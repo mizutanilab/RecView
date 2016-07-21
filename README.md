@@ -98,7 +98,7 @@ The 'Tomography'-'Histogram=>8bitTIF...' menu provides several tools for generat
 ## Frequently asked questions
 <OL>
   <LI><b>System requirements</b></LI>
-    RecView can be executed on a Windows PC running XP, Vista, or Windows 7 with an x86 or x64 CPU and local storage.<br><br>
+    RecView can be executed on a Windows PC running XP, Vista, or Windows 7-10 with an x86 or x64 CPU and local storage.<br><br>
   <LI><b>Manuals</b></LI>
     A brief how-to-use guide has been published as the appendix of the following paper:<BR><BR>
 R. Mizutani, A. Takeuchi, K. Uesugi, S. Takekoshi, R.Y. Osamura and Y. Suzuki (2009). Three-dimensional microstructural analysis of human brain tissue by using synchrotron radiation microtomographs. In <I>Handbook on White Matter</I>, eds. Westland, T.B. & Calton, R.N., New York, Nova Science Publishers, pp. 247-277.
