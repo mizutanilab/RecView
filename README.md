@@ -37,9 +37,9 @@ RecView is provided free of charge under the <a href="https://sites.google.com/s
 </ul>
 
 ## Release notes
-The exec folder contains several executables. Please use the 'RecView' executable appropriate for your PC platform. If your PC has NVIDIA Tesla, GeForce or Quadro GPU processors, you can use the CUDA version. The dynamic link libraries (64 bit: 'cudart64_55.dll' and 'cufft64_55.dll'; 32 bit: 'cudart32_55.dll' and 'cufft32_55.dll') should be placed in the folder of RecView CUDA executable. These library files are also available from the <a href="http://www.nvidia.com/object/cuda_home.html">official NVIDIA site</a> as part of the CUDA toolkit. ATI stream processors Radeon, FireStream or FirePro are also supported. To use ATI processors, you should install the OpenCL library 'OpenCL.dll' provided as part of the <a href="http://game.amd.com/us-en/drivers_catalyst.aspx">ATI Catalyst suite</a>.
+The binary folder contains several executables. Please use the 'RecView' executable appropriate for your PC platform. If your PC has NVIDIA Tesla, GeForce or Quadro GPU processors, you can use the CUDA version. The dynamic link libraries (64 bit: 'cudart64_55.dll' and 'cufft64_55.dll'; 32 bit: 'cudart32_55.dll' and 'cufft32_55.dll') should be placed in the folder of RecView CUDA executable. These library files are also available from the <a href="http://www.nvidia.com/object/cuda_home.html">official NVIDIA site</a> as part of the CUDA toolkit. ATI stream processors Radeon, FireStream or FirePro are also supported. To use ATI processors, you should install the OpenCL library 'OpenCL.dll' provided as part of the <a href="http://game.amd.com/us-en/drivers_catalyst.aspx">ATI Catalyst suite</a>.
 
-A test dataset in TIFF format is also available.
+A test dataset in TIFF format is also provided in the binary folder.
 
 <UL>
   <LI>v4.7.0 (released 13 Nov 2015). A dedicated routine for resolution estimation plot (J. Microsc. 2015) was implemented. CSV files now can be generated from 'Analysis==>Resolution plot' menu. ATI processors are not supported in this release.
