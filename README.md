@@ -93,7 +93,7 @@ The GPU/CPU processors and memory usage can be specified in the 'Tomography'-'Re
 Open 'Tomography'-'Reconstruction' dialog. Enter appropriate parameters for your reconstruction calculation. 'Get center' determines the position of the rotation axis automatically. Tomographic sections can be generated with 'Show image' buttons. 'Batch' executes the reconstruction calculations through 'from' to 'to' sections.
 
 <B>Trimming or reformatting images</B>  
-The 'Tomography'-'Histogram/Conversion' menu provides several tools for trimming, converting to the 8-bit format, and so on.
+The 'Tomography'-'Histogram/Conversion' menu provides several tools for trimming, converting to 8-bit format, removing surrounding capillary pixels, and so on.
 
 ## Frequently asked questions
 <OL>
