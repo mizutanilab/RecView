@@ -6,7 +6,7 @@ Three-dimensional structural analysis by synchrotron radiation microtomography i
 <BR clear=left>
 
 ## License
-RecView is provided free of charge under the <a href="https://sites.google.com/site/mizutanilab1/software-recview/license">BSD 2-Clause License</a>.
+RecView is provided under the <a href="https://sites.google.com/site/mizutanilab1/software-recview/license">BSD 2-Clause License</a>.
 
 ## References
 <ul><li>R. Mizutani, A. Takeuchi, R.Y. Osamura, S. Takekoshi, K. Uesugi and Y. Suzuki (2010). Submicrometer tomographic resolution examined using a micro-fabricated test object. <i>Micron</i> <b>41(1)</b>, 90-95. 
@@ -42,11 +42,11 @@ The binary folder contains several executables. Please use the 'RecView' executa
 A test dataset in TIFF format is also provided in the binary folder.
 
 <UL>
+  <LI>v4.9.0 (released 21 Jul 2016). APS data in HDF5 format is now supported.
   <LI>v4.7.0 (released 13 Nov 2015). A dedicated routine for resolution estimation plot (J. Microsc. 2015) was implemented. CSV files now can be generated from 'Analysis==>Resolution plot' menu. ATI processors are not supported in this release.
   <LI>v4.5.0 (released 6 Jan 2015). Update to support recent output.log format. Fourier transformations now can be generated from Tomography menu. A faster HIS-file reading routine was also implemented. A problem with the tilt angle direction of x64 reconstruction routine was fixed. User interfaces were updated.
   <LI>v4.0.2 (released 22 Oct 2013). Back projection routines running on CUDA processors were updated to support the CUDA 5.5 computing environment. The CUDA version for x64 platforms was also included from this release. Queues from multiple RecView instances are now executed sequentially. 
   <LI>v3.5.1 (released 16 Feb 2013). Functions for rotation center determination were revised. 
-  <LI>v3.4.12 (released 25 Dec 2012). Bug-fix release revising TIFF reading routines and etc.
   <LI>v3.4.4 (released 1 Oct 2012). Drift correction functions were revised. Image reconstruction and processing are now logged in plain text format in the dataset folder. Queueing functions were updated to support least-square fitting of 3D images.
   <LI>v3.1.0 (released 23 Sep 2011). HIS (Hamamatsu Image Sequence) format is now supported. Source codes for reading HIS format files were kindly provided by Dr. Uesugi, JASRI/SPring-8. Reconstruction routines were revised to support images taken with Zernike phase contrast.
   <LI>v3.0.1 (released 12 Jan 2011). Least-square fitting functions were provided. Reconstruction routines were revised to support raw image files in the TIFF format.
