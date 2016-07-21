@@ -37,9 +37,9 @@ RecView is provided under the <a href="https://sites.google.com/site/mizutanilab
 </ul>
 
 ## Release notes
-The binary folder contains several executables. Please use the 'RecView' executable appropriate for your PC platform. If your PC has NVIDIA Tesla, GeForce or Quadro GPU processors, you can use the CUDA version. The dynamic link libraries (64 bit: 'cudart64_55.dll' and 'cufft64_55.dll'; 32 bit: 'cudart32_55.dll' and 'cufft32_55.dll') should be placed in the folder of RecView CUDA executable. These library files are also available from the <a href="http://www.nvidia.com/object/cuda_home.html">official NVIDIA site</a> as part of the CUDA toolkit. ATI stream processors Radeon, FireStream or FirePro are also supported. To use ATI processors, you should install the OpenCL library 'OpenCL.dll' provided as part of the <a href="http://game.amd.com/us-en/drivers_catalyst.aspx">ATI Catalyst suite</a>. Source codes are not available at present.
+The binary folder contains several executables. Please use the 'RecView' executable appropriate for your PC platform. If your PC has NVIDIA Tesla, GeForce or Quadro GPU processors, you can use the CUDA version. The dynamic link libraries (64 bit: 'cudart64_55.dll' and 'cufft64_55.dll'; 32 bit: 'cudart32_55.dll' and 'cufft32_55.dll') should be placed in the folder of RecView CUDA executable. These library files are also available from the <a href="http://www.nvidia.com/object/cuda_home.html">official NVIDIA site</a> as part of the CUDA toolkit. ATI stream processors Radeon, FireStream or FirePro are also supported. To use ATI processors, you should install the OpenCL library 'OpenCL.dll' provided as part of the <a href="http://game.amd.com/us-en/drivers_catalyst.aspx">ATI Catalyst suite</a>. 
 
-A test dataset in TIFF format is also provided in the binary folder.
+Source codes are not available at present. A test dataset in TIFF format is also provided in the binary folder.
 
 <UL>
   <LI>v4.9.0 (released 21 Jul 2016). APS data in HDF5 format is now supported.
