@@ -97,19 +97,14 @@ The 'Tomography'-'Histogram=>8bitTIF...' menu provides several tools for generat
 
 ## Frequently asked questions
 <OL>
-  <LI>System requirements.</LI>
-    <DIV class=cv_item>
-    RecView can be executed on a Windows PC running XP, Vista, or Windows 7 with an x86 or x64 CPU and local storage.
-    </DIV></P>
-  <LI>Are any manuals available?</LI>
-    <DIV class=cv_item>
+  <LI><b>System requirements</b></LI>
+    RecView can be executed on a Windows PC running XP, Vista, or Windows 7 with an x86 or x64 CPU and local storage.<br><br>
+  <LI><b>Manuals</b></LI>
     A brief how-to-use guide has been published as the appendix of the following paper:<BR><BR>
 R. Mizutani, A. Takeuchi, K. Uesugi, S. Takekoshi, R.Y. Osamura and Y. Suzuki (2009). Three-dimensional microstructural analysis of human brain tissue by using synchrotron radiation microtomographs. In <I>Handbook on White Matter</I>, eds. Westland, T.B. & Calton, R.N., New York, Nova Science Publishers, pp. 247-277.
 <A href="http://www.el.u-tokai.ac.jp/ryuta/WhiteMatterChap14Mizutani.pdf">pdf</A> (9.5 MB)
-    </DIV></P>
-  <LI>What kind of data can be processed?</LI>
-    <DIV class=cv_item>
-    RecView is designed for the reconstruction of tomographic data obtained at SPring-8. However, any kind of data can be processed. Please contact the author if you have problems in using this program with data from other tomographs. Dataset requirements are:
+  <LI><b>What kind of data can be processed?</b></LI>
+    RecView is designed for the reconstruction of tomographic data obtained at SPring-8 and APS. However, any kind of data can be processed. Please contact the author if you have problems in using this program with data from other tomographs. Dataset requirements are:
     <UL>
       <LI>We use file names beginning with alphabet characters followed by frame number, such as 'q0005.tif'.</LI>
       <LI>Place a dark-field image 'dark.tif' in the dataset folder.</LI>
@@ -127,9 +122,7 @@ frame#      time(msec)     angle(deg) 0=flatfield/1=sample
           Spreadsheet softwares work well for manually generating this 'output.log' file. The 'time' fields are used for interpolating the trend of flatfield pixel intensities. <BR>The format of output.log files of recent SPring-8 sessions was revised to list angle in pulses instead of angle in degrees. The latest executable can recognize each format.
       </LI>
     </UL>
-    </DIV></P>
-  <LI>How to try the test dataset?</LI>
-    <DIV class=cv_item>
+  <LI><b>How to try the test dataset?</b></LI>
     <UL>
       <LI>Extract all files in the archived test dataset.</LI>
       <LI>Open one of TIFF files (such as Q0005.tif) using RecView.</LI>
@@ -138,11 +131,8 @@ frame#      time(msec)     angle(deg) 0=flatfield/1=sample
       <LI>Enter '311' in the 'From' rotation-center field.</LI>
       <LI>Click 'Show image' below. In seconds, a cross section of a square-wave pattern carved on an aluminum wire will be shown.</LI>
     </UL>
-    </DIV></P>
-  <LI>Does RecView make network connections?</LI>
-    <DIV class=cv_item>
+  <LI><b>Does RecView make network connections?</b></LI>
       No. However, remote folders such as workgroup PCs are searched when you open files. This is  performed by the Windows dialog function.
-    </DIV></P>
 </OL>
 
 ## Contact
