@@ -78,7 +78,7 @@ Here, tau is the time constant required for one pixel projection. For example, o
 Concise help can be found in the 'Help'-'About' menu. We believe that this program is self-explanatory, but the following tips should be helpul.
 
 <B>Installation</B>  
-Download the RecView executable and corresponding library files to any folder you like. 
+Download the RecView executable and corresponding library files and place them any folder you like. 
 
 <B>Execution</B>  
 Double click the 'RecView' executable.
