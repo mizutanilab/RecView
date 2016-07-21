@@ -83,17 +83,17 @@ Download the RecView executable and corresponding library files to any folder yo
 <B>Execution</B>  
 Double click the 'RecView' executable.
 
-<B>Open radiograph</B>  
-From the menu bar, select 'File'-'Open...' and choose an ITEX file. Click the 'OK' button. 
+<B>Open data files</B>  
+From the menu bar, select 'File'-'Open' and choose an image file.
 
 <B>Computing environment</B>  
-The GPU or CPU computing environment can be selected in the 'Tomography'-'Property' dialog.
+The GPU/CPU processors and memory usage can be specified in the 'Tomography'-'Resource usage' dialog.
 
 <B>Reconstruction</B>  
-Open 'Tomography'-'Reconstruction...' dialog. Enter appropriate parameters for your reconstruction calculation. 'Get center' determines the position of the rotation axis. After you have examined a tomogram by using 'Show image', 'Batch' executes the reconstruction calculations.
+Open 'Tomography'-'Reconstruction' dialog. Enter appropriate parameters for your reconstruction calculation. 'Get center' determines the position of the rotation axis automatically. After you have examined a tomography section by using 'Show image', 'Batch' executes the reconstruction calculations through 'from' to 'to' sections.
 
 <B>Trimming or reformatting images</B>  
-The 'Tomography'-'Histogram=>8bitTIF...' menu provides several tools for generating 8-bit TIFF images.
+The 'Tomography'-'Histogram/Conversion' menu provides several tools for trimming, converting to the 8-bit format, and so on.
 
 ## Frequently asked questions
 <OL>
@@ -132,7 +132,7 @@ frame#      time(msec)     angle(deg) 0=flatfield/1=sample
       <LI>Click 'Show image' below. In seconds, a cross section of a square-wave pattern carved on an aluminum wire will be shown.</LI>
     </UL><br>
   <LI><b>Does RecView make network connections?</b></LI>
-      No. However, remote folders such as workgroup PCs are searched when you open files. This is  performed by the Windows dialog function.
+      Never. However, remote folders such as workgroup PCs are searched when you open files. This isperformed by the Windows dialog function.
 </OL>
 
 ## Contact
