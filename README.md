@@ -121,7 +121,7 @@ frame#      time(msec)     angle(deg) 0=flatfield/1=sample
 01891       05310.65700    180.0000        0</pre>
           Spreadsheet softwares work well for manually generating this 'output.log' file. The 'time' fields are used for interpolating the trend of flatfield pixel intensities. <BR>The format of output.log files of recent SPring-8 sessions was revised to list angle in pulses instead of angle in degrees. The latest executable can recognize each format.
       </LI>
-    </UL><br><br>
+    </UL><br>
   <LI><b>How to try the test dataset?</b></LI>
     <UL>
       <LI>Extract all files in the archived test dataset.</LI>
@@ -130,7 +130,7 @@ frame#      time(msec)     angle(deg) 0=flatfield/1=sample
       <LI>Enter '380' in the 'From' layer field.</LI>
       <LI>Enter '311' in the 'From' rotation-center field.</LI>
       <LI>Click 'Show image' below. In seconds, a cross section of a square-wave pattern carved on an aluminum wire will be shown.</LI>
-    </UL><br><br>
+    </UL><br>
   <LI><b>Does RecView make network connections?</b></LI>
       No. However, remote folders such as workgroup PCs are searched when you open files. This is  performed by the Windows dialog function.
 </OL>
