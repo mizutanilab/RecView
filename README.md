@@ -2,7 +2,7 @@
 RecView is a program for tomographic reconstruction and image processing. It consists of about 14,000 lines of custom source codes in C++ and CUDA C and x86/x64 machine languages. RecView is designed for processing data obtained at the BL20B2, BL20XU, BL37XU, and BL47XU beamlines of the synchrotron radiation facility SPring-8 and also those taken at the 32-ID beamline of Advanced Photon Source, Argonne National Laboratory.
 
 <IMG width=100 height=140 alt=testPattern src="pics/testPattern.png" align=left>
-Three-dimensional structural analysis with micro/nanotomography is performed by recording two-dimensional x-ray images. Then tomographic slices are calculated from the x-ray images by the convolution back-projection method. This reconstruction calculation is repeated for each tomographic slice, giving the three-dimensional structure. RecView is a program for those tomographic reconstruction calculations with graphical user interfaces. Multiple data can be continuously processed by using its queueing dialog. Functions for the zooming reconstruction (an example is shown left), Fourier transformation, Gaussian convolution, and many other protocols for image processing are also implemented. The resolution of real sample images can be estimated by using a logarithmic plot in the Fourier domain.
+Three-dimensional structural analysis with micro/nanotomography is performed by recording two-dimensional x-ray images while rotating the sample. Then tomographic sections are calculated from the x-ray images by convolution back-projection method. This reconstruction calculation is repeated for each tomographic slice, giving the three-dimensional structure. RecView is a program for the tomographic reconstruction calculations with graphical user interfaces. Multiple data can be continuously processed by using its queueing dialog. Functions for zooming reconstruction (an example is shown left), Gaussian convolution, and many other procedures for image processing are also implemented. The resolution of real sample images can be estimated with a logarithmic plot in the Fourier domain by using this program.
 <BR clear=left>
 
 ## License
@@ -39,7 +39,7 @@ RecView is provided under the <a href="https://sites.google.com/site/mizutanilab
 ## Release notes
 The binary folder contains several executables. Please use 'RecView.exe' appropriate for your PC platform. If your PC has NVIDIA Tesla, GeForce or Quadro GPU processors, you can use the CUDA version. The dynamic link libraries (64 bit: 'cudart64_55.dll' and 'cufft64_55.dll'; 32 bit: 'cudart32_55.dll' and 'cufft32_55.dll') should be placed in the folder of RecView CUDA executable. These library files are also available from the <a href="http://www.nvidia.com/object/cuda_home.html">official NVIDIA site</a> as part of the CUDA toolkit. 
 
-Source codes are not available at present. A test dataset in TIFF format is provided in the binary folder.
+Source codes are not available at present. A test dataset in TIFF format is also provided in the binary folder.
 
 <UL>
   <LI>v4.9.0 (released 21 Jul 2016). APS data in HDF5 format are now supported.
