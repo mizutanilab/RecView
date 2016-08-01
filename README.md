@@ -2,7 +2,7 @@
 RecView is a program for tomographic reconstruction and image processing. It consists of about 14,000 lines of custom source codes in C++, CUDA, and x86/x64 machine languages. RecView is designed for processing data obtained at the BL20B2, BL20XU, BL37XU, and BL47XU beamlines of the synchrotron radiation facility SPring-8 and also those taken at the 32-ID beamline of Advanced Photon Source, Argonne National Laboratory.
 
 <IMG width=100 height=140 alt=testPattern src="pics/testPattern.png" align=left>
-Three-dimensional structural analysis with micro/nanotomography is performed by recording two-dimensional x-ray images while rotating the sample. Then tomographic sections are calculated from the x-ray images by convolution back-projection method. This reconstruction calculation is repeated for each tomographic slice, giving the three-dimensional structure. RecView is a program for the tomographic reconstruction calculations with graphical user interfaces. Multiple data can be continuously processed by using its queueing dialog. Functions for zooming reconstruction (an example is shown left), Gaussian convolution, and many other procedures for image processing are also implemented. The resolution of real sample images can be estimated with a logarithmic plot in the Fourier domain by using this program.
+Three-dimensional structural analysis with micro/nanotomography is performed by recording two-dimensional x-ray images while rotating the sample. Then tomographic sections are calculated from the x-ray images by convolution back-projection method. This reconstruction calculation is repeated for each tomographic slice, giving the three-dimensional structure. RecView is a program for the tomographic reconstruction calculations with graphical user interfaces. Multiple datasets can be continuously processed by using its queueing dialog. Functions for zooming reconstruction (an example is shown left), Gaussian convolution, and many other procedures for image processing are also implemented. The resolution of real sample images can be estimated with a logarithmic plot in the Fourier domain by using this program.
 <BR clear=left>
 
 ## License
@@ -75,7 +75,7 @@ Here, tau is the time constant required for one pixel projection. For example, o
 </LI></UL>
 
 ## How to use
-Concise help can be found in the 'Help'-'About' menu. We believe that this program is self-explanatory, but the following tips should be helpul.
+Concise help can be found in the 'Help'-'About' menu. We believe that this program is self-explanatory, but the following tips would be helpul.
 
 <B>Installation</B>  
 Download the RecView executable and corresponding library files and place them any folder you like. 
@@ -90,7 +90,7 @@ From the menu bar, select 'File'-'Open' and choose an image file.
 The GPU/CPU processors and memory usage can be specified in the 'Tomography'-'Resource usage' dialog.
 
 <B>Reconstruction</B>  
-Open 'Tomography'-'Reconstruction' dialog. Enter appropriate parameters for your reconstruction calculation. 'Get center' determines the position of the rotation axis automatically. Tomographic sections can be generated with 'Show image' buttons. 'Batch' executes the reconstruction calculations through 'from' to 'to' sections.
+Open 'Tomography'-'Reconstruction' dialog. Enter appropriate parameters for your reconstruction calculation. 'Get center' determines the position of the rotation axis automatically, if possible. Tomographic sections can be generated with 'Show image' buttons. 'Batch' executes the reconstruction calculations through 'from' to 'to' sections.
 
 <B>Trimming or reformatting images</B>  
 The 'Tomography'-'Histogram/Conversion' menu provides several tools for trimming, converting to 8-bit format, removing surrounding capillary pixels, and so on.
@@ -119,7 +119,7 @@ frame#      time(msec)     angle(deg) 0=flatfield/1=sample
 ...
 01890       05298.43800    180.0000        1
 01891       05310.65700    180.0000        0</pre>
-          Spreadsheet softwares work well for manually generating this 'output.log' file. The 'time' fields are used for interpolating the trend of flatfield pixel intensities. <BR>The format of output.log files of recent SPring-8 sessions was revised to list angle in pulses instead of angle in degrees. The latest executable can recognize each format.
+          Spreadsheet softwares work well for manually generating this 'output.log' file. The 'time' fields are used for interpolating the trend of flatfield pixel intensities. <BR>The output.log files of some SPring-8 sessions list angle in pulses instead of angle in degrees. RecView can recognize each format.
       </LI>
     </UL><br>
   <LI><b>How to try the test dataset?</b></LI>
@@ -129,10 +129,10 @@ frame#      time(msec)     angle(deg) 0=flatfield/1=sample
       <LI>Open 'Tomography'-'Reconstruction...' dialog.</LI>
       <LI>Enter '380' in the 'From' layer field.</LI>
       <LI>Enter '311' in the 'From' rotation-center field.</LI>
-      <LI>Click 'Show image' below. In seconds, a cross section of a square-wave pattern carved on an aluminum wire will be shown.</LI>
+      <LI>Click 'Show image' below. In seconds, a cross section of an aluminum wire with a square-wave pattern carved on its surface will be shown.</LI>
     </UL><br>
   <LI><b>Does RecView make network connections?</b></LI>
-      Never. However, remote folders such as workgroup PCs are searched when you open files. This isperformed by the Windows dialog function.
+      Never. However, remote folders such as workgroup PCs are searched when you open files. This is performed by the Windows dialog function.
 </OL>
 
 ## Contact
@@ -141,7 +141,7 @@ Department of Applied Biochemistry
 School of Engineering, Tokai University  
 Kitakaname 4-1-1, Hiratsuka, Kanagawa 259-1292, Japan  
 E-mail ryuta(at)tokai-u.jp  
-https://sites.google.com/site/mizutanilab1/  
+http://www.el.u-tokai.ac.jp/ryuta/<br>  
 <A href="http://www.linkedin.com/pub/ryuta-mizutani/79/832/115">Linkedin</A> - 
 <A href="http://www.facebook.com/people/Ryuta-Mizutani/100005433369640">Facebook</A><BR>
 
