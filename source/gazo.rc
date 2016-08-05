@@ -1,0 +1,1074 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// 日本語 resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_JPN)
+#ifdef _WIN32
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+#pragma code_page(932)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "#define _AFX_NO_SPLITTER_RESOURCES\r\n"
+    "#define _AFX_NO_OLE_RESOURCES\r\n"
+    "#define _AFX_NO_TRACKER_RESOURCES\r\n"
+    "#define _AFX_NO_PROPERTY_RESOURCES\r\n"
+    "\r\n"
+    "#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)\r\n"
+    "#ifdef _WIN32\r\n"
+    "LANGUAGE 9, 1\r\n"
+    "#pragma code_page(1252)\r\n"
+    "#endif //_WIN32\r\n"
+    "#include ""res\\gazo.rc2""  // Microsoft Visual C++ 以外のツールで編集されたリソース\r\n"
+    "#include ""afxres.rc""         // 標準のコンポーネント\r\n"
+    "#include ""afxprint.rc""       // 印刷/印刷プレビュー リソース\r\n"
+    "#endif\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+#endif    // 日本語 resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// 英語 (米国) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDR_MAINFRAME           ICON                    "res\\gazo.ico"
+IDR_GAZOTYPE            ICON                    "res\\gazoDoc.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDR_MAINFRAME           BITMAP                  "res\\Toolbar.bmp"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Toolbar
+//
+
+IDR_MAINFRAME TOOLBAR  16, 15
+BEGIN
+    BUTTON      ID_FILE_OPEN
+    BUTTON      ID_FILE_SAVE
+    SEPARATOR
+    BUTTON      ID_EDIT_PASTE
+    SEPARATOR
+    BUTTON      ID_FILE_PRINT
+    SEPARATOR
+    BUTTON      ID_APP_ABOUT
+    SEPARATOR
+    BUTTON      ID_TOOLBAR_MAG
+    BUTTON      ID_TOOLBAR_MIN
+    SEPARATOR
+    BUTTON      ID_TOOLBAR_BRIGHT
+    BUTTON      ID_TOOLBAR_DARK
+    BUTTON      ID_TOOLBAR_CNTUP
+    BUTTON      ID_TOOLBAR_CNTDOWN
+    SEPARATOR
+    BUTTON      ID_TOOLBAR_FNJUMPR
+    BUTTON      ID_TOOLBAR_FNFR
+    BUTTON      ID_TOOLBAR_FNREV
+    BUTTON      ID_TOOLBAR_FNREVONE
+    SEPARATOR
+    BUTTON      ID_TOOLBAR_FNSR
+    BUTTON      ID_TOOLBAR_PLPAUSE
+    BUTTON      ID_TOOLBAR_FNSF
+    SEPARATOR
+    BUTTON      ID_TOOLBAR_FNFWDONE
+    BUTTON      ID_TOOLBAR_FNFWD
+    BUTTON      ID_TOOLBAR_FNFF
+    BUTTON      ID_TOOLBAR_FNJUMPF
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDR_MAINFRAME MENU 
+BEGIN
+    POPUP "&File"
+    BEGIN
+        MENUITEM "&New\tCtrl+N",                ID_FILE_NEW
+        MENUITEM "Prepare files...",            IDM_FILE_PREPFILES
+        MENUITEM "&Open...\tCtrl+O",            ID_FILE_OPEN
+        MENUITEM SEPARATOR
+        MENUITEM "Load queue...",               IDM_FILE_LOADQUEUE
+        MENUITEM "Save queue...",               IDM_FILE_SAVEQUEUE
+        MENUITEM SEPARATOR
+        MENUITEM "P&rint Setup...",             ID_FILE_PRINT_SETUP
+        MENUITEM SEPARATOR
+        MENUITEM "Recent File",                 ID_FILE_MRU_FILE1
+        MENUITEM SEPARATOR
+        MENUITEM "E&xit",                       ID_APP_EXIT
+    END
+    POPUP "Tomography"
+    BEGIN
+        MENUITEM "Queue...",                    IDM_TOMO_QUEUE
+        MENUITEM "LSQ fitting...",              IDM_TOMO_LSQFIT
+        MENUITEM "Renumber files...",           IDM_TOMO_RENUMFILES
+        MENUITEM "Resource usage..",            IDM_TOMO_PROPERTY
+    END
+    POPUP "&View"
+    BEGIN
+        MENUITEM "&Toolbar",                    ID_VIEW_TOOLBAR
+        MENUITEM "&Status Bar",                 ID_VIEW_STATUS_BAR
+        MENUITEM "Error...",                    32807
+        MENUITEM "Drag scroll",                 IDM_VIEW_DRAGSCROLL
+        MENUITEM "Box axis label",              IDM_VIEW_BOXAXISLABEL
+    END
+    POPUP "&Help"
+    BEGIN
+        MENUITEM "&About RecView...",           ID_APP_ABOUT
+        MENUITEM "Debug...",                    IDM_HLP_DEBUG
+    END
+END
+
+IDR_GAZOTYPE MENU 
+BEGIN
+    POPUP "&File"
+    BEGIN
+        MENUITEM "&New\tCtrl+N",                ID_FILE_NEW
+        MENUITEM "Prepare files...",            IDM_FILE_PREPFILES
+        MENUITEM "&Open...\tCtrl+O",            ID_FILE_OPEN
+        MENUITEM "&Close",                      ID_FILE_CLOSE
+        MENUITEM "Close all",                   IDM_FILE_CLOSEALL
+        MENUITEM "Save &As...",                 ID_FILE_SAVE_AS
+        MENUITEM SEPARATOR
+        MENUITEM "Load queue...",               IDM_FILE_LOADQUEUE
+        MENUITEM "Save queue...",               IDM_FILE_SAVEQUEUE
+        MENUITEM SEPARATOR
+        MENUITEM "&Print...\tCtrl+P",           ID_FILE_PRINT
+        MENUITEM "Print Pre&view",              ID_FILE_PRINT_PREVIEW
+        MENUITEM "P&rint Setup...",             ID_FILE_PRINT_SETUP
+        MENUITEM SEPARATOR
+        MENUITEM "Recent File",                 ID_FILE_MRU_FILE1
+        MENUITEM SEPARATOR
+        MENUITEM "E&xit",                       ID_APP_EXIT
+    END
+    POPUP "&Edit"
+    BEGIN
+        MENUITEM "&Undo\tCtrl+Z",               ID_EDIT_UNDO
+        MENUITEM SEPARATOR
+        MENUITEM "Cu&t\tCtrl+X",                ID_EDIT_CUT
+        MENUITEM "&Copy\tCtrl+C",               ID_EDIT_COPY
+        MENUITEM "&Paste\tCtrl+V",              ID_EDIT_PASTE
+    END
+    POPUP "Tomography"
+    BEGIN
+        MENUITEM "Reconstruction...",           IDM_TOMO_RECONST
+        MENUITEM "Histogram/conversion...",     IDM_TOMO_HISTG
+        MENUITEM "Queue...",                    IDM_TOMO_QUEUE
+        MENUITEM "LSQ fitting...",              IDM_TOMO_LSQFIT
+        MENUITEM "Renumber files...",           IDM_TOMO_RENUMFILES
+        MENUITEM SEPARATOR
+        MENUITEM "Refraction correction...",    IDM_TOMO_REFRAC
+        MENUITEM "Sample rotation axis..",      IDM_TOMO_AXIS
+        MENUITEM "Show comment...",             IDM_TOMO_COMMENT
+        MENUITEM "Resource usage...",           IDM_TOMO_PROPERTY
+    END
+    POPUP "Analysis"
+    BEGIN
+        MENUITEM "Intensity statistics...",     IDM_TOMO_STAT
+        MENUITEM "Resolution plot...",          ID_TOMOGRAPHY_RESOLUTIONREPORT
+        MENUITEM "Line projection...",          IDM_TOMO_LINE
+        MENUITEM "Horizontal center...",        IDM_TOMO_HORIZCENT
+        MENUITEM "Show Fourier transform",      IDM_TOMO_FOURIER
+        MENUITEM "Gaussian convolution...",     ID_TOMOGRAPHY_GAUSSIANCONVOLUTION
+        MENUITEM "Add noise...",                ID_ANALYSIS_ADDNOISE
+        MENUITEM "Overlay...",                  32821
+    END
+    POPUP "&View"
+    BEGIN
+        MENUITEM "&Toolbar",                    ID_VIEW_TOOLBAR
+        MENUITEM "&Status Bar",                 ID_VIEW_STATUS_BAR
+        MENUITEM "Error...",                    IDM_VIEW_ERROR
+        MENUITEM "Drag scroll",                 IDM_VIEW_DRAGSCROLL
+        MENUITEM "Box axis label",              IDM_VIEW_BOXAXISLABEL
+    END
+    POPUP "&Window"
+    BEGIN
+        MENUITEM "&New Window",                 ID_WINDOW_NEW
+        MENUITEM "&Cascade",                    ID_WINDOW_CASCADE
+        MENUITEM "&Tile",                       ID_WINDOW_TILE_HORZ
+        MENUITEM "&Arrange Icons",              ID_WINDOW_ARRANGE
+    END
+    POPUP "&Help"
+    BEGIN
+        MENUITEM "&About RecView...",           ID_APP_ABOUT
+        MENUITEM "Debug...",                    IDM_HLP_DEBUG
+    END
+END
+
+IDR_MENU_POPUP MENU 
+BEGIN
+    POPUP "popupQueue"
+    BEGIN
+        MENUITEM "Delete",                      ID_POPUPQUEUE_DEL
+        MENUITEM "Up",                          ID_POPUPQUEUE_UP
+        MENUITEM "Down",                        ID_POPUPQUEUE_DOWN
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Accelerator
+//
+
+IDR_MAINFRAME ACCELERATORS 
+BEGIN
+    "N",            ID_FILE_NEW,            VIRTKEY, CONTROL
+    "O",            ID_FILE_OPEN,           VIRTKEY, CONTROL
+    "S",            ID_FILE_SAVE,           VIRTKEY, CONTROL
+    "P",            ID_FILE_PRINT,          VIRTKEY, CONTROL
+    "Z",            ID_EDIT_UNDO,           VIRTKEY, CONTROL
+    "X",            ID_EDIT_CUT,            VIRTKEY, CONTROL
+    "C",            ID_EDIT_COPY,           VIRTKEY, CONTROL
+    "V",            ID_EDIT_PASTE,          VIRTKEY, CONTROL
+    VK_BACK,        ID_EDIT_UNDO,           VIRTKEY, ALT
+    VK_DELETE,      ID_EDIT_CUT,            VIRTKEY, SHIFT
+    VK_INSERT,      ID_EDIT_COPY,           VIRTKEY, CONTROL
+    VK_INSERT,      ID_EDIT_PASTE,          VIRTKEY, SHIFT
+    VK_F6,          ID_NEXT_PANE,           VIRTKEY 
+    VK_F6,          ID_PREV_PANE,           VIRTKEY, SHIFT
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_ABOUTBOX DIALOGEX 0, 0, 207, 191
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "About RecView"
+FONT 8, "MS Sans Serif", 0, 0, 0x0
+BEGIN
+    ICON            IDR_MAINFRAME,IDC_STATIC,11,17,20,20
+    DEFPUSHBUTTON   "OK",IDOK,164,7,36,14,WS_GROUP
+    LTEXT           "CGazoApp::CGazoApp() sProgVersion",IDC_ABOUT_VER,42,11,115,16,SS_NOPREFIX | WS_TABSTOP
+    LTEXT           "Copyright (C) 2008-2016 Ryuta Mizutani.\r\nAll rights reserved.",IDC_STATIC,46,31,154,17
+    LTEXT           "http://www.el.u-tokai.ac.jp/ryuta/",IDC_STATIC,54,49,139,15
+    LTEXT           "File->Open one of *.his, *.img, or *.h5 files.\r\nGo 'Tomography->Reconstruction' menu.\r\n  Click 'Show image' to calcurate tomograms.\r\n  Examine tomograms at top and bottom of the sample.\r\n  Refine parameters as you like.\r\n  Then issue or queue execution.",IDC_STATIC,17,67,179,60
+    LTEXT           "Again File->Open one of rec*.tif files.\r\nGo 'Tomography->Histogram/conversion' menu.\r\n  Click 'Select Image'\r\n    to select files to convert.\r\n  Move green and red lines in the histogram\r\n    to define output LAC levels.\r\n  Issue or queue execution.",IDC_STATIC,17,119,183,61
+END
+
+IDD_RECONST DIALOGEX 0, 0, 131, 215
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION
+CAPTION "Reconstruction"
+FONT 9, "MS Sans Serif", 400, 0, 0x0
+BEGIN
+    DEFPUSHBUTTON   "Show image",IDC_RECONST_SHOW1,82,49,42,13
+    PUSHBUTTON      "Batch",IDOK,7,194,25,14
+    PUSHBUTTON      "Close",IDCANCEL,99,194,25,14
+    EDITTEXT        IDC_RECONST_SLICE1,25,34,28,12,ES_AUTOHSCROLL
+    LTEXT           "From:",IDC_STATIC,7,36,17,8
+    LTEXT           "Layer    Rotation center",IDC_STATIC,32,24,78,8
+    EDITTEXT        IDC_RECONST_CENT1,64,34,36,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_RECONST_SLICE2,25,86,28,12,ES_AUTOHSCROLL
+    LTEXT           "To:",IDC_STATIC,7,88,10,8
+    EDITTEXT        IDC_RECONST_CENT2,64,86,36,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "Queue",IDC_RECONST_QUEUE,70,194,25,14
+    LTEXT           "Pixel width",IDC_STATIC,21,121,33,8
+    EDITTEXT        IDC_RECONST_PIXEL,58,119,28,12,ES_AUTOHSCROLL
+    LTEXT           "um",IDC_STATIC,90,121,10,8
+    PUSHBUTTON      "Get center",IDC_RECONST_AUTO1,42,49,38,13
+    PUSHBUTTON      "Get center",IDC_RECONST_AUTO2,42,101,38,13
+    PUSHBUTTON      "Show image",IDC_RECONST_SHOW2,82,101,42,13
+    PUSHBUTTON      "Stop",IDC_RECONST_STOP,35,194,25,14
+    CONTROL         "Progress1",IDC_RECONST_PROGRESS,"msctls_progress32",WS_BORDER,7,181,117,10
+    CONTROL         "Offset CT approx",IDC_RECONST_OFFCT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,21,152,70,10
+    EDITTEXT        IDC_RECONST_OFFAXIS,93,151,31,12,ES_AUTOHSCROLL
+    LTEXT           "Tilt angle",IDC_STATIC,21,138,36,8
+    EDITTEXT        IDC_RECONST_TILT,58,136,28,12,ES_AUTOHSCROLL
+    LTEXT           "deg",IDC_STATIC,90,138,21,8
+    PUSHBUTTON      "Options...",IDC_RECONST_OPTIONS,86,165,38,13
+    PUSHBUTTON      "View sinogram",IDC_RECONST_SINO1,70,65,54,13
+    COMBOBOX        IDC_RECONST_HISDATASET2,35,7,30,70,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Dataset",IDC_STATIC,7,10,27,8
+    EDITTEXT        IDC_RECONST_SUFFIX3,97,8,27,12,ES_AUTOHSCROLL
+    LTEXT           "Output",IDC_STATIC,69,10,25,8
+    PUSHBUTTON      "Select frames",IDC_RECONST_SELECT,15,65,54,13,WS_DISABLED
+END
+
+IDD_HISTOGRAM DIALOGEX 0, 0, 242, 227
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION
+CAPTION "Histogram"
+FONT 9, "MS Sans Serif", 0, 0, 0x0
+BEGIN
+    DEFPUSHBUTTON   "Batch",IDOK,113,206,28,14
+    PUSHBUTTON      "Close",IDCANCEL,207,206,28,14
+    CONTROL         "",IDC_HISTG_BITMAP,"Static",SS_BITMAP | SS_REALSIZEIMAGE | SS_SUNKEN,30,10,14,15
+    LTEXT           "Max",IDC_HISTG_HSTMAX,7,7,22,8
+    LTEXT           "Low",IDC_HISTG_HSTLOW,25,110,29,8
+    RTEXT           "High",IDC_HISTG_HSTHIGH,193,110,42,8
+    CONTROL         "Spin1",IDC_HISTG_MAG,"msctls_updown32",UDS_ARROWKEYS,16,39,9,44
+    LTEXT           "(Intensity)",IDC_HISTG_HSTUNIT,156,111,31,8
+    EDITTEXT        IDC_HISTG_CURSLOW,73,109,38,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_HISTG_CURSHIGH,114,109,38,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "Queue",IDC_HISTG_QUEUE,144,206,28,14
+    CONTROL         "Preview",IDC_HISTG_PREVIEW,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,144,148,48,10
+    GROUPBOX        "Trimming box",IDC_STATIC,7,128,127,59
+    EDITTEXT        IDC_HISTG_TRMCENTX,35,146,27,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_HISTG_TRMCENTY,64,146,27,12,ES_AUTOHSCROLL
+    LTEXT           "X",IDC_STATIC,46,137,8,8
+    LTEXT           "Y",IDC_STATIC,75,137,8,8
+    LTEXT           "Center",IDC_STATIC,12,148,21,8
+    EDITTEXT        IDC_HISTG_TRMSIZEX,35,159,27,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_HISTG_TRMSIZEY,64,159,27,12,ES_AUTOHSCROLL
+    LTEXT           "Size",IDC_STATIC,12,162,15,8
+    EDITTEXT        IDC_HISTG_TRMANGLE,96,160,27,12,ES_AUTOHSCROLL
+    LTEXT           "Tilt",IDC_STATIC,98,150,11,8
+    LTEXT           "o",IDC_STATIC,124,160,8,8
+    LTEXT           "Tomograms",IDC_HISTG_FILEMSG,84,193,151,8
+    PUSHBUTTON      "Select image",IDC_HISTG_GETPATH,7,190,48,14
+    CONTROL         "Progress1",IDC_HISTG_PROGRESS,"msctls_progress32",WS_BORDER,7,207,102,11
+    CONTROL         "Enable trimming",IDC_HISTG_ENTRIM,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,144,160,61,10
+    LTEXT           "Box (0,0)-(100,100)",IDC_HISTG_BOXMSG,12,175,117,8
+    PUSHBUTTON      "Options...",IDC_HISTG_OPT,143,173,34,14
+END
+
+IDD_QUEUE DIALOGEX 0, 0, 299, 141
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION
+EXSTYLE WS_EX_ACCEPTFILES
+CAPTION "Queue-RecView"
+FONT 9, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "Start",IDOK,200,120,25,14
+    PUSHBUTTON      "Close",IDCANCEL,267,120,25,14
+    CONTROL         "List1",IDC_QUEUE_LIST,"SysListView32",LVS_REPORT | LVS_NOLABELWRAP | WS_BORDER | WS_TABSTOP,7,7,285,107,WS_EX_ACCEPTFILES
+    PUSHBUTTON      "Stop",IDC_QUEUE_STOP,228,120,25,14
+    CONTROL         "End at current process",IDC_QUEUE_FINAL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,122,83,10
+END
+
+IDD_MESSAGE DIALOGEX 0, 0, 187, 163
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Message"
+FONT 9, "MS Sans Serif", 0, 0, 0x0
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,157,142,23,14
+    EDITTEXT        IDC_MSG_TEXT,7,7,173,129,ES_MULTILINE | ES_READONLY | ES_WANTRETURN | WS_VSCROLL | WS_HSCROLL
+END
+
+IDD_PROPERTY DIALOGEX 0, 0, 163, 227
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Property"
+FONT 9, "MS Sans Serif", 0, 0, 0x0
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,95,206,28,14
+    DEFPUSHBUTTON   "Cancel",IDCANCEL,128,206,28,14
+    COMBOBOX        IDC_PROP_NCPU,81,50,43,70,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "CPU core",IDC_STATIC,21,53,48,8
+    COMBOBOX        IDC_PROP_MEMORY,62,7,43,70,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Memory usage",IDC_STATIC,12,10,48,8
+    CONTROL         "Use SIMD instruction set",IDC_PROP_SIMD,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,21,66,108,10
+    CONTROL         "On board x86/x64 CPU",IDC_PROP_INTELCPU,"Button",BS_AUTORADIOBUTTON | WS_GROUP,12,37,124,10
+    CONTROL         "Tesla/GeForce/Quadro CUDA GPU",IDC_PROP_CUDAGPU,"Button",BS_AUTORADIOBUTTON,12,79,132,10
+    CONTROL         "ATI Stream GPU",IDC_PROP_ATISTREAM,"Button",BS_AUTORADIOBUTTON,12,139,132,10
+    GROUPBOX        "Processor",IDC_STATIC,7,26,149,162
+    COMBOBOX        IDC_PROP_NGPU,81,92,43,70,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "GPU device",IDC_STATIC,21,95,48,8
+    COMBOBOX        IDC_PROP_CUDANBLOCK,81,109,43,70,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Threads/block",IDC_STATIC,21,112,48,8
+    CONTROL         "Enable progress report",IDC_PROP_ENREPORT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,208,84,10
+    CONTROL         "Use CUDA FFT routine",IDC_PROP_CUDAFFT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,21,125,108,10
+    COMBOBOX        IDC_PROP_NATISTREAM,81,152,43,70,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "GPU device",IDC_STATIC,21,155,48,8
+    COMBOBOX        IDC_PROP_ATISTREAMNWORK,81,169,43,70,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Work group size",IDC_STATIC,21,172,57,8
+    CONTROL         "Enable fast file access",IDC_PROP_ENFASTSEEK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,192,84,10
+END
+
+IDD_RECON_OPT DIALOGEX 0, 0, 231, 211
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION
+CAPTION "Reconstruction options"
+FONT 9, "MS Sans Serif", 400, 0, 0x0
+BEGIN
+    PUSHBUTTON      "OK",IDOK,167,190,25,14
+    PUSHBUTTON      "Cancel",IDCANCEL,199,190,25,14
+    LTEXT           "Zoom/binning",IDC_STATIC,9,43,46,8
+    LTEXT           "Window function",IDC_STATIC,9,10,57,8
+    EDITTEXT        IDC_RECONST_SUFFIX,60,192,35,12,ES_AUTOHSCROLL | WS_DISABLED
+    LTEXT           "Output file prefix",IDC_STATIC,7,193,51,8
+    LTEXT           "Cutoff",IDC_STATIC,27,26,19,8
+    EDITTEXT        IDC_RECONST_CUTOFF,48,24,18,12,ES_AUTOHSCROLL
+    LTEXT           "Order",IDC_STATIC,73,26,17,8
+    EDITTEXT        IDC_RECONST_ORDER,94,24,18,12,ES_AUTOHSCROLL | WS_DISABLED
+    COMBOBOX        IDC_RECONST_INTP,60,40,52,70,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_RECONST_FILTER,72,7,40,70,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "Angular interpolation",IDC_RECONST_ANGINTP,"Button",BS_AUTOCHECKBOX | WS_DISABLED | WS_TABSTOP,9,73,97,10
+    EDITTEXT        IDC_RECONST_TRIM,58,58,35,12,ES_AUTOHSCROLL
+    LTEXT           "Trimming",IDC_STATIC,9,60,43,8
+    LTEXT           "Output path",IDC_STATIC,7,176,38,8
+    EDITTEXT        IDC_RECONST_OUTPATH,45,174,167,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "...",IDC_RECONST_SETPATH,214,175,9,11
+    LTEXT           "pixel",IDC_STATIC,97,60,15,8
+    GROUPBOX        "Drift correction",IDC_STATIC,121,7,103,130
+    EDITTEXT        IDC_RECONST_DRSTART,178,31,35,12,ES_AUTOHSCROLL
+    LTEXT           "Drift start",IDC_STATIC,135,33,42,8
+    EDITTEXT        IDC_RECONST_DREND,178,45,35,12,ES_AUTOHSCROLL
+    LTEXT           "Drift end",IDC_STATIC,135,47,42,8
+    EDITTEXT        IDC_RECONST_DRX,165,75,35,12,ES_AUTOHSCROLL
+    LTEXT           "Drift x",IDC_STATIC,135,77,28,8
+    EDITTEXT        IDC_RECONST_DRY,165,89,35,12,ES_AUTOHSCROLL
+    LTEXT           "Drift y",IDC_STATIC,135,91,28,8
+    LTEXT           "pixel",IDC_STATIC,203,77,15,8
+    LTEXT           "pixel",IDC_STATIC,203,91,15,8
+    CONTROL         "Skip drifting frames",IDC_RECONST_OMIT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,135,61,79,10
+    CONTROL         "Zernike phase contrast",IDC_RECONST_ZERNIKE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,86,97,10
+    LTEXT           "HIS data set",IDC_STATIC,9,103,43,8
+    COMBOBOX        IDC_RECONST_HISDATASET,58,99,35,70,CBS_DROPDOWNLIST | WS_DISABLED | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "Apply drift parameters",IDC_RECONST_DRIFTPARAMS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,129,18,79,10
+    CONTROL         "Read drift list",IDC_RECONST_DRIFTLIST,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,129,105,79,10
+    EDITTEXT        IDC_RECONST_DRIFTLISTPATH,135,119,76,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "...",IDC_RECONST_SETDRIFTLIST,212,119,9,11
+    GROUPBOX        "Frame usage",IDC_STATIC,7,117,109,50
+    CONTROL         "All",IDC_RECONST_FRAMEALL,"Button",BS_AUTORADIOBUTTON | WS_GROUP,12,127,24,10
+    CONTROL         "Odd frames only",IDC_RECONST_FRAMEODD,"Button",BS_AUTORADIOBUTTON,41,127,64,10
+    CONTROL         "Even frames only",IDC_RECONST_FRAMEEVEN,"Button",BS_AUTORADIOBUTTON,41,138,67,10
+    CONTROL         "Skip initial flat images in HDF5",IDC_RECONST_SKIPINITIALFLATSINHDF5,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,150,97,10
+END
+
+IDD_HISTO_OPT DIALOGEX 0, 0, 107, 124
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Output options"
+FONT 9, "MS Sans Serif", 400, 0, 0x0
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,33,103,32,14
+    PUSHBUTTON      "Cancel",IDCANCEL,68,103,32,14
+    EDITTEXT        IDC_HISTG_PREFIX,72,7,20,13,ES_AUTOHSCROLL
+    LTEXT           "Output prefix",IDC_STATIC,7,9,46,9
+    EDITTEXT        IDC_HISTG_TRMAVRG,72,23,20,13,ES_AUTOHSCROLL
+    LTEXT           "Averaging (pixel)",IDC_STATIC,7,26,57,9
+    CONTROL         "16 bit TIFF",IDC_HISTG_16BIT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,88,51,11
+    GROUPBOX        "Remove surface",IDC_STATIC,7,40,93,44
+    EDITTEXT        IDC_HISTOPT_RMDEPTH,72,50,20,13,ES_AUTOHSCROLL
+    LTEXT           "Depth (pixel)",IDC_STATIC,13,53,40,9
+    EDITTEXT        IDC_HISTOPT_RMLAC,72,66,20,13,ES_AUTOHSCROLL
+    LTEXT           "LAC threshold",IDC_STATIC,13,69,48,9
+END
+
+IDD_REFRACTION DIALOGEX 0, 0, 139, 180
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Dialog"
+FONT 9, "MS Sans Serif", 400, 0, 0x0
+BEGIN
+    PUSHBUTTON      "Batch",IDOK,7,159,28,14
+    PUSHBUTTON      "Close",IDCANCEL,104,159,28,14
+    EDITTEXT        IDC_REFR_ATOMZ,92,7,40,12,ES_AUTOHSCROLL
+    LTEXT           "Electrons per molecule",IDC_STATIC,7,10,81,8
+    EDITTEXT        IDC_REFR_ATOMA,92,23,40,12,ES_AUTOHSCROLL
+    LTEXT           "Average molecular mass",IDC_STATIC,7,26,83,8
+    EDITTEXT        IDC_REFR_DENSITY,92,39,40,12,ES_AUTOHSCROLL
+    LTEXT           "Density (g/cm3)",IDC_STATIC,7,42,83,8
+    EDITTEXT        IDC_REFR_LAC,92,55,40,12,ES_AUTOHSCROLL
+    LTEXT           "Linear abs coeff (cm-1)",IDC_STATIC,6,58,83,8
+    EDITTEXT        IDC_REFR_XENERGY,92,71,40,12,ES_AUTOHSCROLL
+    LTEXT           "X-ray energy (keV)",IDC_STATIC,6,74,83,8
+    EDITTEXT        IDC_REFR_S2DDIST,92,87,40,12,ES_AUTOHSCROLL
+    LTEXT           "Sample-to-detector (mm)",IDC_STATIC,7,90,83,8
+    EDITTEXT        IDC_REFR_PXSIZE,92,103,40,12,ES_AUTOHSCROLL
+    LTEXT           "Pixel size (um)",IDC_STATIC,7,106,83,8
+    DEFPUSHBUTTON   "Show",IDC_REFR_SHOW,73,159,28,14
+    LTEXT           "Status",IDC_REFR_STATUS,7,147,125,8
+    PUSHBUTTON      "Stop",IDC_REFR_STOP,37,159,28,14
+    EDITTEXT        IDC_REFR_PREFIX,91,119,40,12,ES_AUTOHSCROLL
+    LTEXT           "Output prefix",IDC_STATIC,6,121,83,8
+END
+
+IDD_LSQFIT DIALOGEX 0, 0, 316, 241
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Least-square fitting"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    PUSHBUTTON      "Close",IDOK,280,220,29,14
+    PUSHBUTTON      "Start",IDC_LSQFIT_START,245,199,29,14
+    EDITTEXT        IDC_LSQFIT_REFLIST,7,23,147,113,ES_MULTILINE | ES_AUTOHSCROLL | ES_READONLY | WS_VSCROLL | WS_HSCROLL
+    LTEXT           "Reference image set: 0",IDC_LSQFIT_REFMSG,7,9,97,8
+    PUSHBUTTON      "Select...",IDC_LSQFIT_REFSET,105,7,48,13
+    EDITTEXT        IDC_LSQFIT_RESULT,7,140,219,94,ES_MULTILINE | ES_AUTOHSCROLL | ES_READONLY | WS_VSCROLL | WS_HSCROLL
+    EDITTEXT        IDC_LSQFIT_QRYLIST,162,23,147,113,ES_MULTILINE | ES_AUTOHSCROLL | ES_READONLY | WS_VSCROLL | WS_HSCROLL
+    LTEXT           "Query image set: 0",IDC_LSQFIT_QRYMSG,162,10,97,8
+    PUSHBUTTON      "Select...",IDC_LSQFIT_QRYSET,260,7,48,13
+    LTEXT           "Scan range",IDC_STATIC,234,140,37,8
+    LTEXT           "x",IDC_STATIC,235,153,8,8
+    LTEXT           "y",IDC_STATIC,235,167,8,8
+    LTEXT           "z",IDC_STATIC,235,182,8,8
+    LTEXT           "-",IDC_STATIC,276,153,8,8
+    LTEXT           "-",IDC_STATIC,276,167,8,8
+    LTEXT           "-",IDC_STATIC,276,182,8,8
+    EDITTEXT        IDC_LSQFIT_XLOW,246,151,25,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_LSQFIT_XHIGH,284,151,25,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_LSQFIT_YLOW,246,167,25,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_LSQFIT_YHIGH,284,167,25,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_LSQFIT_ZLOW,246,182,25,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_LSQFIT_ZHIGH,284,182,25,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "Stop",IDC_LSQFIT_STOP,280,199,29,14
+    PUSHBUTTON      "Queue",IDC_LSQFIT_QUEUE,245,220,29,14
+END
+
+IDD_HORIZCENTER DIALOGEX 0, 0, 187, 190
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Horizontal center of mass"
+FONT 9, "MS Sans Serif", 0, 0, 0x0
+BEGIN
+    DEFPUSHBUTTON   "Close",IDOK,152,169,28,14
+    EDITTEXT        IDC_MSG_TEXT,7,37,173,129,ES_MULTILINE | ES_READONLY | ES_WANTRETURN | WS_VSCROLL | WS_HSCROLL
+    LTEXT           "Background threshold",IDC_STATIC,7,9,76,8
+    PUSHBUTTON      "Save",IDC_HORIZCEN_SAVE,115,169,31,14
+    EDITTEXT        IDC_HORIZCEN_BACK,84,8,25,12,ES_AUTOHSCROLL,WS_EX_RIGHT
+    PUSHBUTTON      "Get list",IDC_HORIZCEN_GETLIST,137,7,43,14
+    LTEXT           "Averaging",IDC_STATIC,7,24,33,8
+    EDITTEXT        IDC_HORIZCEN_AVG,47,22,25,12,ES_AUTOHSCROLL,WS_EX_RIGHT
+    CONTROL         "Relative",IDC_RADIO_RELATIVE,"Button",BS_AUTORADIOBUTTON | WS_GROUP,83,23,40,10
+    CONTROL         "Absolute",IDC_RADIO_ABSOLUTE,"Button",BS_AUTORADIOBUTTON,124,23,42,10
+END
+
+IDD_RENUMFILES DIALOGEX 0, 0, 179, 263
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Renumber files"
+FONT 9, "MS Sans Serif", 400, 0, 0x0
+BEGIN
+    DEFPUSHBUTTON   "Start",IDOK,94,242,38,14
+    PUSHBUTTON      "Cancel",IDCANCEL,134,242,38,14
+    EDITTEXT        IDC_RENUM_FILELIST,7,25,166,163,ES_MULTILINE | ES_AUTOHSCROLL | ES_READONLY | WS_VSCROLL | WS_HSCROLL
+    LTEXT           "Reference image set: 0",IDC_RENUM_MSG,6,10,96,9
+    PUSHBUTTON      "Add...",IDC_RENUM_SETFILE,141,7,32,14
+    EDITTEXT        IDC_RENUM_PREFIX,44,226,22,13,ES_AUTOHSCROLL
+    LTEXT           "File prefix",IDC_STATIC,7,228,31,8
+    EDITTEXT        IDC_RENUM_STARTINDEX,120,226,22,13,ES_AUTOHSCROLL
+    LTEXT           "Index from",IDC_STATIC,78,229,37,8
+    EDITTEXT        IDC_RENUM_OUTPATH,44,210,117,12,ES_AUTOHSCROLL
+    LTEXT           "Output path",IDC_STATIC,7,212,35,8
+    PUSHBUTTON      "...",IDC_RENUM_SETPATH,163,209,9,11
+    LTEXT           "Rotation Z",IDC_STATIC,7,195,36,8
+    EDITTEXT        IDC_RENUM_ROTZ,44,193,22,13,ES_AUTOHSCROLL
+    LTEXT           "Rot Y",IDC_STATIC,72,195,18,8
+    EDITTEXT        IDC_RENUM_ROTY,92,193,22,13,ES_AUTOHSCROLL
+    LTEXT           "Rot X",IDC_STATIC,119,195,18,8
+    EDITTEXT        IDC_RENUM_ROTX,139,193,22,13,ES_AUTOHSCROLL
+END
+
+IDD_GENERAL DIALOGEX 0, 0, 136, 183
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "General input"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,7,162,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,79,162,50,14
+    LTEXT           "Parameter 1",IDC_CAPTION1,7,8,68,8
+    EDITTEXT        IDC_INPUT1,81,7,48,12,ES_AUTOHSCROLL
+    LTEXT           "Parameter 2",IDC_CAPTION2,7,23,68,8
+    EDITTEXT        IDC_INPUT2,81,21,48,12,ES_AUTOHSCROLL
+    LTEXT           "Parameter 3",IDC_CAPTION3,7,36,68,8
+    EDITTEXT        IDC_INPUT3,81,35,48,12,ES_AUTOHSCROLL
+END
+
+IDD_OVERLAY DIALOGEX 0, 0, 271, 158
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Dialog"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "Apply",IDC_OVLY_APPLY,7,118,31,14
+    PUSHBUTTON      "Close",IDCANCEL,7,137,31,14
+    PUSHBUTTON      "Up",IDC_OVLYUP,229,103,23,14
+    PUSHBUTTON      "Down",IDC_OVLYDOWN,229,135,23,14
+    EDITTEXT        IDC_OVLYX1,155,29,28,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_OVLYY1,187,29,28,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_OVLYX2,154,47,28,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_OVLYY2,186,47,28,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_OVLYX3,154,65,28,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_OVLYY3,186,65,28,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_OVLYX4,155,82,28,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_OVLYY4,187,82,28,12,ES_AUTOHSCROLL
+    LTEXT           "=>",IDC_STATIC,139,59,12,8
+    LTEXT           "Original (x y z)",IDC_STATIC,18,17,55,10
+    EDITTEXT        IDC_OVLYU1,15,29,28,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_OVLYV1,47,29,28,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_OVLYU2,15,47,28,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_OVLYV2,47,47,28,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_OVLYU3,15,65,28,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_OVLYV3,47,65,28,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_OVLYU4,15,82,28,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_OVLYV4,47,82,28,12,ES_AUTOHSCROLL
+    LTEXT           "Overlay (x y)",IDC_STATIC,157,17,44,8
+    PUSHBUTTON      "Left",IDC_OVLYLEFT,216,119,23,14
+    PUSHBUTTON      "Right",IDC_OVLYRIGHT,241,119,23,14
+    PUSHBUTTON      "CW",IDC_OVLYCW,185,110,23,14
+    PUSHBUTTON      "CCW",IDC_OVLYCCW,185,127,23,14
+    PUSHBUTTON      "Larger",IDC_OVLYLARGE,147,111,28,14
+    PUSHBUTTON      "Smaller",IDC_OVLYSMALL,147,127,28,14
+    CONTROL         "Move",IDC_MOVE1,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,220,31,33,10
+    CONTROL         "Move",IDC_MOVE2,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,220,48,33,10
+    CONTROL         "Move",IDC_MOVE3,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,220,67,33,10
+    CONTROL         "Move",IDC_MOVE4,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,220,83,33,10
+    EDITTEXT        IDC_OVLYW1,79,29,28,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_OVLYW2,79,47,28,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_OVLYW3,80,66,28,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_OVLYW4,79,82,28,12,ES_AUTOHSCROLL
+    CONTROL         "z",IDC_OVLY_CHKW1,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,111,30,19,10
+    CONTROL         "z",IDC_OVLY_CHKW2,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,111,48,19,10
+    CONTROL         "z",IDC_OVLY_CHKW3,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,111,67,19,10
+    CONTROL         "z",IDC_OVLY_CHKW4,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,111,83,19,10
+    PUSHBUTTON      "z up",IDC_OVLY_WUP,79,111,31,14
+    PUSHBUTTON      "z down",IDC_OVLY_WDOWN,79,127,31,14
+END
+
+IDD_RESOLNPLOT DIALOGEX 0, 0, 316, 180
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Resolution estimation plot"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    PUSHBUTTON      "Close",IDCANCEL,198,159,36,14
+    CONTROL         "",IDC_RESOLNPLOT_BITMAP,"Static",SS_BITMAP | SS_REALSIZEIMAGE | SS_SUNKEN,34,7,16,14
+    CONTROL         "",IDC_RESOLNPLOT_MAG,"msctls_updown32",UDS_ARROWKEYS | UDS_HORZ,107,134,55,11
+    EDITTEXT        IDC_RESOLNPLOT_MSG,239,7,70,166,ES_MULTILINE | ES_AUTOHSCROLL | ES_READONLY
+    RTEXT           "10.00",IDC_RESOLNPLOT_YHIGH,8,7,22,8
+    RTEXT           "0.00",IDC_RESOLNPLOT_YLOW,7,127,23,8
+    CONTROL         "R",IDC_RESOLNPLOT_PLOTR,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,140,19,10
+    CONTROL         "G",IDC_RESOLNPLOT_PLOTG,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,27,140,19,10
+    CONTROL         "B",IDC_RESOLNPLOT_PLOTB,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,47,140,19,10
+    EDITTEXT        IDC_RESOLNPLOT_PIXELWIDTH,44,160,31,12,ES_AUTOHSCROLL
+    LTEXT           "Pixel width",IDC_STATIC,7,162,35,8
+    LTEXT           "um",IDC_STATIC,79,162,10,8
+    PUSHBUTTON      "Update",IDC_RESOLNPLOT_UPDATE,92,159,31,14
+    PUSHBUTTON      "Save csv..",IDC_RESOLNPLOT_CSV,145,159,50,14
+    LTEXT           "log|F|",IDC_STATIC,7,66,20,8
+    LTEXT           "2",IDC_STATIC,26,63,8,8
+    LTEXT           "|k|",IDC_STATIC,205,133,10,8
+    LTEXT           "2",IDC_STATIC,214,131,8,8
+END
+
+IDD_FRAMELIST DIALOGEX 0, 0, 316, 183
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Frame list"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,141,162,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,259,162,50,14
+    CONTROL         "",IDC_FRAMELIST_TREE,"SysTreeView32",TVS_NOHSCROLL | WS_BORDER | WS_TABSTOP,7,7,112,169
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 4,2,0,1
+ PRODUCTVERSION 4,2,0,1
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x4L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "FileDescription", "RecView CT software"
+            VALUE "FileVersion", "4, 2, 0, 1"
+            VALUE "InternalName", "recview"
+            VALUE "LegalCopyright", "Copyright (C) 2008-2014"
+            VALUE "OriginalFilename", "recview.EXE"
+            VALUE "ProductName", "RecView Application"
+            VALUE "ProductVersion", "4, 2, 0, 1"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO 
+BEGIN
+    IDD_ABOUTBOX, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 200
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 184
+    END
+
+    IDD_RECONST, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 124
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 208
+    END
+
+    IDD_HISTOGRAM, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 235
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 220
+    END
+
+    IDD_QUEUE, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 292
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 134
+    END
+
+    IDD_MESSAGE, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 180
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 156
+    END
+
+    IDD_PROPERTY, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 156
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 220
+    END
+
+    IDD_RECON_OPT, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 224
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 204
+    END
+
+    IDD_HISTO_OPT, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 100
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 117
+    END
+
+    IDD_REFRACTION, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 132
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 173
+    END
+
+    IDD_LSQFIT, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 309
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 234
+    END
+
+    IDD_HORIZCENTER, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 180
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 183
+    END
+
+    IDD_RENUMFILES, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 172
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 256
+    END
+
+    IDD_GENERAL, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 129
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 176
+    END
+
+    IDD_OVERLAY, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 264
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 151
+    END
+
+    IDD_RESOLNPLOT, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 309
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 173
+    END
+
+    IDD_FRAMELIST, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 309
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 176
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog Info
+//
+
+IDD_RECON_OPT DLGINIT
+BEGIN
+    IDC_RECONST_INTP, 0x403, 11, 0
+0x3478, 0x6220, 0x6e69, 0x696e, 0x676e, "\000" 
+    IDC_RECONST_INTP, 0x403, 11, 0
+0x3278, 0x6220, 0x6e69, 0x696e, 0x676e, "\000" 
+    IDC_RECONST_INTP, 0x403, 5, 0
+0x6f6e, 0x656e, "\000" 
+    IDC_RECONST_INTP, 0x403, 11, 0
+0x3278, 0x7a20, 0x6f6f, 0x696d, 0x676e, "\000" 
+    IDC_RECONST_INTP, 0x403, 11, 0
+0x3478, 0x7a20, 0x6f6f, 0x696d, 0x676e, "\000" 
+    IDC_RECONST_INTP, 0x403, 11, 0
+0x3878, 0x7a20, 0x6f6f, 0x696d, 0x676e, "\000" 
+    IDC_RECONST_FILTER, 0x403, 5, 0
+0x6148, 0x6e6e, "\000" 
+    IDC_RECONST_FILTER, 0x403, 8, 0
+0x6148, 0x6d6d, 0x6e69, 0x0067, 
+    IDC_RECONST_FILTER, 0x403, 12, 0
+0x6552, 0x7463, 0x6e61, 0x7567, 0x616c, 0x0072, 
+    IDC_RECONST_FILTER, 0x403, 7, 0
+0x6150, 0x7a72, 0x6e65, "\000" 
+    IDC_RECONST_FILTER, 0x403, 12, 0
+0x7542, 0x7474, 0x7265, 0x6f77, 0x7472, 0x0068, 
+    0
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Cursor
+//
+
+IDC_CURSOR_WHEEL        CURSOR                  "res\\cursor1.cur"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE 
+BEGIN
+    IDR_MAINFRAME           "RecView"
+    IDR_GAZOTYPE            "\nUntitiled\nNew\nTIFF file (*.tif)\n.tif\nRecView.Document\nRecView Document"
+END
+
+STRINGTABLE 
+BEGIN
+    AFX_IDS_APP_TITLE       "gazo"
+    AFX_IDS_IDLEMESSAGE     "Ready"
+END
+
+STRINGTABLE 
+BEGIN
+    ID_INDICATOR_EXT        "EXT"
+    ID_INDICATOR_CAPS       "CAP"
+    ID_INDICATOR_NUM        "NUM"
+    ID_INDICATOR_SCRL       "SCRL"
+    ID_INDICATOR_OVR        "OVR"
+    ID_INDICATOR_REC        "REC"
+END
+
+STRINGTABLE 
+BEGIN
+    ID_FILE_NEW             "Create a new document\nNew"
+    ID_FILE_OPEN            "Open an existing document\nOpen"
+    ID_FILE_CLOSE           "Close the active document\nClose"
+    ID_FILE_SAVE            "Save the active document\nSave"
+    ID_FILE_SAVE_AS         "Save the active document with a new name\nSave As"
+    ID_FILE_PAGE_SETUP      "Change the printing options\nPage Setup"
+    ID_FILE_PRINT_SETUP     "Change the printer and printing options\nPrint Setup"
+    ID_FILE_PRINT           "Print the active document\nPrint"
+    ID_FILE_PRINT_PREVIEW   "Display full pages\nPrint Preview"
+END
+
+STRINGTABLE 
+BEGIN
+    ID_APP_ABOUT            "Display program information, version number and copyright\nAbout"
+    ID_APP_EXIT             "Quit the application; prompts to save documents\nExit"
+END
+
+STRINGTABLE 
+BEGIN
+    ID_FILE_MRU_FILE1       "Open this document"
+    ID_FILE_MRU_FILE2       "Open this document"
+    ID_FILE_MRU_FILE3       "Open this document"
+    ID_FILE_MRU_FILE4       "Open this document"
+    ID_FILE_MRU_FILE5       "Open this document"
+    ID_FILE_MRU_FILE6       "Open this document"
+    ID_FILE_MRU_FILE7       "Open this document"
+    ID_FILE_MRU_FILE8       "Open this document"
+    ID_FILE_MRU_FILE9       "Open this document"
+    ID_FILE_MRU_FILE10      "Open this document"
+    ID_FILE_MRU_FILE11      "Open this document"
+    ID_FILE_MRU_FILE12      "Open this document"
+    ID_FILE_MRU_FILE13      "Open this document"
+    ID_FILE_MRU_FILE14      "Open this document"
+    ID_FILE_MRU_FILE15      "Open this document"
+    ID_FILE_MRU_FILE16      "Open this document"
+END
+
+STRINGTABLE 
+BEGIN
+    ID_NEXT_PANE            "Switch to the next window pane\nNext Pane"
+    ID_PREV_PANE            "Switch back to the previous window pane\nPrevious Pane"
+END
+
+STRINGTABLE 
+BEGIN
+    ID_WINDOW_NEW           "Open another window for the active document\nNew Window"
+    ID_WINDOW_ARRANGE       "Arrange icons at the bottom of the window\nArrange Icons"
+    ID_WINDOW_CASCADE       "Arrange windows so they overlap\nCascade Windows"
+    ID_WINDOW_TILE_HORZ     "Arrange windows as non-overlapping tiles\nTile Windows"
+    ID_WINDOW_TILE_VERT     "Arrange windows as non-overlapping tiles\nTile Windows"
+    ID_WINDOW_SPLIT         "Split the active window into panes\nSplit"
+END
+
+STRINGTABLE 
+BEGIN
+    ID_EDIT_CLEAR           "Erase the selection\nErase"
+    ID_EDIT_CLEAR_ALL       "Erase everything\nErase All"
+    ID_EDIT_COPY            "Copy the selection and put it on the Clipboard\nCopy"
+    ID_EDIT_CUT             "Cut the selection and put it on the Clipboard\nCut"
+    ID_EDIT_FIND            "Find the specified text\nFind"
+    ID_EDIT_PASTE           "Insert Clipboard contents\nPaste"
+    ID_EDIT_REPEAT          "Repeat the last action\nRepeat"
+    ID_EDIT_REPLACE         "Replace specific text with different text\nReplace"
+    ID_EDIT_SELECT_ALL      "Select the entire document\nSelect All"
+    ID_EDIT_UNDO            "Undo the last action\nUndo"
+    ID_EDIT_REDO            "Redo the previously undone action\nRedo"
+END
+
+STRINGTABLE 
+BEGIN
+    ID_VIEW_TOOLBAR         "Show or hide the toolbar\nToggle ToolBar"
+    ID_VIEW_STATUS_BAR      "Show or hide the status bar\nToggle StatusBar"
+END
+
+STRINGTABLE 
+BEGIN
+    AFX_IDS_SCSIZE          "Change the window size"
+    AFX_IDS_SCMOVE          "Change the window position"
+    AFX_IDS_SCMINIMIZE      "Reduce the window to an icon"
+    AFX_IDS_SCMAXIMIZE      "Enlarge the window to full size"
+    AFX_IDS_SCNEXTWINDOW    "Switch to the next document window"
+    AFX_IDS_SCPREVWINDOW    "Switch to the previous document window"
+    AFX_IDS_SCCLOSE         "Close the active window and prompts to save the documents"
+END
+
+STRINGTABLE 
+BEGIN
+    AFX_IDS_SCRESTORE       "Restore the window to normal size"
+    AFX_IDS_SCTASKLIST      "Activate Task List"
+    AFX_IDS_MDICHILD        "Activate this window"
+END
+
+STRINGTABLE 
+BEGIN
+    AFX_IDS_PREVIEW_CLOSE   "Close print preview mode\nCancel Preview"
+END
+
+#endif    // 英語 (米国) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+#define _AFX_NO_SPLITTER_RESOURCES
+#define _AFX_NO_OLE_RESOURCES
+#define _AFX_NO_TRACKER_RESOURCES
+#define _AFX_NO_PROPERTY_RESOURCES
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE 9, 1
+#pragma code_page(1252)
+#endif //_WIN32
+#include "res\gazo.rc2"  // Microsoft Visual C++ 以外のツールで編集されたリソース
+#include "afxres.rc"         // 標準のコンポーネント
+#include "afxprint.rc"       // 印刷/印刷プレビュー リソース
+#endif
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
