@@ -19,8 +19,8 @@ RecView is provided under the <a href="https://sites.google.com/site/mizutanilab
 <a href="https://drive.google.com/open?id=0Byx6vGOSewwpUk9WRWpJdmVDajg">preprint</a>
 </li>
 <li>R. Mizutani, A. Takeuchi, K. Uesugi, S. Takekoshi, N. Nakamura and Y. Suzuki (2011). Building human brain network in 3D coefficient map determined by X-ray microtomography. <i>AIP Conference Proceedings</i> <b>1365</b>, 403-406.
-<a href="http://link.aip.org/link/?APCPCS/1365/403/1">Abstract and full-text pdf</a>
-<a href="https://drive.google.com/open?id=0Byx6vGOSewwpbXJ2TzV4WUROOGc">preprint</a> (right-click to download)
+<a href="http://link.aip.org/link/?APCPCS/1365/403/1">AIP</a> 
+<a href="https://drive.google.com/open?id=0Byx6vGOSewwpbXJ2TzV4WUROOGc">preprint</a>
 </li>
 
 <li>R. Mizutani and Y. Suzuki (2012). X-ray Microtomography in biology. <i>Micron</i> <b>43(2-3)</b>, 104-115. Review. 
