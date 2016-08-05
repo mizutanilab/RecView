@@ -37,7 +37,7 @@ RecView is provided under the <a href="https://sites.google.com/site/mizutanilab
 </ul>
 
 ## Release notes
-The binary folder contains several executables. Please use 'RecView.exe' appropriate for your PC platform. If your PC has NVIDIA Tesla, GeForce or Quadro GPU processors, you can use the CUDA version. The dynamic link libraries (64 bit: 'cudart64_55.dll' and 'cufft64_55.dll'; 32 bit: 'cudart32_55.dll' and 'cufft32_55.dll') should be placed in the folder where the RecView CUDA executable is extracted. These library files are also available from the <a href="http://www.nvidia.com/object/cuda_home.html">official NVIDIA site</a> as part of the CUDA toolkit. The executables were generated using Visual Studio 2008 C++ along with CUDA toolkit 5.5.
+The binary folder contains several executables. Please use 'RecView.exe' appropriate for your PC platform. If your PC has NVIDIA Tesla, GeForce or Quadro GPU processors, you can use the CUDA version. The dynamic link libraries (64 bit: 'cudart64_55.dll' and 'cufft64_55.dll'; 32 bit: 'cudart32_55.dll' and 'cufft32_55.dll') should be placed in the folder where the RecView CUDA executable is extracted. These library files are also available from the <a href="http://www.nvidia.com/object/cuda_home.html">official NVIDIA site</a> as part of the CUDA toolkit. The executables were generated using Visual Studio 2008 C++ compiler along with CUDA toolkit 5.5.
 
 A test dataset in TIFF format is also provided in the binary folder.
 
