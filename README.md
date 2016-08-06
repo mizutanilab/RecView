@@ -6,7 +6,7 @@ Three-dimensional structural analysis with micro/nanotomography (micro-CT or nan
 <BR clear=left>
 
 ## License
-RecView is provided under the <a href="https://sites.google.com/site/mizutanilab1/software-recview/license">BSD 2-Clause License</a>.
+RecView is provided under the BSD 2-Clause License.
 
 ## References
 <ul><li>R. Mizutani, A. Takeuchi, R.Y. Osamura, S. Takekoshi, K. Uesugi and Y. Suzuki (2010). Submicrometer tomographic resolution examined using a micro-fabricated test object. <i>Micron</i> <b>41(1)</b>, 90-95. 
@@ -42,7 +42,7 @@ The binary folder contains several executables. Please use 'RecView.exe' appropr
 A test dataset in TIFF format is also provided in the binary folder.
 
 <UL>
-  <LI>v5.0.1 (released 5 Aug 2016). Reconstruction kernels were revised in order to improve the calculation precision. There would be no obvious difference in the appearance of reconstructed images, though pixel values are different from those of previous versions. The previous execulables are also still available in the binary folder. Fourier domain plot for the resolution estimation now can be generated from the "Analysis - Resolution plot" menu, without spread sheet software.
+  <LI>v5.0.1 (released 5 Aug 2016). Reconstruction kernels were revised in order to improve sin/cos func precision in the reconstruction calculation. There would be no obvious difference in the appearance of reconstructed images, though pixel values are different from those of previous versions. Execulables of the previous version are also still provided in the binary folder. Fourier domain plot for the resolution estimation can be generated from the "Analysis - Resolution plot" menu, without using spread sheet software.
   <LI>v4.9.0 (released 21 Jul 2016). APS data in HDF5 format are now supported.
   <LI>v4.7.0 (released 13 Nov 2015). A dedicated routine for resolution estimation plot (J. Microsc. 261, 57-66, 2016) was implemented. CSV files now can be generated from 'Analysis==>Resolution plot' menu. ATI processors are not supported in this release.
   <LI>v4.5.0 (released 6 Jan 2015). Update to support recent output.log format. Fourier transformations now can be generated from Tomography menu. A faster HIS-file reading routine was also implemented. A problem with the tilt angle direction of x64 reconstruction routine was fixed. User interfaces were updated.
@@ -101,7 +101,7 @@ The 'Tomography'-'Histogram/Conversion' menu provides several tools for trimming
   <LI><b>System requirements</b></LI>
     RecView can be executed on a Windows PC running XP, Vista, or Windows 7-10 with an x86 or x64 CPU and local storage.<br><br>
   <LI><b>Manuals</b></LI>
-    A brief how-to-use guide has been published as the appendix of the following paper:<BR><BR>
+    A brief how-to-use guide has been published as the appendix of the following paper. A step-by-step manual in Japanese is available from the docs folder.<BR><BR>
 R. Mizutani, A. Takeuchi, K. Uesugi, S. Takekoshi, R.Y. Osamura and Y. Suzuki (2009). Three-dimensional microstructural analysis of human brain tissue by using synchrotron radiation microtomographs. In <I>Handbook on White Matter</I>, eds. Westland, T.B. & Calton, R.N., New York, Nova Science Publishers, pp. 247-277.
 <A href="http://www.el.u-tokai.ac.jp/ryuta/WhiteMatterChap14Mizutani.pdf">pdf</A> (9.5 MB)<br><br>
   <LI><b>What kind of data can be processed?</b></LI>
@@ -133,7 +133,7 @@ frame#      time(msec)     angle(deg) 0=flatfield/1=sample
       <LI>Click 'Show image' below. In seconds, a cross section of an aluminum wire with a square-wave pattern carved on its surface will be shown.</LI>
     </UL><br>
   <LI><b>Does RecView make network connections?</b></LI>
-      Never. However, remote folders such as workgroup PCs are searched when you open files. This is performed by the Windows dialog function.
+      Never. However, remote folders such as workgroup PCs are searched when you open files. It's probably one of default functions of Windows OS depending on your environment.
 </OL>
 
 ## Contact
