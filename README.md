@@ -103,7 +103,7 @@ The 'Tomography'-'Histogram/Conversion' menu provides several tools for trimming
   <LI><b>Manuals</b></LI>
     A brief how-to-use guide has been published as the appendix of the following paper. A step-by-step manual in Japanese is provided in the docs folder.<BR><BR>
 R. Mizutani, A. Takeuchi, K. Uesugi, S. Takekoshi, R.Y. Osamura and Y. Suzuki (2009). Three-dimensional microstructural analysis of human brain tissue by using synchrotron radiation microtomographs. In <I>Handbook on White Matter</I>, eds. Westland, T.B. & Calton, R.N., New York, Nova Science Publishers, pp. 247-277.
-<A href="http://www.el.u-tokai.ac.jp/ryuta/WhiteMatterChap14Mizutani.pdf">pdf</A> (9.5 MB)<br><br>
+<A href="https://drive.google.com/open?id=0Byx6vGOSewwpcGdISUp0YTk5QW8">PDF (9.5 MB)</A><br><br>
   <LI><b>What kind of data can be processed?</b></LI>
     RecView is designed for the reconstruction of tomographic data obtained at SPring-8 and APS. However, any kind of data can be processed. Please contact the author if you have problems in using this program with data from other tomographs. Dataset requirements are:
     <UL>
