@@ -37,7 +37,7 @@ RecView is provided under the BSD 2-Clause License.
 </ul>
 
 ## Release notes
-The binary folder contains several executables. Please use 'RecView.exe' appropriate for your PC platform. If your PC has NVIDIA Tesla, GeForce or Quadro GPU processors, you can use the CUDA version. The dynamic link libraries (64 bit: 'cudart64_55.dll' and 'cufft64_55.dll'; 32 bit: 'cudart32_55.dll' and 'cufft32_55.dll') should be placed in the folder where the RecView CUDA executable is extracted. These library files are also available from the <a href="http://www.nvidia.com/object/cuda_home.html">official NVIDIA site</a> as part of the CUDA toolkit. ATI stream processors Radeon, FireStream, and FirePro are also supported. To use ATI processors, you should install the OpenCL library 'OpenCL.dll' provided as part of the [ATI Catalyst driver suite](http://www.amd.com/en-gb/innovations/software-technologies/catalyst). The executables were generated using Visual Studio 2008 C++ compiler, CUDA toolkit 5.5, and ATI Stream SDK 2.1.
+The binary folder contains several executables. Please use 'RecView.exe' appropriate for your PC platform. If your PC has NVIDIA Tesla, GeForce or Quadro GPU processors, you can use the CUDA version. The dynamic link libraries (64 bit: 'cudart64_55.dll' and 'cufft64_55.dll'; 32 bit: 'cudart32_55.dll' and 'cufft32_55.dll') should be placed in the folder where the RecView CUDA executable is extracted. These library files are also available from the <a href="http://www.nvidia.com/object/cuda_home.html">official NVIDIA site</a> as part of the CUDA toolkit. ATI stream processors Radeon, FireStream, and FirePro are also supported. To run the executable with ATI processors, you should install the [ATI Catalyst driver suite](http://www.amd.com/en-gb/innovations/software-technologies/catalyst) to use the OpenCL library 'OpenCL.dll'. The executables were generated using Visual Studio 2008 C++ compiler, CUDA toolkit 5.5, and ATI Stream SDK 2.1.
 
 A test dataset in TIFF format is also provided in the binary folder.
 
@@ -49,8 +49,8 @@ A test dataset in TIFF format is also provided in the binary folder.
     <LI>Tau (80 cores, 650 MHz) = 0.0 nsec (20.6 sec for a 2000x2000 tomogram from 1800 projections) by using Radeon HD 5450 with 512 MB of DDR2 memory,
     <LI>Tau (4 threads, 3.16 GHz) = 0.0 nsec (5.94 sec for a 2000x2000 tomogram from 1800 projections) by using Xeon (x86),
     <LI>Tau (4 threads, 3.16 GHz) = 0.0 nsec (5.82 sec for a 2000x2000 tomogram from 1800 projections) by using Xeon (x64).
-    </UL>
-Here, tau is the time constant required for one pixel projection. For example, one tomogram of 2000 x 2000 pixels from 1800 projection frames can be reconstructed in tau x 2000 x 2000 x 1800 sec.
+    </UL>  
+Here, tau is the time constant required for one pixel projection. For example, one tomogram of 2000 x 2000 pixels from 1800 projection frames can be reconstructed in tau x 2000 x 2000 x 1800 sec.  
   <LI>v5.0.1 (released 5 Aug 2016). Reconstruction kernels were revised in order to improve sin/cos func precision in the reconstruction calculation. There would be no obvious difference in the appearance of reconstructed images, though pixel values are different from those of previous versions. Execulables of the previous version are also still provided in the binary folder. Fourier domain plot for the resolution estimation can be generated from the "Analysis - Resolution plot" menu, without using spread sheet software.
   <LI>v4.9.0 (released 21 Jul 2016). APS data in HDF5 format are now supported.
   <LI>v4.7.0 (released 13 Nov 2015). A dedicated routine for resolution estimation plot (J. Microsc. 261, 57-66, 2016) was implemented. CSV files now can be generated from 'Analysis==>Resolution plot' menu. ATI processors are not supported in this release.
