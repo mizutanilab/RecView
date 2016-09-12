@@ -1,12 +1,12 @@
 ## RecView
-RecView is a program for tomographic reconstruction and image processing. It consists of about 14,000 lines of custom source codes in C++, CUDA, and x86/x64 machine languages. RecView is designed for processing data obtained at the BL20B2, BL20XU, BL37XU, and BL47XU beamlines of the synchrotron radiation facility SPring-8 and also those taken at the 32-ID beamline of Advanced Photon Source, Argonne National Laboratory.
+RecView is a program for tomographic reconstruction and image processing. It consists of approx 22,000 lines of custom source codes in C++, CUDA, and OpenCL. RecView is designed for processing data obtained at the BL20B2, BL20XU, BL37XU, and BL47XU beamlines of the synchrotron radiation facility SPring-8 and also those taken at the 32-ID beamline of Advanced Photon Source, Argonne National Laboratory.
 
 <IMG width=100 height=140 alt=testPattern src="pics/testPattern.png" align=left>
-Three-dimensional structural analysis with micro/nanotomography is performed by recording two-dimensional x-ray images while rotating the sample. Then tomographic sections are calculated from the x-ray images by convolution back-projection method. This reconstruction calculation is repeated for each tomographic slice, giving the three-dimensional structure. RecView is a program for the tomographic reconstruction calculations with graphical user interfaces. Multiple datasets can be continuously processed by using its queueing dialog. Functions for zooming reconstruction (an example is shown left), Gaussian convolution, and many other procedures for image processing are also implemented. The resolution of real sample images can be estimated with a logarithmic plot in the Fourier domain by using this program.
+Three-dimensional structural analysis with microtomography (micro-CT) or nanotomography (nano-CT) is performed by recording two-dimensional x-ray images while rotating the sample. Then tomographic sections are calculated from the x-ray images by convolution back-projection method. This reconstruction calculation is repeated for each tomographic slice, giving the three-dimensional structure. RecView is a program for the tomographic reconstruction calculations with graphical user interfaces. Multiple datasets can be continuously processed by using its queueing dialog. Functions for zooming reconstruction (an example is shown left), Gaussian convolution, and many other procedures for image processing are also implemented. The resolution of real sample images can be estimated with a logarithmic plot in the Fourier domain by using this program.
 <BR clear=left>
 
 ## License
-RecView is provided under the <a href="https://sites.google.com/site/mizutanilab1/software-recview/license">BSD 2-Clause License</a>.
+RecView is provided under the BSD 2-Clause License.
 
 ## References
 <ul><li>R. Mizutani, A. Takeuchi, R.Y. Osamura, S. Takekoshi, K. Uesugi and Y. Suzuki (2010). Submicrometer tomographic resolution examined using a micro-fabricated test object. <i>Micron</i> <b>41(1)</b>, 90-95. 
@@ -19,8 +19,8 @@ RecView is provided under the <a href="https://sites.google.com/site/mizutanilab
 <a href="https://drive.google.com/open?id=0Byx6vGOSewwpUk9WRWpJdmVDajg">preprint</a>
 </li>
 <li>R. Mizutani, A. Takeuchi, K. Uesugi, S. Takekoshi, N. Nakamura and Y. Suzuki (2011). Building human brain network in 3D coefficient map determined by X-ray microtomography. <i>AIP Conference Proceedings</i> <b>1365</b>, 403-406.
-<a href="http://link.aip.org/link/?APCPCS/1365/403/1">Abstract and full-text pdf</a>
-<a href="https://drive.google.com/open?id=0Byx6vGOSewwpbXJ2TzV4WUROOGc">preprint</a> (right-click to download)
+<a href="http://link.aip.org/link/?APCPCS/1365/403/1">AIP</a> 
+<a href="https://drive.google.com/open?id=0Byx6vGOSewwpbXJ2TzV4WUROOGc">preprint</a>
 </li>
 
 <li>R. Mizutani and Y. Suzuki (2012). X-ray Microtomography in biology. <i>Micron</i> <b>43(2-3)</b>, 104-115. Review. 
@@ -37,13 +37,14 @@ RecView is provided under the <a href="https://sites.google.com/site/mizutanilab
 </ul>
 
 ## Release notes
-The binary folder contains several executables. Please use 'RecView.exe' appropriate for your PC platform. If your PC has NVIDIA Tesla, GeForce or Quadro GPU processors, you can use the CUDA version. The dynamic link libraries (64 bit: 'cudart64_55.dll' and 'cufft64_55.dll'; 32 bit: 'cudart32_55.dll' and 'cufft32_55.dll') should be placed in the folder same with the RecView CUDA executable. These library files are also available from the <a href="http://www.nvidia.com/object/cuda_home.html">official NVIDIA site</a> as part of the CUDA toolkit. 
+The binary folder contains several executables. Please use 'RecView.exe' appropriate for your PC platform. If your PC has NVIDIA Tesla, GeForce or Quadro GPU processors, you can use the CUDA version. The dynamic link libraries (64 bit: 'cudart64_55.dll' and 'cufft64_55.dll'; 32 bit: 'cudart32_55.dll' and 'cufft32_55.dll') should be placed in the folder where the RecView CUDA executable is extracted. These library files are also available from the <a href="http://www.nvidia.com/object/cuda_home.html">official NVIDIA site</a> as part of the CUDA toolkit. The executables were generated using Visual Studio 2008 C++ compiler along with CUDA toolkit 5.5.
 
-Source codes are not available at present. A test dataset in TIFF format is also provided in the binary folder.
+A test dataset in TIFF format is also provided in the binary folder.
 
 <UL>
+  <LI>v5.0.1 (released 5 Aug 2016). Reconstruction kernels were revised in order to improve sin/cos func precision in the reconstruction calculation. There would be no obvious difference in the appearance of reconstructed images, though pixel values are different from those of previous versions. Execulables of the previous version are also still provided in the binary folder. Fourier domain plot for the resolution estimation can be generated from the "Analysis - Resolution plot" menu, without using spread sheet software.
   <LI>v4.9.0 (released 21 Jul 2016). APS data in HDF5 format are now supported.
-  <LI>v4.7.0 (released 13 Nov 2015). A dedicated routine for resolution estimation plot (J. Microsc. 2015) was implemented. CSV files now can be generated from 'Analysis==>Resolution plot' menu. ATI processors are not supported in this release.
+  <LI>v4.7.0 (released 13 Nov 2015). A dedicated routine for resolution estimation plot (J. Microsc. 261, 57-66, 2016) was implemented. CSV files now can be generated from 'Analysis==>Resolution plot' menu. ATI processors are not supported in this release.
   <LI>v4.5.0 (released 6 Jan 2015). Update to support recent output.log format. Fourier transformations now can be generated from Tomography menu. A faster HIS-file reading routine was also implemented. A problem with the tilt angle direction of x64 reconstruction routine was fixed. User interfaces were updated.
   <LI>v4.0.2 (released 22 Oct 2013). Back projection routines running on CUDA processors were updated to support the CUDA 5.5 computing environment. The CUDA version for x64 platforms was also included from this release. Queues from multiple RecView instances are now executed sequentially. 
   <LI>v3.5.1 (released 16 Feb 2013). Functions for rotation center determination were revised. 
@@ -100,9 +101,9 @@ The 'Tomography'-'Histogram/Conversion' menu provides several tools for trimming
   <LI><b>System requirements</b></LI>
     RecView can be executed on a Windows PC running XP, Vista, or Windows 7-10 with an x86 or x64 CPU and local storage.<br><br>
   <LI><b>Manuals</b></LI>
-    A brief how-to-use guide has been published as the appendix of the following paper:<BR><BR>
+    A brief how-to-use guide has been published as the appendix of the following paper. A step-by-step manual in Japanese is provided in the docs folder.<BR><BR>
 R. Mizutani, A. Takeuchi, K. Uesugi, S. Takekoshi, R.Y. Osamura and Y. Suzuki (2009). Three-dimensional microstructural analysis of human brain tissue by using synchrotron radiation microtomographs. In <I>Handbook on White Matter</I>, eds. Westland, T.B. & Calton, R.N., New York, Nova Science Publishers, pp. 247-277.
-<A href="http://www.el.u-tokai.ac.jp/ryuta/WhiteMatterChap14Mizutani.pdf">pdf</A> (9.5 MB)<br><br>
+<A href="https://drive.google.com/open?id=0Byx6vGOSewwpcGdISUp0YTk5QW8">PDF (9.5 MB)</A><br><br>
   <LI><b>What kind of data can be processed?</b></LI>
     RecView is designed for the reconstruction of tomographic data obtained at SPring-8 and APS. However, any kind of data can be processed. Please contact the author if you have problems in using this program with data from other tomographs. Dataset requirements are:
     <UL>
@@ -132,7 +133,7 @@ frame#      time(msec)     angle(deg) 0=flatfield/1=sample
       <LI>Click 'Show image' below. In seconds, a cross section of an aluminum wire with a square-wave pattern carved on its surface will be shown.</LI>
     </UL><br>
   <LI><b>Does RecView make network connections?</b></LI>
-      Never. However, remote folders such as workgroup PCs are searched when you open files. This is performed by the Windows dialog function.
+      Never. However, remote folders such as workgroup PCs are searched when you open files. It's probably one of default functions of Windows OS depending on your environment.
 </OL>
 
 ## Contact
@@ -141,7 +142,8 @@ Department of Applied Biochemistry
 School of Engineering, Tokai University  
 Kitakaname 4-1-1, Hiratsuka, Kanagawa 259-1292, Japan  
 E-mail ryuta(at)tokai-u.jp  
-http://www.el.u-tokai.ac.jp/ryuta/<br>  
+https://mizutanilab.github.io/<br>
 <A href="http://www.linkedin.com/pub/ryuta-mizutani/79/832/115">Linkedin</A> - 
 <A href="http://www.facebook.com/people/Ryuta-Mizutani/100005433369640">Facebook</A><BR>
 
+[![Analytics](https://ga-beacon.appspot.com/UA-80845358-8/RecView/readme)](https://github.com/igrigorik/ga-beacon)
