@@ -206,7 +206,7 @@ void CDlgProperty::EnableCtrl() {
 	if (iATIstream) GetDlgItem(IDC_PROP_ATISTREAM)->EnableWindow(TRUE);
 	switch (m_ProcessorType) {
 		case CDLGPROPERTY_PROCTYPE_INTEL: {
-			if (bSIMD) GetDlgItem(IDC_PROP_SIMD)->EnableWindow(TRUE);
+//160910			if (bSIMD) GetDlgItem(IDC_PROP_SIMD)->EnableWindow(TRUE);
 			GetDlgItem(IDC_PROP_NCPU)->EnableWindow(TRUE);
 			break;}
 		case CDLGPROPERTY_PROCTYPE_CUDA: {

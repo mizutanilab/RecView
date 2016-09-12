@@ -163,7 +163,7 @@ void CudaReconstHostFFT(RECONST_INFO* ri, int idev, bool bReport) {
 		if (bReport) {
 			if (DBProjDlgCtrl(ri, iProgStep, i, &iCurrStep)) break;
 		}
-		if (!ri->bInc[i]) continue;
+		if (!(ri->bInc[i] & CGAZODOC_BINC_SAMPLE)) continue;
 		//100315 const int sidx = ixdim * (i * ri->iMultiplex + ri->iOffset);
 		//100315 if (sidx >= ri->maxLenSinogr) break;
 		const int sidx = i * ri->iMultiplex + ri->iOffset;
@@ -258,7 +258,7 @@ void CudaReconstHost(RECONST_INFO* ri, int idev, bool bReport) {
 		if (bReport) {
 			if (DBProjDlgCtrl(ri, iProgStep, i, &iCurrStep)) break;
 		}
-		if (!ri->bInc[i]) continue;
+		if (!(ri->bInc[i] & CGAZODOC_BINC_SAMPLE)) continue;
 		const int sidx = i * ri->iMultiplex + ri->iOffset;
 		if (sidx >= ri->maxSinogrLen) break;
 		(*(ri->nSinogr))++;
@@ -374,13 +374,13 @@ void CudaSinogramHost(RECONST_INFO* ri, int idev, bool bReport) {
 	//121019
 	int i0 = -1, i1 = -1;
 	for (int i=0; i<isino-1; i++) {
-		if (!bInc[i]) {i0 = i; break;}
+		if (!(bInc[i] & CGAZODOC_BINC_SAMPLE)) {i0 = i; break;}
 	}
 	for (int i=0; i<isino-1; i++) {
-		if (!bInc[i]) {i0 = i; i1 = -1; continue;}
+		if (!(bInc[i] & CGAZODOC_BINC_SAMPLE)) {i0 = i; i1 = -1; continue;}
 		if (i1 < 0) {
 			for (int j=i; j<isino-1; j++) {
-				if (bInc[j]) continue;
+				if (bInc[j] & CGAZODOC_BINC_SAMPLE) continue;
 				i1 = j;
 				break;
 			}

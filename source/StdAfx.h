@@ -24,4 +24,9 @@
 //{{AFX_INSERT_LOCATION}}
 // Microsoft Visual C++ は前行の直前に追加の宣言を挿入します。
 
+
+#define CGAZODOC_BINC_WHITE 0
+#define CGAZODOC_BINC_SAMPLE 1
+#define CGAZODOC_BINC_NOUSE 2
+
 #endif // !defined(AFX_STDAFX_H__98E8803D_E345_468C_A7DF_4E12C27EAC11__INCLUDED_)

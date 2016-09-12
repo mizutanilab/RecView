@@ -399,17 +399,23 @@ TErr CGazoDoc::OutputImageInBox(FORMAT_QUEUE* fq, CProgressCtrl* progress, CStri
 	const int ixy = ixsize * iysize;
 	unsigned char* pixOut = NULL;
 	int* pixOut16 = NULL;
+	int* pixbuf = NULL;
 	int maxIntensity = 255;
-	if (fq->b16bit) {
-		maxIntensity = 65535;
-		pixOut16 = new int[ixy];
-		if (!pixOut16) return 21032;
-	} else {
-		pixOut = new unsigned char[ixy];
-		if (!pixOut) return 21032;
+	try {
+		if (fq->b16bit) {
+			maxIntensity = 65535;
+			pixOut16 = new int[ixy];
+		} else {
+			pixOut = new unsigned char[ixy];
+		}
+		pixbuf = new int[ixy];
 	}
-	int* pixbuf = new int[ixy];
-	if (!pixbuf) {if (pixOut) delete [] pixOut; if (pixOut16) delete [] pixOut16; return 21032;}
+	catch (CException* e) {
+		if (pixOut) delete [] pixOut;
+		if (pixOut16) delete [] pixOut16;
+		if (pixbuf) delete [] pixbuf;
+		e->Delete(); return 21032;
+	}
 	//sort files
 	bool bNull = false;
 	if (nFiles < 0) {
@@ -423,8 +429,15 @@ TErr CGazoDoc::OutputImageInBox(FORMAT_QUEUE* fq, CProgressCtrl* progress, CStri
 		}
 		if (nFiles > 1) nFiles--;//nfile: 1==>1 file; 3==>2 files; 4==>3files etc.
 	}
-	char** flist = new char*[nFiles];
-	if (!flist) {delete [] pixbuf; if (pixOut) delete [] pixOut; if (pixOut16) delete [] pixOut16; return 21032;}
+	char** flist = NULL;
+	try {flist = new char*[nFiles];}
+	catch (CException* e) {
+		if (flist) delete [] flist; 
+		if (pixbuf) delete [] pixbuf;
+		if (pixOut) delete [] pixOut;
+		if (pixOut16) delete [] pixOut16;
+		e->Delete(); return 21032;
+	}
 	if (nFiles > 1) {//multiple selection
 		bNull = false;
 		int idx = 0;
@@ -1557,7 +1570,7 @@ void CGazoDoc::ShowSinogram(RECONST_QUEUE* rq, int iy, double fc) {
 		//const int iydims = maxSinogrLen - 1;
 		int iydims = 0;
 		for (int j=0; j<maxSinogrLen - 1; j++) {
-			if (!bInc[j]) continue;//skip incident
+			if (!(bInc[j] & CGAZODOC_BINC_SAMPLE)) continue;//skip incident
 			if (fdeg[j] > 180.) continue;//skip the last image
 			iydims++;
 		}
@@ -1568,7 +1581,7 @@ void CGazoDoc::ShowSinogram(RECONST_QUEUE* rq, int iy, double fc) {
 		pcd->iydim = iydims;
 		int k = 0;
 		for (int j=0; j<maxSinogrLen - 1; j++) {
-			if (!bInc[j]) continue;
+			if (!(bInc[j] & CGAZODOC_BINC_SAMPLE)) continue;
 			if (fdeg[j] > 180.) continue;
 			for (int i=0; i<ixdims; i++) {
 				pcd->pPixel[i + k * ixdims] = (iSinogr[j])[i];
@@ -1662,18 +1675,18 @@ TErr CGazoDoc::LoadLogFile(BOOL bOffsetCT) {
 				fdeg[i] = 180.f * i / (ipos-2);
 				fexp[i] = fdeg[i];
 				fname[i].Format("%05d", i);
-				bInc[i] = 1;
+				bInc[i] = CGAZODOC_BINC_SAMPLE;
 			}
 			//pre white image
 			fdeg[0] = fdeg[1] - 1;
 			fexp[0] = fexp[1] - 1;
 			fname[0].Format("%05d", 0);
-			bInc[0] = 0;
+			bInc[0] = CGAZODOC_BINC_WHITE;
 			//
 			fdeg[ipos-1] = fdeg[ipos-2] + 1;
 			fexp[ipos-1] = fexp[ipos-2] + 1;
 			fname[ipos-1].Format("%05d", ipos-1);
-			bInc[ipos-1] = 0;
+			bInc[ipos-1] = CGAZODOC_BINC_WHITE;
 			iLenSinogr = ipos + 1;//including dark.img
 //CString msg; msg.Format("160629-2 %d", iLenSinogr); AfxMessageBox(msg);
 		} else {//step scan
@@ -1688,25 +1701,25 @@ TErr CGazoDoc::LoadLogFile(BOOL bOffsetCT) {
 			for (int i=1; i<(int)(ipos-1); i++) {
 				fexp[i] = fdeg[i];
 				fname[i].Format("%05d", i);
-				bInc[i] = 1;
+				bInc[i] = CGAZODOC_BINC_SAMPLE;
 			}
 			//pre white image
 			fdeg[0] = fdeg[1] - 1;
 			fexp[0] = fexp[1] - 1;
 			fname[0].Format("%05d", 0);
-			bInc[0] = 0;
+			bInc[0] = CGAZODOC_BINC_WHITE;
 			//
 			if (fabs(fabs(fdeg[1] - fdeg[ipos-2]) - 180.) < 1E-6) {
 				//if the last sample frame is 180 deg from the start, 
 				// do not use that frame and replace with white image
-				bInc[ipos-2] = 0;
+				bInc[ipos-2] = CGAZODOC_BINC_WHITE;
 				iLenSinogr = ipos;//place dark.img at the end of sinogram
 			} else {
 				//generate an entry for the post white image
 				fdeg[ipos-1] = fdeg[ipos-2] + 1;
 				fexp[ipos-1] = fexp[ipos-2] + 1;
 				fname[ipos-1].Format("%05d", ipos-1);
-				bInc[ipos-1] = 0;
+				bInc[ipos-1] = CGAZODOC_BINC_WHITE;
 				iLenSinogr = ipos + 1;//including dark.img
 			}
 		}
@@ -1756,7 +1769,7 @@ TErr CGazoDoc::LoadLogFile(BOOL bOffsetCT) {
 			if (sscanf_s(line, "%s %f %f %c", cfname, 20, &(fexp[ipos]), &(fdeg[ipos]), &(bInc[ipos]), 1)
 						!= 4) break;
 			fname[ipos] = cfname;
-			if (bInc[ipos] == '1') bInc[ipos] = 1; else bInc[ipos] = 0;//080302
+			if (bInc[ipos] == '1') bInc[ipos] = CGAZODOC_BINC_SAMPLE; else bInc[ipos] = CGAZODOC_BINC_WHITE;
 			ipos++;
 		}
 		fclose(flog);
@@ -2285,10 +2298,8 @@ TErr CGazoDoc::GenerateSinogram(RECONST_QUEUE* rq, int iLayer, double center, do
 			if (pf) pf->m_wndStatusBar.SetPaneText(0, "Abort");
 			return 0;
 		}
-		//080302 if (bInc[i] == '1') bInc[i] = 1; else bInc[i] = 0;
 		if (i == isino - 1) fn = "dark" + rq->itexFileSuffix;//".img";
 		else fn = rq->itexFilePrefix + fname[i].Right(ideg) + rq->itexFileSuffix;//".img";
-		//else fn = dataSuffix + fname[i].Right(ideg) + ".img";
 		fn = rq->dataPath + fn;
 		memset(sbuf, 0, sizeof(short) * ixFrm * iMultiplex * iBinning);
 		if ((rq->itexFileSuffix == ".img")||(rq->itexFileSuffix == ".IMG")) {
@@ -2609,9 +2620,9 @@ TErr CGazoDoc::GenerateSinogram(RECONST_QUEUE* rq, int iLayer, double center, do
 	const int iNativeXdim = rq->iRawSinoXdim * 2;
 	//CString line2 = "", scr;
 	for (int i=0; i<iOfSinogrDim; i++) {
-		if (!bInc[i]) continue;
+		if (!(bInc[i] & CGAZODOC_BINC_SAMPLE)) continue;
 		const double th = fdeg[i];
-		while ((fdeg[iRevIdx] - th < 180)|(bInc[iRevIdx] == 0)) {
+		while ((fdeg[iRevIdx] - th < 180)|((bInc[iRevIdx] & CGAZODOC_BINC_SAMPLE) == 0)) {
 			iRevIdx++;
 			if (iRevIdx >= isino - 1) return 21052;
 		}
@@ -3058,7 +3069,7 @@ TErr CGazoDoc::GetAxis(int iTargetSlice, double* pCenter, double* pGrad,
 	int idxIncident0 = -1;
 	int idxSample0 = -1;
 	for (int i=0; i<iLenSinogr-1; i++) {
-		if (!bInc[i]) {
+		if (!(bInc[i] & CGAZODOC_BINC_SAMPLE)) {
 			idxIncident0 = i;
 			if (idxSample0 < 0) continue;
 		} else {
@@ -3077,7 +3088,7 @@ TErr CGazoDoc::GetAxis(int iTargetSlice, double* pCenter, double* pGrad,
 	int idxSample1 = -1;
 	float diff, minDiff = 190;
 	for (int i=0; i<iLenSinogr-1; i++) {
-		if (!bInc[i]) continue;
+		if (!(bInc[i] & CGAZODOC_BINC_SAMPLE)) continue;
 		//130203 diff = (float)fabs(fabs(fdeg[i] - aSample0) - 180);
 		diff = (float)fabs(fabs(fdeg[i] - aSample0) - (180. - deltaAngle));
 		//q1804 at 180 deg might be pointed to images with a higher index, such as a3722.img in the conv.bat file.
@@ -4548,10 +4559,21 @@ int ResolnListCompare( const void *arg1, const void *arg2 ) {
 
 void CGazoDoc::OnTomographyResolutionReport()
 {
-	//140610
 	if ((ixdim <= 0)||(iydim <= 0)) return;
-	const int imgx = this->ixdim;//refq->iXdim;
-	const int imgy = this->iydim;//refq->iYdim;
+
+	POSITION pos = GetFirstViewPosition();
+	CGazoView* pv = (CGazoView*) GetNextView( pos );
+	int ixcent, iycent, imgx, imgy;
+	int iangle = 0;
+	bool bEnableBox = false;
+	pv->GetBoxParams(&ixcent, &iycent, &imgx, &imgy, &iangle, &bEnableBox);
+	if (!bEnableBox) {
+		imgx = this->ixdim;
+		imgy = this->iydim;
+	}
+
+	//const int imgx = this->ixdim;
+	//const int imgy = this->iydim;
 	const int ndimxp = (int)((log((double)imgx) / LOG2)) + 1;
 	const int ndimx = (int) pow((double)2, ndimxp);
 	const int ndimyp = (int)((log((double)imgy) / LOG2)) + 1;
@@ -4576,15 +4598,49 @@ void CGazoDoc::OnTomographyResolutionReport()
 	}
 	const double pxd = (pixDiv > 0) ? pixDiv : 1;
 	const int nmax = bColor ? 3 : 1;
+	const double csa = cos(iangle * DEG_TO_RAD);
+	const double sna = sin(iangle * DEG_TO_RAD);
 	int iList;
 	for (int n=0; n<nmax; n++) {
 		for (int i=0; i<ndimx*ndimy; i++) {cPixel[i].Reset();}
 		for (int i=0; i<imgx; i++) {
 			for (int j=0; j<imgy; j++) {
-				const int idx = i+j*imgx;
-				if (bColor) cPixel[i+j*ndimx].re = (float)((pPixel[idx] >> (n*8)) & 0xff);
-				//else cPixel[i+j*ndimx].re = (float)(pPixel[idx] / pxd + pixBase);
-				else cPixel[i+j*ndimx].re = (float)(pPixel[idx]);
+				int ipix = 0;
+				if (bEnableBox) {
+					const int kxdim = this->ixdim;
+					const int kydim = this->iydim;
+					int ix = i - imgx / 2;
+					int iy = j - imgy / 2;
+					double gx = ix * csa - iy * sna + ixcent;
+					double gy = ix * sna + iy * csa + iycent;
+					if ((gx >= 0)&&(gy >= 0)&&(gx <= kxdim-1)&&(gy <= kydim-1)) {
+						int igx = (int)gx;
+						int igy = (int)gy;
+						double dx = gx - igx;
+						double dy = gy - igy;
+						if ((fabs(dx) < 0.00001)&&(fabs(dy) < 0.00001)) {//090727
+							ipix = pPixel[igx + igy * kxdim];
+						} else {
+							//interpolated intensity
+							if (igx == kxdim-1) {igx--; dx = 1;}
+							if (igy == kydim-1) {igy--; dy = 1;}
+							//plane determined by least square fitting
+							int is0 = pPixel[igx + igy * kxdim];
+							int is1 = pPixel[(igx + 1) + igy * kxdim];
+							int is2 = pPixel[igx + (igy + 1) * kxdim];
+							int is3 = pPixel[(igx + 1) + (igy + 1) * kxdim];
+							double ap = 0.5 * (is1 + is3 - is0 - is2);
+							double bp = 0.5 * (is2 + is3 - is0 - is1);
+							double cp = 0.25 * ((is0 + is1 + is2 + is3) - 2 * (ap + bp));
+							ipix = (int)(ap * dx + bp * dy + cp);
+						}
+					}
+				} else {
+					const int idx = i+j*imgx;
+					ipix = pPixel[idx];
+				}
+				if (bColor) cPixel[i+j*ndimx].re = (float)((ipix >> (n*8)) & 0xff);
+				else cPixel[i+j*ndimx].re = (float)(ipix);
 			}
 		}
 		CFft fft2;
@@ -4601,7 +4657,8 @@ void CGazoDoc::OnTomographyResolutionReport()
 				double dx = ix - (istep/2) + istep * 0.5; 
 				double dy = iy - (istep/2) + istep * 0.5;
 				double dDist2 = (dx * dx)/(ndimx * ndimx) + (dy * dy)/(ndimy * ndimy);
-				if (dDist2 > 0.1) continue;
+				//160826 if (dDist2 > 0.1) continue;
+				if (dDist2 > 0.25) continue;
 				double dsum = 0;
 				int icount = 0;
 				for (int jx=-1; jx<=1; jx+=2) {

@@ -33,8 +33,6 @@
 
 #define CGAZODOC_MAXOVERLAY 500
 
-//#define CGAZODOC_APS_DUMMYFRAME 3
-
 class CMainFrame;
 
 struct CGZD_RESOLN_LIST {

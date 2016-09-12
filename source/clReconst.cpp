@@ -1,9 +1,8 @@
 #include "stdafx.h"
 #include "ccmplx.h"
 #include "cfft.h"
-//////////////////////////////////
-//revised 160804, but not tested.
-//////////////////////////////////
+#include "gazo.h"
+#include "DlgQueue.h"
 
 //OpenCL template
 #include "clReconst.h"
@@ -477,7 +476,7 @@ void CLReconstHost(RECONST_INFO* ri, int idev, bool bReport) {
 		if (bReport) {
 			if (DBProjDlgCtrl(ri, iProgStep, i, &iCurrStep)) break;
 		}
-		if (!ri->bInc[i]) continue;
+		if (!(ri->bInc[i] & CGAZODOC_BINC_SAMPLE)) continue;
 		const int sidx = i * ri->iMultiplex + ri->iOffset;
 		if (sidx >= ri->maxSinogrLen) break;
 		(*(ri->nSinogr))++;

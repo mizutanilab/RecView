@@ -57,7 +57,7 @@ BOOL CDlgFrameList::OnInitDialog()
 			HTREEITEM hItem;
 			for (int i=0; i<iList; i++) {
 				CString sItem; sItem.Format("%s (%.2f)", pd->fname[i], pd->fdeg[i]);
-				if (!pd->bInc[i]) sItem += " flat";
+				if (!(pd->bInc[i] & CGAZODOC_BINC_SAMPLE)) sItem += " flat";
 				hItem = m_treeFrames.InsertItem(sItem);
 				m_treeFrames.SetItemData(hItem, i);
 				m_treeFrames.SetCheck(hItem, TRUE);

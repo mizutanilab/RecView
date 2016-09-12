@@ -1976,6 +1976,7 @@ int StringCompare( const void *arg1, const void *arg2 ) {
    return _tcsicmp( * ( char** ) arg1, * ( char** ) arg2 );
 }
 
+//*160910
 #ifdef _WIN64
 unsigned __stdcall DeconvBackProjThread(void* pArg) {
 	RECONST_INFO* ri = (RECONST_INFO*)pArg;
@@ -1995,16 +1996,26 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 		//const int iIntpDim = ri->ipintp;
 		const double center = ri->center;
 		const int ixdimp = ixdim * iIntpDim;
-		CCmplx* p;
-		if ((p = new CCmplx[ndim]) == NULL) {ri->iStatus = RECONST_INFO_ERROR; return 0;}
+		//
+		CCmplx* p = NULL;
+		int* igp = NULL;
+		const int imargin = ixdimp;
+		const int igpdim = (ixdimp + imargin * 2) * DBPT_GINTP;
+		try{
+			p = new CCmplx[ndim];
+			igp = new int[igpdim];
+		}
+		catch(CException* e) {
+			e->Delete();
+			if (igp) delete [] igp;
+			if (p) delete [] p;
+			ri->iStatus = RECONST_INFO_ERROR;
+			//error.Log(28802);//120720
+			return 0;
+		}
 		CFft fft;
 		fft.Init1(ndimp, -1);
-		int* igp;
-		const int imargin = ixdimp;
-		//const int imargin = 0;
-		const int igpdim = (ixdimp + imargin * 2) * DBPT_GINTP;
-		if ((igp = new int[igpdim]) == NULL) {delete [] p; ri->iStatus = RECONST_INFO_ERROR; return 0;}
-		for (int j=0; j<igpdim; j++) {igp[j] = 0;}
+		memset(igp, 0, sizeof(int) * igpdim);
 		const int ixdimh = ixdimp / 2;
 		const int ihoffset = ndim / 2 - 1 - ixdimh;
 		//const __int64 icenter = (__int64)((ixdimh + center - (int)(center)) * DBPT_PNT);
@@ -2018,7 +2029,7 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 			if (bReport) {
 				if (DBProjDlgCtrl(ri, iProgStep, i, &iCurrStep)) break;
 			}
-			if (!ri->bInc[i]) continue;
+			if (!(ri->bInc[i] & CGAZODOC_BINC_SAMPLE)) continue;
 			//100315 const int sidx = ixdim * (i * ri->iMultiplex + ri->iOffset);
 			//if (sidx >= ri->maxLenSinogr) break;
 			//short* iStrip = &(ri->iSinogr[sidx]);
@@ -2077,14 +2088,15 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 			const int ixdimpg = ixdimp << DBPT_LOG2GINTP;
 			for (int iy=0; iy<ixdimp; iy++) {
 				int ifpidx = iy * ixdimp - 1;
+				double dyoff = iy * fsin + foffset;
 				for (int ix=0; ix<ixdimp; ix++) {
-					int ix0 = (int)(ix * fcos + iy * fsin + foffset);
+					int ix0 = (int)(ix * fcos + dyoff);
 					ifpidx++;
 					if (ix0 < 0) continue;
 					if (ix0 >= ixdimpg) continue;
 					ifp[ifpidx] += ipgp[ix0];
 				}
-			}///*///
+			}
 		}
 
 		delete [] igp;
@@ -2115,6 +2127,7 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 #endif // ifdef _WIN64
 
 #ifndef _WIN64
+///*///
 unsigned __stdcall DeconvBackProjThread(void* pArg) {
 	//AfxMessageBox("131014 #ifndef _WIN64  DeconvBackProjThread");
 	RECONST_INFO* ri = (RECONST_INFO*)pArg;
@@ -2165,7 +2178,7 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 			if (bReport) {
 				if (DBProjDlgCtrl(ri, iProgStep, i, &iCurrStep)) break;
 			}
-			if (!ri->bInc[i]) continue;
+			if (!(ri->bInc[i] & CGAZODOC_BINC_SAMPLE)) continue;
 			//100315 const int sidx = ixdim * (i * ri->iMultiplex + ri->iOffset);
 			//if (sidx >= ri->maxLenSinogr) break;
 			//short* iStrip = &(ri->iSinogr[sidx]);
@@ -2218,13 +2231,13 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 			int* ifp = ri->iReconst;
 			const int ixdimpg = ixdimp << DBPT_LOG2GINTP;
 			for (int iy=0; iy<ixdimp; iy++) {
-				int ifpidx = iy * ixdimp - 1;
+				const int ifpidx = iy * ixdimp;
+				const double dyoff = iy * fsin + foffset;
 				for (int ix=0; ix<ixdimp; ix++) {
-					int ix0 = (int)(ix * fcos + iy * fsin + foffset);
-					ifpidx++;
+					int ix0 = (int)(ix * fcos + dyoff);
 					if (ix0 < 0) continue;
 					if (ix0 >= ixdimpg) continue;
-					ifp[ifpidx] += ipgp[ix0];
+					ifp[ifpidx + ix] += ipgp[ix0];
 				}
 			}
 		}
@@ -2314,13 +2327,13 @@ unsigned __stdcall GenerateSinogramThread(void* pArg) {
 		int i0 = -1, i1 = -1;
 		//121019
 		for (int i=0; i<isino-1; i++) {
-			if (!bInc[i]) {i0 = i; break;}
+			if (!(bInc[i] & CGAZODOC_BINC_SAMPLE)) {i0 = i; break;}
 		}
 		for (int i=0; i<isino-1; i++) {
-			if (!bInc[i]) {i0 = i; i1 = -1; continue;}
+			if (!(bInc[i] & CGAZODOC_BINC_SAMPLE)) {i0 = i; i1 = -1; continue;}
 			if (i1 < 0) {
 				for (int j=i; j<isino-1; j++) {
-					if (bInc[j]) continue;
+					if (bInc[j] & CGAZODOC_BINC_SAMPLE) continue;
 					i1 = j;
 					break;
 				}
@@ -2494,7 +2507,7 @@ unsigned __stdcall RefracCorrThread(void* pArg) {
 			break;
 		}
 		//when incident image
-		if (bInc[is] == 0) {
+		if ((bInc[is] & CGAZODOC_BINC_SAMPLE) == 0) {
 			for (int i=0; i<imgx*imgy; i++) {iSample[i] = 16384;}
 			fn = refq->dataPath + refq->outFilePrefix + fname[is].Right(ideg) + ".img";
 			if (fimg.Open(fn, CFile::modeCreate | CFile::modeReadWrite | CFile::shareDenyWrite)) {
@@ -2513,10 +2526,10 @@ unsigned __stdcall RefracCorrThread(void* pArg) {
 			//find incident
 			iInc0pos = -1; iInc1pos = -1;
 			for (int i=is; i<(ri->iLenSinogr)-1; i++) {
-				if (bInc[i] == 0) {iInc1pos = i; break;}
+				if ((bInc[i] & CGAZODOC_BINC_SAMPLE) == 0) {iInc1pos = i; break;}
 			}
 			for (int i=is; i>=0; i--) {
-				if (bInc[i] == 0) {iInc0pos = i; break;}
+				if ((bInc[i] & CGAZODOC_BINC_SAMPLE) == 0) {iInc0pos = i; break;}
 			}
 			bool bIncErr = false;
 			if (iInc0pos < 0) {
