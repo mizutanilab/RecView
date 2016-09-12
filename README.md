@@ -12,27 +12,26 @@ RecView is provided under the BSD 2-Clause License.
 <ul><li>R. Mizutani, A. Takeuchi, R.Y. Osamura, S. Takekoshi, K. Uesugi and Y. Suzuki (2010). Submicrometer tomographic resolution examined using a micro-fabricated test object. <i>Micron</i> <b>41(1)</b>, 90-95. 
 <a href="http://dx.doi.org/10.1016/j.micron.2009.09.001">DOI</a>
 <a href="http://www.ncbi.nlm.nih.gov/pubmed/19800246">PubMed</a>
-<a href="https://drive.google.com/open?id=0Byx6vGOSewwpckZhYTAxZzVaLVk">preprint</a>
+<a href="https://arxiv.org/abs/1609.02270">preprint</a>
 </li>
 <li>R. Mizutani, K. Taguchi, A. Takeuchi, K. Uesugi and Y. Suzuki (2010). Estimation of presampling modulation transfer function in synchrotron radiation microtomography. <i>Nuclear Instrum. Meth. A</i> <b>621(1-3)</b>, 615-619.
 <a href="http://dx.doi.org/10.1016/j.nima.2010.03.111">DOI</a>
-<a href="https://drive.google.com/open?id=0Byx6vGOSewwpUk9WRWpJdmVDajg">preprint</a>
+<a href="https://arxiv.org/abs/1609.02269">preprint</a>
 </li>
 <li>R. Mizutani, A. Takeuchi, K. Uesugi, S. Takekoshi, N. Nakamura and Y. Suzuki (2011). Building human brain network in 3D coefficient map determined by X-ray microtomography. <i>AIP Conference Proceedings</i> <b>1365</b>, 403-406.
 <a href="http://link.aip.org/link/?APCPCS/1365/403/1">AIP</a> 
-<a href="https://drive.google.com/open?id=0Byx6vGOSewwpbXJ2TzV4WUROOGc">preprint</a>
 </li>
 
 <li>R. Mizutani and Y. Suzuki (2012). X-ray Microtomography in biology. <i>Micron</i> <b>43(2-3)</b>, 104-115. Review. 
 <a href="http://dx.doi.org/10.1016/j.micron.2011.10.002">DOI</a>
 <a href="http://www.ncbi.nlm.nih.gov/pubmed/22036251">PubMed</a>
-<a href="https://drive.google.com/open?id=0Byx6vGOSewwpU2JXZy1xMkRzMkU">preprint</a>
+<a href="https://arxiv.org/abs/1609.02263">preprint</a>
 </li>
 
 <li>R. Mizutani, R. Saiga, S. Takekoshi, C. Inomoto, N. Nakamura, M. Itokawa, M. Arai, K. Oshima, A. Takeuchi, K. Uesugi, Y. Terada and Y. Suzuki (2016). A method for estimating spatial resolution of real image in the Fourier domain. <i>J. Microscopy</i> <b>261(1)</b>, 57-66.
 <a href="http://dx.doi.org/10.1111/jmi.12315">DOI</a>
 <a href="http://www.ncbi.nlm.nih.gov/pubmed/26444300">PubMed</a>
-<a href="https://drive.google.com/open?id=0Byx6vGOSewwpR2lJOHlQaGtkWms">preprint</a>
+<a href="https://arxiv.org/abs/1609.02268">preprint</a>
 </li>
 </ul>
 
@@ -42,13 +41,14 @@ The binary folder contains several executables. Please use 'RecView.exe' appropr
 A test dataset in TIFF format is also provided in the binary folder.
 
 <UL>
-  <LI>v5.1.0 (released 12 Sep 2016). OpenCL routines for ATI processors were updated.
+  <LI>v5.1.0 (released 12 Sep 2016). OpenCL routines for ATI processors were updated. Performances are:
     <UL>
-    <LI>Tau (448 cores, 607 MHz) = 0.0 nsec (23.4 sec for a 8000x8000 tomogram from 4500 projections) by using GeForce GTX470 with 1.28 GB of GDDR5 memory,
-    <LI>Tau (112 cores, 500 MHz) = 0.0 nsec (1.75 sec for a 2000x2000 tomogram from 1800 projections) by using Quadro FX 3700 with 512 MB of GDDR3 memory,
-    <LI>Tau (80 cores, 650 MHz) = 0.0 nsec (20.6 sec for a 2000x2000 tomogram from 1800 projections) by using Radeon HD 5450 with 512 MB of DDR2 memory,
-    <LI>Tau (4 threads, 3.16 GHz) = 0.0 nsec (5.94 sec for a 2000x2000 tomogram from 1800 projections) by using Xeon (x86),
-    <LI>Tau (4 threads, 3.16 GHz) = 0.0 nsec (5.82 sec for a 2000x2000 tomogram from 1800 projections) by using Xeon (x64).
+    <LI>Tau (Quadro K5000, 1536 cores, 706 MHz) = 0.23 nsec (1.75 sec for a 2048x2048 tomogram from 1800 projections),
+    <LI>Tau (Quadro K4200, 1344 cores, 780 MHz) = 0.30 nsec (2.3 sec for a 2048x2048 tomogram from 1800 projections),
+    <LI>Tau (Radeon HD 5450, 80 cores, 650 MHz) = 8.47 nsec (61.0 sec for a 2000x2000 tomogram from 1800 projections),
+    <LI>Tau (Core i5-4670 (x64), 4 threads, 3.4 GHz) = 0.50 nsec (3.8 sec for a 2048x2048 tomogram from 1800 projections),
+    <LI>Tau (Core i5-4670 (x86), 4 threads, 3.4 GHz) = 0.91 nsec (6.9 sec for a 2048x2048 tomogram from 1800 projections),
+    <LI>Tau (Xeon E5-2609 (x64), 4 threads, 2.4 GHz) = 0.93 nsec (7.0 sec for a 2048x2048 tomogram from 1800 projections).
     </UL>  
 Here, tau is the time constant required for one pixel projection. For example, one tomogram of 2000 x 2000 pixels from 1800 projection frames can be reconstructed in tau x 2000 x 2000 x 1800 sec.  
   <LI>v5.0.1 (released 5 Aug 2016). Reconstruction kernels were revised in order to improve sin/cos func precision in the reconstruction calculation. There would be no obvious difference in the appearance of reconstructed images, though pixel values are different from those of previous versions. Execulables of the previous version are also still provided in the binary folder. Fourier domain plot for the resolution estimation can be generated from the "Analysis - Resolution plot" menu, without using spread sheet software.
