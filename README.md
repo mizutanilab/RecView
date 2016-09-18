@@ -1,5 +1,5 @@
 ## RecView
-RecView is a program for tomographic reconstruction and image processing. It consists of approx 22,000 lines of custom source codes in C++, CUDA, and OpenCL. RecView is designed for processing data obtained at the BL20B2, BL20XU, BL37XU, and BL47XU beamlines of the synchrotron radiation facility SPring-8 and also those taken at the 32-ID beamline of Advanced Photon Source (APS), Argonne National Laboratory.
+RecView is a program for tomographic reconstruction and image processing. It consists of approx 22,000 lines of custom source codes in C++, CUDA C, OpenCL, and x86/x64 assembly language. RecView is designed for processing data obtained at the BL20B2, BL20XU, BL37XU, and BL47XU beamlines of the synchrotron radiation facility SPring-8 and also those taken at the 32-ID beamline of Advanced Photon Source (APS), Argonne National Laboratory.
 
 <IMG width=100 height=140 alt=testPattern src="pics/testPattern.png" align=left>
 Three-dimensional structural analysis with microtomography (micro-CT) or nanotomography (nano-CT) is performed by recording two-dimensional x-ray images while rotating the sample. Then tomographic sections are calculated from the x-ray images by convolution back-projection method. This reconstruction calculation is repeated for each tomographic slice, giving the three-dimensional structure. RecView is a program for the tomographic reconstruction calculations with graphical user interfaces. Multiple datasets can be continuously processed by using its queueing dialog. Functions for zooming reconstruction (an example is shown left), Gaussian convolution, and many other procedures for image processing are also implemented. The resolution of real sample images can be estimated with a logarithmic plot in the Fourier domain by using this program.
@@ -36,11 +36,12 @@ RecView is provided under the BSD 2-Clause License.
 </ul>
 
 ## Release notes
-The binary folder contains several executables. Please use 'RecView.exe' appropriate for your PC platform. The executables were generated using Visual Studio 2008 C++ compiler, CUDA toolkit 5.5, and ATI Stream SDK 2.1. If your PC has NVIDIA Tesla, GeForce or Quadro GPU processors, you can use the CUDA version. The dynamic link libraries (64 bit: 'cudart64_55.dll' and 'cufft64_55.dll'; 32 bit: 'cudart32_55.dll' and 'cufft32_55.dll') should be placed in the folder where the RecView CUDA executable is extracted. These library files are also available from the <a href="http://www.nvidia.com/object/cuda_home.html">official NVIDIA site</a> as part of the CUDA toolkit. ATI stream processors Radeon, FireStream, and FirePro are also supported. To run the executable with ATI processors, you should install the [ATI Catalyst driver suite](http://www.amd.com/en-gb/innovations/software-technologies/catalyst) to use the OpenCL library 'OpenCL.dll'. 
+The binary folder contains several executables. Please use 'RecView.exe' appropriate for your PC platform. The executables were generated using Visual Studio 2008 C++ compiler, MASM for x64, CUDA toolkit 5.5, and ATI Stream SDK 2.1. If your PC has NVIDIA Tesla, GeForce or Quadro GPU processors, you can use the CUDA version. The dynamic link libraries (64 bit: 'cudart64_55.dll' and 'cufft64_55.dll'; 32 bit: 'cudart32_55.dll' and 'cufft32_55.dll') should be placed in the folder where the RecView CUDA executable is extracted. These library files are also available from the <a href="http://www.nvidia.com/object/cuda_home.html">official NVIDIA site</a> as part of the CUDA toolkit. ATI stream processors Radeon, FireStream, and FirePro are also supported. To run the executable with ATI processors, you should install the [ATI Catalyst driver suite](http://www.amd.com/en-gb/innovations/software-technologies/catalyst) to use the OpenCL library 'OpenCL.dll'. 
 
 A test dataset in TIFF format is also provided in the binary folder.
 
 <UL>
+  <LI>v5.1.1 (released 18 Sep 2016). Reconstruction kernels were updated by using x86/x64 assembly codes. The performance of the x86 kernel seems to be accelerated by a factor of two or higher, but it's still under analysis.
   <LI>v5.1.0 (released 12 Sep 2016). OpenCL routines for ATI processors were updated. Performances are:
     <UL>
     <LI>Tau (Quadro K5000, 1536 cores, 706 MHz) = 0.23 nsec (1.75 sec for a 2048x2048 tomogram from 1800 projections),
@@ -108,7 +109,7 @@ The 'Tomography'-'Histogram/Conversion' menu provides several tools for trimming
 ## Frequently asked questions
 <OL>
   <LI><b>System requirements</b></LI>
-    RecView can be executed on a Windows PC running XP, Vista, or Windows 7-10 with an x86 or x64 CPU and local storage.<br><br>
+    RecView can be executed on a Windows PC running XP, Vista, or Windows 7-10 with an x86 or x64 CPU and local storage. We recommend CPUs released after 2005. This is because SSE2 SIMD instructions are implemented in the x86/x64 reconstruction kernels. It's not the requirement to run the program, but the reconstruction performance can differ by a factor of two or higher.<br><br>
   <LI><b>Manuals</b></LI>
     A brief how-to-use guide has been published as the appendix of the following paper. A step-by-step manual in Japanese is provided in the docs folder.<BR><BR>
 R. Mizutani, A. Takeuchi, K. Uesugi, S. Takekoshi, R.Y. Osamura and Y. Suzuki (2009). Three-dimensional microstructural analysis of human brain tissue by using synchrotron radiation microtomographs. In <I>Handbook on White Matter</I>, eds. Westland, T.B. & Calton, R.N., New York, Nova Science Publishers, pp. 247-277.
