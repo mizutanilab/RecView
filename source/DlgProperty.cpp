@@ -33,7 +33,7 @@ void CDlgProperty::Init(int icpu, bool bsimd,
 	//iCPU = pApp->iAvailableCPU;
 	iCPU = icpu > 1 ? icpu : 1;
 	bSIMD = bsimd;
-	//if (bSIMD) bEnableSIMD = TRUE;
+	if (bSIMD) bEnableSIMD = TRUE;//160918 enabled again
 	maxCUDA = iCudaCount;
 	maxCUDAThreadsPerBlock = iCudaBlock;
 	iCUDAwarpsize = iCudaWarp;
@@ -206,7 +206,7 @@ void CDlgProperty::EnableCtrl() {
 	if (iATIstream) GetDlgItem(IDC_PROP_ATISTREAM)->EnableWindow(TRUE);
 	switch (m_ProcessorType) {
 		case CDLGPROPERTY_PROCTYPE_INTEL: {
-//160910			if (bSIMD) GetDlgItem(IDC_PROP_SIMD)->EnableWindow(TRUE);
+			if (bSIMD) GetDlgItem(IDC_PROP_SIMD)->EnableWindow(TRUE);
 			GetDlgItem(IDC_PROP_NCPU)->EnableWindow(TRUE);
 			break;}
 		case CDLGPROPERTY_PROCTYPE_CUDA: {

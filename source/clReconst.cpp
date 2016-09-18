@@ -548,7 +548,7 @@ void CLReconstHost(RECONST_INFO* ri, int idev, bool bReport) {
 		const float fcos = (float)(cos(theta) * DBPT_GINTP);
 		const float fsin = (float)(-sin(theta) * DBPT_GINTP);
 		const float fcenter = (float)((ixdimh + center - (int)(center)) * DBPT_GINTP);
-		const float foffset = fcenter - ixdimh * (fcos + fsin);
+		const float foffset = fcenter - ixdimh * (fcos + fsin) + DBPT_F2I_PADDING;
 		//parameters
 		status = clSetKernelArg(kernel, 3, sizeof(cl_float), (void *)&fcos);
 		if(status != CL_SUCCESS) {AfxMessageBox("Error: Setting kernel argument. (cos)"); return;}

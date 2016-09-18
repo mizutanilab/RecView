@@ -162,7 +162,7 @@ void CudaDeconvBackProj(int ixdim, int iIntpDim, int ndim, float center, float t
 	const float fcos = (float)(cos(theta) * DBPT_GINTP);
 	const float fsin = (float)(-sin(theta) * DBPT_GINTP);
 	const float fcenter = (float)((ixdimh + center - (int)(center)) * DBPT_GINTP);
-	const float foffset = fcenter - ixdimh * (fcos + fsin);
+	const float foffset = fcenter - ixdimh * (fcos + fsin) + DBPT_F2I_PADDING;
 	//Kernels
 	//shared memory must not be used since its use causes device driver crash
 	//
@@ -203,7 +203,7 @@ void CudaBackProj(int ixdim, int iIntpDim, float center, float theta, int* d_ifp
 	const float fcos = (float)(cos(theta) * DBPT_GINTP);
 	const float fsin = (float)(-sin(theta) * DBPT_GINTP);
 	const float fcenter = (float)((ixdimh + center - (int)(center)) * DBPT_GINTP);
-	const float foffset = fcenter - ixdimh * (fcos + fsin);
+	const float foffset = fcenter - ixdimh * (fcos + fsin) + DBPT_F2I_PADDING;
 	//
 	//Kernel4 for emulation mode
 	//dim3 dimGrid_ixdimp(gridsize);

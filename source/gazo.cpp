@@ -72,7 +72,7 @@ CGazoApp::CGazoApp()
 	// TODO: この位置に構築用コードを追加してください。
 	// ここに InitInstance 中の重要な初期化処理をすべて記述してください。
 	iStatus = 0;
-	sProgVersion = "RecView ver5.1.0";
+	sProgVersion = "RecView ver5.1.1";
 #ifdef _WIN64
 	sProgVersion += "-x64\r\n";
 #endif
@@ -93,10 +93,13 @@ CGazoApp::CGazoApp()
 	//const int iHyperThreading = (CPUInfo[3] & 0x10000000) / 0x10000000;
 	const int iLogicalProcessorCount = (CPUInfo[1] & 0x00ff0000) / 0x00010000;
 	bool bSIMD = false;
+//160918	if ( (CPUInfo[3] & 0x00800000) && //MMX
+//		 (CPUInfo[3] & 0x02000000) && //SSE
+//		 (CPUInfo[3] & 0x04000000) && //SSE2
+//		 (CPUInfo[2] & 0x00000001) )  //SSE3
 	if ( (CPUInfo[3] & 0x00800000) && //MMX
 		 (CPUInfo[3] & 0x02000000) && //SSE
-		 (CPUInfo[3] & 0x04000000) && //SSE2
-		 (CPUInfo[2] & 0x00000001) )  //SSE3
+		 (CPUInfo[3] & 0x04000000) ) //SSE2
 		 bSIMD = true;
 	//131019===>
 	iAvailableCPU = ::GetProcessorCoreCount();

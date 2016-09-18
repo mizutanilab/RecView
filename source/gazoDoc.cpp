@@ -2785,9 +2785,67 @@ void CGazoDoc::OnHlpDebug()
 	CMainFrame* pf = (CMainFrame*) AfxGetMainWnd();
 	if (bDebug) bDebug = false; else bDebug = true;
 
-	CDlgFrameList dlg;
-	dlg.pd = this;
-	dlg.DoModal();
+	float f1 = 10.3f, f2 = 10.6f;
+	int i1 = (int)f1, i2 = (int)f2;
+	line.Format("%d %d", i1, i2); AfxMessageBox(line); return;
+/*
+		const int ixdim = 10;
+		const int iZooming = 0;
+		const int iIntpDim = (int) pow((double)2, iZooming);
+		const int ndimp = (int)((log((double)ixdim) / LOG2)) + 1 + iZooming;
+		const int ndim = (int) pow((double)2, ndimp);
+		const double center = 5.1;
+		const int ixdimp = ixdim * iIntpDim;
+		const int ixdimh = ixdimp / 2;
+		const int imargin = ixdimp;
+		const int igpdim = (ixdimp + imargin * 2) * DBPT_GINTP;
+		int* igp = new int[igpdim];
+	srand(1);
+	for (int i=0; i<igpdim; i++) {igp[i] = i*10;}//rand();}
+			const float th = (10.0f) * (float)DEG_TO_RAD;
+			const float fcos = (float)(cos(th) * DBPT_GINTP);
+			const float fsin = (float)(-sin(th) * DBPT_GINTP);
+			const float fcenter = (ixdimh + (float)center - (int)(center)) * DBPT_GINTP;
+			const float foffset = fcenter - ixdimh * (fcos + fsin);
+			int iparam6 = ((DWORD_PTR) igp) + imargin * sizeof(int) * DBPT_GINTP;
+			int* ipgp = (int*)(iparam6);
+			int* ifp = new int[ixdimp * ixdimp];
+			int* ifp2 = new int[ixdimp * ixdimp];
+			for (int i=0; i<ixdimp * ixdimp; i++) {ifp[i] = 0; ifp2[i] = 0;}
+			const int ixdimpg = ixdimp * DBPT_GINTP;
+			int param[8];
+			param[0] = (DWORD_PTR)(&fcos);
+			param[1] = (DWORD_PTR)(&fsin);
+			param[2] = (DWORD_PTR)(&foffset);
+			param[3] = ixdimpg;
+			param[4] = ixdimp;
+			param[5] = (DWORD_PTR) ifp2;//iifp;
+			param[6] = ((DWORD_PTR) igp) + imargin * sizeof(int) * DBPT_GINTP;
+			param[7] = 0;
+			projx32((int)param);
+			for (int iy=0; iy<ixdimp; iy++) {
+				const int ifpidx = iy * ixdimp;
+				const float fyoff = iy * fsin + foffset;
+				for (int ix=0; ix<ixdimp; ix++) {
+					int ix0 = (int)(ix * fcos + fyoff + 0.5);
+					if (ix0 < 0) continue;
+					if (ix0 >= ixdimpg) continue;
+					ifp[ifpidx + ix] += ipgp[ix0];
+				}
+			}
+//	projx32((int)param);
+	CString msg = "";
+	for (int i=0; i<100; i++) {
+		if (ifp[i] != ifp2[i]) {
+			line.Format("%d %d %d\r\n", i, ifp[i], ifp2[i]); msg += line;
+		}
+	}
+	AfxMessageBox(msg);
+	delete [] igp; delete [] ifp; delete [] ifp2;
+	*/
+	//CDlgFrameList dlg;
+	//dlg.pd = this;
+	//dlg.DoModal();
 
 	/*
 	CString fpath = this->GetPathName();

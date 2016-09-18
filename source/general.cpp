@@ -1976,7 +1976,12 @@ int StringCompare( const void *arg1, const void *arg2 ) {
    return _tcsicmp( * ( char** ) arg1, * ( char** ) arg2 );
 }
 
-//*160910
+#ifdef _WIN64
+extern "C" __int64 projx64(__int64);
+#else
+extern "C" int projx32(int);
+#endif
+
 #ifdef _WIN64
 unsigned __stdcall DeconvBackProjThread(void* pArg) {
 	RECONST_INFO* ri = (RECONST_INFO*)pArg;
@@ -1996,6 +2001,10 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 		//const int iIntpDim = ri->ipintp;
 		const double center = ri->center;
 		const int ixdimp = ixdim * iIntpDim;
+		const int ixdimpg = ixdimp * DBPT_GINTP;
+		const int ixdimh = ixdimp / 2;
+		const int ihoffset = ndim / 2 - 1 - ixdimh;
+		const float fcenter = (ixdimh + (float)center - (int)(center)) * DBPT_GINTP;
 		//
 		CCmplx* p = NULL;
 		int* igp = NULL;
@@ -2016,23 +2025,31 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 		CFft fft;
 		fft.Init1(ndimp, -1);
 		memset(igp, 0, sizeof(int) * igpdim);
-		const int ixdimh = ixdimp / 2;
-		const int ihoffset = ndim / 2 - 1 - ixdimh;
-		//const __int64 icenter = (__int64)((ixdimh + center - (int)(center)) * DBPT_PNT);
 		//if (pApp->dlgProperty.bEnableSIMD) param[7] |= 0x0001;
 		const int iProgStep = ri->iLenSinogr / PROGRESS_BAR_UNIT;
 		int iCurrStep = 0;
 		CGazoDoc* pd = (CGazoDoc*)(ri->pDoc);
 		CMainFrame* pf = (CMainFrame*) AfxGetMainWnd();
 		const BOOL bReport = pApp->dlgProperty.m_EnReport;
+		float fcos, fsin, foffset;
+		__int64 iparam6 = ((DWORD_PTR) igp) + imargin * sizeof(int) * DBPT_GINTP;
+		int* ipgp = (int*)(iparam6);
+		int* ifp = ri->iReconst;
+		__int64 param[8];
+		param[0] = (DWORD_PTR)(&fcos);
+		param[1] = (DWORD_PTR)(&fsin);
+		param[2] = (DWORD_PTR)(&foffset);
+		param[3] = ixdimpg;
+		param[4] = ixdimp;
+		param[5] = (DWORD_PTR) ri->iReconst;//ifp;
+		param[6] = iparam6;
+		param[7] = 0;
+		BOOL bUseSIMD = pApp->dlgProperty.bEnableSIMD;
 		for (int i=(ri->iStartSino); i<(ri->iLenSinogr-1); i+=(ri->iStepSino)) {
 			if (bReport) {
 				if (DBProjDlgCtrl(ri, iProgStep, i, &iCurrStep)) break;
 			}
 			if (!(ri->bInc[i] & CGAZODOC_BINC_SAMPLE)) continue;
-			//100315 const int sidx = ixdim * (i * ri->iMultiplex + ri->iOffset);
-			//if (sidx >= ri->maxLenSinogr) break;
-			//short* iStrip = &(ri->iSinogr[sidx]);
 			const int sidx = i * ri->iMultiplex + ri->iOffset;
 			if (sidx >= ri->maxSinogrLen) break;
 			short* iStrip = ri->iSinogr[sidx];
@@ -2046,12 +2063,12 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 				}
 			}
 			//
-				memset(p, 0, sizeof(CCmplx) * ndim);//111206
-				const int idx0 = (0 - (int)center) * iIntpDim + (ndim / 2 - 1);
-				const int idx1 = (ixdim-1 - (int)center) * iIntpDim + (ndim / 2 - 1) + 1;
-				for (int m=0; m<idx0; m++) {p[m].re = iStrip[0];}
-				for (int m=idx1; m<ndim; m++) {p[m].re = iStrip[ixdim-1];}
-				//111206
+			memset(p, 0, sizeof(CCmplx) * ndim);//111206
+			const int idx0 = (0 - (int)center) * iIntpDim + (ndim / 2 - 1);
+			const int idx1 = (ixdim-1 - (int)center) * iIntpDim + (ndim / 2 - 1) + 1;
+			for (int m=0; m<idx0; m++) {p[m].re = iStrip[0];}
+			for (int m=idx1; m<ndim; m++) {p[m].re = iStrip[ixdim-1];}
+			//111206
 			for (int k=0; k<ixdim; k++) {
 				int idx = (k - (int)center) * iIntpDim + (ndim / 2 - 1);
 				if (idx < 0) continue;
@@ -2068,7 +2085,6 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 			for (int k=0; k<ndim; k++) {p[k] *= ri->fFilter[k];}
 			fft.FFT1(p);
 			//
-			//090211 for (int j=0; j<ixdimp; j++) {igp[j + imargin] = (int)(p[j + ihoffset].re * BACKPROJ_SCALE);}
 			for (int j=0; j<ixdimp; j++) {
 				const TCmpElmnt p0 = p[j + ihoffset].re * BACKPROJ_SCALE;
 				const TCmpElmnt p1p0 = (j == ixdimp -1)? 
@@ -2076,27 +2092,26 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 				const int gidx = (j + imargin) * DBPT_GINTP;
 				for (int k=0; k<DBPT_GINTP; k++) {igp[gidx + k] = (int)(p0 + p1p0 * k);}
 			}
-			//080318 float th = ri->fdeg[i] * (float)DEG_TO_RAD;
-			float th = (ri->fdeg[i] + ri->fTiltAngle) * (float)DEG_TO_RAD;
-			const float fcos = (float)(cos(th) * DBPT_GINTP);
-			const float fsin = (float)(-sin(th) * DBPT_GINTP);
-			const float fcenter = ((ixdimh + (float)center - (int)(center)) * DBPT_GINTP);
-			const float foffset = fcenter - ixdimh * (fcos + fsin);
-			__int64 iparam6 = ((DWORD_PTR) igp) + imargin * sizeof(int) * DBPT_GINTP;
-			int* ipgp = (int*)(iparam6);
-			int* ifp = ri->iReconst;
-			const int ixdimpg = ixdimp << DBPT_LOG2GINTP;
-			for (int iy=0; iy<ixdimp; iy++) {
-				int ifpidx = iy * ixdimp - 1;
-				double dyoff = iy * fsin + foffset;
-				for (int ix=0; ix<ixdimp; ix++) {
-					int ix0 = (int)(ix * fcos + dyoff);
-					ifpidx++;
-					if (ix0 < 0) continue;
-					if (ix0 >= ixdimpg) continue;
-					ifp[ifpidx] += ipgp[ix0];
+			const double th = (ri->fdeg[i] + ri->fTiltAngle) * DEG_TO_RAD;
+			fcos = (float)(cos(th) * DBPT_GINTP);
+			fsin = (float)(-sin(th) * DBPT_GINTP);
+			foffset = fcenter - ixdimh * (fcos + fsin);
+			if (bUseSIMD) {
+				projx64((__int64)param);
+			} else {
+				foffset = fcenter - ixdimh * (fcos + fsin) + DBPT_F2I_PADDING;
+				for (int iy=0; iy<ixdimp; iy++) {
+					int ifpidx = iy * ixdimp - 1;
+					float fyoff = iy * fsin + foffset;
+					for (int ix=0; ix<ixdimp; ix++) {
+						int ix0 = (int)(ix * fcos + fyoff);
+						ifpidx++;
+						if (ix0 < 0) continue;
+						if (ix0 >= ixdimpg) continue;
+						ifp[ifpidx] += ipgp[ix0];
+					}
 				}
-			}
+			}//(bUseSIMD)
 		}
 
 		delete [] igp;
@@ -2127,7 +2142,7 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 #endif // ifdef _WIN64
 
 #ifndef _WIN64
-///*///
+
 unsigned __stdcall DeconvBackProjThread(void* pArg) {
 	//AfxMessageBox("131014 #ifndef _WIN64  DeconvBackProjThread");
 	RECONST_INFO* ri = (RECONST_INFO*)pArg;
@@ -2145,6 +2160,10 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 		const int ndim = (int) pow((double)2, ndimp);
 		const double center = ri->center;
 		const int ixdimp = ixdim * iIntpDim;
+		const int ixdimpg = ixdimp * DBPT_GINTP;
+		const int ixdimh = ixdimp / 2;
+		const int ihoffset = ndim / 2 - 1 - ixdimh;
+		const float fcenter = (ixdimh + (float)center - (int)(center)) * DBPT_GINTP;
 		//
 		CCmplx* p = NULL;
 		int* igp = NULL;
@@ -2165,15 +2184,26 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 		CFft fft;
 		fft.Init1(ndimp, -1);
 		memset(igp, 0, sizeof(int) * igpdim);
-		const int ixdimh = ixdimp / 2;
-		const int ihoffset = ndim / 2 - 1 - ixdimh;
-		//const __int64 icenter = (__int64)((ixdimh + center - (int)(center)) * DBPT_PNT);
 		//if (pApp->dlgProperty.bEnableSIMD) param[7] |= 0x0001;
 		const int iProgStep = ri->iLenSinogr / PROGRESS_BAR_UNIT;
 		int iCurrStep = 0;
 		CGazoDoc* pd = (CGazoDoc*)(ri->pDoc);
 		CMainFrame* pf = (CMainFrame*) AfxGetMainWnd();
 		const BOOL bReport = pApp->dlgProperty.m_EnReport;
+		float fcos, fsin, foffset;
+		int iparam6 = ((DWORD_PTR) igp) + imargin * sizeof(int) * DBPT_GINTP;
+		int* ipgp = (int*)(iparam6);
+		int* ifp = ri->iReconst;
+		int param[8];
+		param[0] = (DWORD_PTR)(&fcos);
+		param[1] = (DWORD_PTR)(&fsin);
+		param[2] = (DWORD_PTR)(&foffset);
+		param[3] = ixdimpg;
+		param[4] = ixdimp;
+		param[5] = (DWORD_PTR) ri->iReconst;//ifp;
+		param[6] = iparam6;
+		param[7] = 0;
+		BOOL bUseSIMD = pApp->dlgProperty.bEnableSIMD;
 		for (int i=(ri->iStartSino); i<(ri->iLenSinogr-1); i+=(ri->iStepSino)) {
 			if (bReport) {
 				if (DBProjDlgCtrl(ri, iProgStep, i, &iCurrStep)) break;
@@ -2221,25 +2251,25 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 				const int gidx = (j + imargin) * DBPT_GINTP;
 				for (int k=0; k<DBPT_GINTP; k++) {igp[gidx + k] = (int)(p0 + p1p0 * k);}
 			}
-			float th = (ri->fdeg[i] + ri->fTiltAngle) * (float)DEG_TO_RAD;
-			const float fcos = (float)(cos(th) * DBPT_GINTP);
-			const float fsin = (float)(-sin(th) * DBPT_GINTP);
-			const float fcenter = (ixdimh + (float)center - (int)(center)) * DBPT_GINTP;
-			const float foffset = fcenter - ixdimh * (fcos + fsin);
-			int iparam6 = ((DWORD_PTR) igp) + imargin * sizeof(int) * DBPT_GINTP;
-			int* ipgp = (int*)(iparam6);
-			int* ifp = ri->iReconst;
-			const int ixdimpg = ixdimp << DBPT_LOG2GINTP;
-			for (int iy=0; iy<ixdimp; iy++) {
-				const int ifpidx = iy * ixdimp;
-				const double dyoff = iy * fsin + foffset;
-				for (int ix=0; ix<ixdimp; ix++) {
-					int ix0 = (int)(ix * fcos + dyoff);
-					if (ix0 < 0) continue;
-					if (ix0 >= ixdimpg) continue;
-					ifp[ifpidx + ix] += ipgp[ix0];
+			const double th = (ri->fdeg[i] + ri->fTiltAngle) * DEG_TO_RAD;
+			fcos = (float)(cos(th) * DBPT_GINTP);
+			fsin = (float)(-sin(th) * DBPT_GINTP);
+			foffset = fcenter - ixdimh * (fcos + fsin);
+			if (bUseSIMD) {
+				projx32((int)param);
+			} else {
+				foffset = fcenter - ixdimh * (fcos + fsin) + DBPT_F2I_PADDING;
+				for (int iy=0; iy<ixdimp; iy++) {
+					const int ifpidx = iy * ixdimp;
+					const float fyoff = iy * fsin + foffset;
+					for (int ix=0; ix<ixdimp; ix++) {
+						int ix0 = (int)(ix * fcos + fyoff);
+						if (ix0 < 0) continue;
+						if (ix0 >= ixdimpg) continue;
+						ifp[ifpidx + ix] += ipgp[ix0];
+					}
 				}
-			}
+			}//(bUseSIMD)
 		}
 		delete [] igp;
 		delete [] p;
