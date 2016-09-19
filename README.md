@@ -41,7 +41,7 @@ The binary folder contains several executables. Please use 'RecView.exe' appropr
 A test dataset in TIFF format is also provided in the binary folder.
 
 <UL>
-  <LI>v5.1.1 (released 18 Sep 2016). Reconstruction kernels were updated by using x86/x64 assembly codes. The performance of the x86 kernel seems to be accelerated by a factor of two or higher, but it's still under analysis.
+  <LI>v5.1.1 (released 18 Sep 2016). Reconstruction kernels for x86/x64 processors were updated using assembly code. The x86 kernel is accelerated by a factor of 2-3 with vectorized instructions.
   <LI>v5.1.0 (released 12 Sep 2016). OpenCL routines for ATI processors were updated. Performances are:
     <UL>
     <LI>Tau (Quadro K5000, 1536 cores, 706 MHz) = 0.23 nsec (1.75 sec for a 2048x2048 tomogram from 1800 projections),
@@ -109,7 +109,7 @@ The 'Tomography'-'Histogram/Conversion' menu provides several tools for trimming
 ## Frequently asked questions
 <OL>
   <LI><b>System requirements</b></LI>
-    RecView can be executed on a Windows PC running XP, Vista, or Windows 7-10 with an x86 or x64 CPU and local storage. We recommend CPUs released after 2005. This is because SSE2 SIMD instructions are implemented in the x86/x64 reconstruction kernels. It's not the requirement to run the program, but the reconstruction performance can differ by a factor of two or higher.<br><br>
+    RecView can be executed on a Windows PC running XP, Vista, or Windows 7-10 with an x86 or x64 CPU and local storage. If you don't have a GPU, we recommend CPUs released after 2005, because SSE2 SIMD instructions are used in the x86/x64 reconstruction kernels. This is not the requirement, but the performance differs by a factor of 2-3 with or without SSE2.<br><br>
   <LI><b>Manuals</b></LI>
     A brief how-to-use guide has been published as the appendix of the following paper. A step-by-step manual in Japanese is provided in the docs folder.<BR><BR>
 R. Mizutani, A. Takeuchi, K. Uesugi, S. Takekoshi, R.Y. Osamura and Y. Suzuki (2009). Three-dimensional microstructural analysis of human brain tissue by using synchrotron radiation microtomographs. In <I>Handbook on White Matter</I>, eds. Westland, T.B. & Calton, R.N., New York, Nova Science Publishers, pp. 247-277.
