@@ -19,9 +19,9 @@ extern "C" int GetCudaWarpSize();
 extern "C" void CudaSinogramHost(RECONST_INFO* ri, int idev, bool bReport);
 
 //CUDA
-extern "C" void CudaBackProj(int ixdim, int iIntpDim, float center, float theta, int* d_ifp, int* d_igp);
+extern "C" void CudaBackProj(int ixdim, int iIntpDim, float center, double theta, int* d_ifp, int* d_igp);
 extern "C" 
-void CudaDeconvBackProj(int ixdim, int iIntpDim, int ndim, float center, float theta, 
+void CudaDeconvBackProj(int ixdim, int iIntpDim, int ndim, float center, double theta, 
 				int* d_ifp, float* d_filt, short* d_strip, int* d_igp, float2* d_p, cufftHandle* fftplan);
 //extern "C" 
 //void CudaDeconvBackProjLong(int ixdim, int iIntpDim, int ndim, float center, float theta, 

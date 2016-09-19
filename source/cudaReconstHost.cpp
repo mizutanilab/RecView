@@ -181,7 +181,7 @@ void CudaReconstHostFFT(RECONST_INFO* ri, int idev, bool bReport) {
 		cudaMemcpy(ri->d_strip, ri->iSinogr[sidx], mem_size_strip, cudaMemcpyHostToDevice);
 		//130923 cutilSafeCall(cudaMemcpy(ri->d_strip, ri->iSinogr[sidx], mem_size_strip, cudaMemcpyHostToDevice) );
 		CudaDeconvBackProj(ixdim, iIntpDim, ndim, fCenter, 
-							(ri->fdeg[i] + ri->fTiltAngle) * (float)DEG_TO_RAD, 
+							(ri->fdeg[i] + ri->fTiltAngle) * DEG_TO_RAD, 
 							ri->d_ifp, ri->d_filt, ri->d_strip, ri->d_igp, ri->d_p, &(ri->fftplan));
 	}
     // copy results from device to host
@@ -306,7 +306,7 @@ void CudaReconstHost(RECONST_INFO* ri, int idev, bool bReport) {
 		//
 		if (cudaSuccess != cudaMemcpy(ri->d_igp, igpm, mem_size_igp, cudaMemcpyHostToDevice)) AfxMessageBox("cudaMemcpy error");
 		CudaBackProj(ixdim, iIntpDim, fCenter,
-							(ri->fdeg[i] + ri->fTiltAngle) * (float)DEG_TO_RAD, 
+							(ri->fdeg[i] + ri->fTiltAngle) * DEG_TO_RAD, 
 							ri->d_ifp, ri->d_igp);
 		/*/141205==>
 			float theta = (ri->fdeg[i] + ri->fTiltAngle) * (float)DEG_TO_RAD;

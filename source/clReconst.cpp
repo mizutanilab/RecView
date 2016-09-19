@@ -544,7 +544,7 @@ void CLReconstHost(RECONST_INFO* ri, int idev, bool bReport) {
 		//	break;
 		//}
 
-		float theta = (ri->fdeg[i] + ri->fTiltAngle) * (float)DEG_TO_RAD;
+		double theta = (ri->fdeg[i] + ri->fTiltAngle) * DEG_TO_RAD;
 		const float fcos = (float)(cos(theta) * DBPT_GINTP);
 		const float fsin = (float)(-sin(theta) * DBPT_GINTP);
 		const float fcenter = (float)((ixdimh + center - (int)(center)) * DBPT_GINTP);

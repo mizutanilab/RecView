@@ -105,7 +105,7 @@ intpKernel(float2* d_p, short* d_strip, int ixdim, int ndim, int iIntpDim, float
 }
 
 extern "C" 
-void CudaDeconvBackProj(int ixdim, int iIntpDim, int ndim, float center, float theta,  
+void CudaDeconvBackProj(int ixdim, int iIntpDim, int ndim, float center, double theta,  
 				int* d_ifp, float* d_filt, short* d_strip, int* d_igp, float2* d_p, cufftHandle* fftplan) {
 	//constants
 	const int ixdimp = ixdim * iIntpDim;
@@ -178,7 +178,7 @@ void CudaDeconvBackProj(int ixdim, int iIntpDim, int ndim, float center, float t
 }
 
 extern "C" 
-void CudaBackProj(int ixdim, int iIntpDim, float center, float theta, int* d_ifp, int* d_igp) {
+void CudaBackProj(int ixdim, int iIntpDim, float center, double theta, int* d_ifp, int* d_igp) {
 	//constants
 	const int ixdimp = ixdim * iIntpDim;
 	const int ixdimh = ixdimp / 2;
