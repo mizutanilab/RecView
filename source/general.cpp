@@ -2099,10 +2099,10 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 			if (bUseSIMD) {
 				projx64((__int64)param);
 			} else {
-				foffset = fcenter - ixdimh * (fcos + fsin) + DBPT_F2I_PADDING;
+				foffset = fcenter - ixdimh * (fcos + fsin);
 				for (int iy=0; iy<ixdimp; iy++) {
 					int ifpidx = iy * ixdimp - 1;
-					float fyoff = iy * fsin + foffset;
+					float fyoff = iy * fsin + foffset;//double can be used 160919
 					for (int ix=0; ix<ixdimp; ix++) {
 						int ix0 = (int)(ix * fcos + fyoff);
 						ifpidx++;
@@ -2258,10 +2258,10 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 			if (bUseSIMD) {
 				projx32((int)param);
 			} else {
-				foffset = fcenter - ixdimh * (fcos + fsin) + DBPT_F2I_PADDING;
+				foffset = fcenter - ixdimh * (fcos + fsin);
 				for (int iy=0; iy<ixdimp; iy++) {
 					const int ifpidx = iy * ixdimp;
-					const float fyoff = iy * fsin + foffset;
+					const float fyoff = iy * fsin + foffset;//double can be used 160919
 					for (int ix=0; ix<ixdimp; ix++) {
 						int ix0 = (int)(ix * fcos + fyoff);
 						if (ix0 < 0) continue;

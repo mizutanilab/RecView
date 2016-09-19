@@ -55,21 +55,20 @@ projx32 PROC param:dword
 	mov eax, ixdimp
 	shl eax, 2
 	mov ixdimp4, eax
-;	mov eax, [esi + 20] ; iifp
-;	mov ifpx, eax ; ifpx = iifp
 
 	mov eax, ixdimp ; iy
 	mov ecx, eax
 	dec eax
 	imul ecx
 	shl eax, 2 ; ixy = ixdimp * (ixdimp - 1) * 4
-	add eax, [esi + 20]; ixy += iifp
+	add eax, [esi + 20]; ixy += ifp
 	mov edi, eax
 
-;sse rounding mode
-	stmxcsr pmxcsr
-	and pmxcsr, 0FFFF9FFFh
-	ldmxcsr pmxcsr
+;sse rounding mode RC=01B
+;	stmxcsr pmxcsr
+;	and pmxcsr, 0FFFF9FFFh
+;	or pmxcsr,  000002000h
+;	ldmxcsr pmxcsr
 
 ;start process
 	mov ecx, [esi + 12]; ixdimpg
@@ -93,7 +92,7 @@ LOOPX:
 	movaps xmm4, xmm0	; xmm4<==fcos, fcos, fcos, fcos
 	mulps xmm4, xmm2	; (ix-n) * fcos
 	addps xmm4, xmm5	; (ix-n) * fcos + foffset
-	cvtps2dq xmm4, xmm4	; xmm4 float*4 to integer32*4
+	cvttps2dq xmm4, xmm4	; xmm4 float*4 to integer32*4
 	movd eax, xmm4	; lower 4 bytes to eax
 ;	pextrd eax, xmm4, 0	; SSE4.1
 	cmp eax, ecx	; ix<=>ixdimpg

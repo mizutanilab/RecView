@@ -269,6 +269,7 @@
 				StringPooling="true"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
+				EnableEnhancedInstructionSet="0"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderThrough="stdafx.h"
 				PrecompiledHeaderFile=".\Release/gazo.pch"
@@ -369,6 +370,7 @@
 				StringPooling="true"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
+				EnableEnhancedInstructionSet="0"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderThrough="stdafx.h"
 				PrecompiledHeaderFile=".\Release/gazo.pch"
@@ -2532,7 +2534,7 @@
 					>
 					<Tool
 						Name="VCCustomBuildTool"
-						CommandLine="ml64.exe /DWIN_X64 /Zi /c /Cp /Fl /Fo$(IntDir)\$(InputName).obj projx64.asm"
+						CommandLine="ml64.exe /DWIN_X64 /Zi /c /Cp /Fl /Fo$(IntDir)\$(InputName).obj projx64.asm&#x0D;&#x0A;"
 						Outputs="$(IntDir)\$(InputName).obj"
 					/>
 				</FileConfiguration>
