@@ -10,33 +10,34 @@ RecView is provided under the BSD 2-Clause License.
 
 ## References
 <ul><li>R. Mizutani, A. Takeuchi, R.Y. Osamura, S. Takekoshi, K. Uesugi and Y. Suzuki (2010). Submicrometer tomographic resolution examined using a micro-fabricated test object. <i>Micron</i> <b>41(1)</b>, 90-95. 
-<a href="http://dx.doi.org/10.1016/j.micron.2009.09.001">DOI</a>
-<a href="http://www.ncbi.nlm.nih.gov/pubmed/19800246">PubMed</a>
-<a href="https://arxiv.org/abs/1609.02270">preprint</a>
+<a href="http://dx.doi.org/10.1016/j.micron.2009.09.001">DOI</a> 
+<a href="http://www.ncbi.nlm.nih.gov/pubmed/19800246">PubMed</a> 
+<a href="https://arxiv.org/abs/1609.02270">arXiv</a> 
 </li>
 <li>R. Mizutani, K. Taguchi, A. Takeuchi, K. Uesugi and Y. Suzuki (2010). Estimation of presampling modulation transfer function in synchrotron radiation microtomography. <i>Nuclear Instrum. Meth. A</i> <b>621(1-3)</b>, 615-619.
-<a href="http://dx.doi.org/10.1016/j.nima.2010.03.111">DOI</a>
-<a href="https://arxiv.org/abs/1609.02269">preprint</a>
+<a href="http://dx.doi.org/10.1016/j.nima.2010.03.111">DOI</a> 
+<a href="https://arxiv.org/abs/1609.02269">arXiv</a> 
 </li>
 <li>R. Mizutani, A. Takeuchi, K. Uesugi, S. Takekoshi, N. Nakamura and Y. Suzuki (2011). Building human brain network in 3D coefficient map determined by X-ray microtomography. <i>AIP Conference Proceedings</i> <b>1365</b>, 403-406.
+<a href="http://dx.doi.org/10.1063/1.3625388">DOI</a> 
 <a href="http://link.aip.org/link/?APCPCS/1365/403/1">AIP</a> 
 </li>
 
-<li>R. Mizutani and Y. Suzuki (2012). X-ray Microtomography in biology. <i>Micron</i> <b>43(2-3)</b>, 104-115. Review. 
-<a href="http://dx.doi.org/10.1016/j.micron.2011.10.002">DOI</a>
-<a href="http://www.ncbi.nlm.nih.gov/pubmed/22036251">PubMed</a>
-<a href="https://arxiv.org/abs/1609.02263">preprint</a>
+<li>R. Mizutani and Y. Suzuki (2012). X-ray microtomography in biology. <i>Micron</i> <b>43(2-3)</b>, 104-115. Review. 
+<a href="http://dx.doi.org/10.1016/j.micron.2011.10.002">DOI</a> 
+<a href="http://www.ncbi.nlm.nih.gov/pubmed/22036251">PubMed</a> 
+<a href="https://arxiv.org/abs/1609.02263">arXiv</a> 
 </li>
 
 <li>R. Mizutani, R. Saiga, S. Takekoshi, C. Inomoto, N. Nakamura, M. Itokawa, M. Arai, K. Oshima, A. Takeuchi, K. Uesugi, Y. Terada and Y. Suzuki (2016). A method for estimating spatial resolution of real image in the Fourier domain. <i>J. Microscopy</i> <b>261(1)</b>, 57-66.
-<a href="http://dx.doi.org/10.1111/jmi.12315">DOI</a>
-<a href="http://www.ncbi.nlm.nih.gov/pubmed/26444300">PubMed</a>
-<a href="https://arxiv.org/abs/1609.02268">preprint</a>
+<a href="http://dx.doi.org/10.1111/jmi.12315">DOI</a> 
+<a href="http://www.ncbi.nlm.nih.gov/pubmed/26444300">PubMed</a> 
+<a href="https://arxiv.org/abs/1609.02268">arXiv</a> 
 </li>
 </ul>
 
 ## Release notes
-The binary folder contains several executables. Please use 'RecView.exe' appropriate for your PC platform. The executables were generated using Visual Studio 2008 C++ compiler, MASM for x64, CUDA toolkit 5.5, and ATI Stream SDK 2.1. If your PC has NVIDIA Tesla, GeForce or Quadro GPU processors, you can use the CUDA version. The dynamic link libraries (64 bit: 'cudart64_55.dll' and 'cufft64_55.dll'; 32 bit: 'cudart32_55.dll' and 'cufft32_55.dll') should be placed in the folder where the RecView CUDA executable is extracted. These library files are also available from the <a href="http://www.nvidia.com/object/cuda_home.html">official NVIDIA site</a> as part of the CUDA toolkit. ATI stream processors Radeon, FireStream, and FirePro are also supported. To run the executable with ATI processors, you should install the [ATI Catalyst driver suite](http://www.amd.com/en-gb/innovations/software-technologies/catalyst) to add the OpenCL library 'OpenCL.dll'. 
+The binary folder contains several executables. Please use 'RecView.exe' appropriate for your PC platform. The executables were generated using Visual Studio 2008 C++ compiler, MASM for x64, CUDA toolkit 5.5, and ATI Stream SDK 2.1. If your PC has NVIDIA Tesla, GeForce or Quadro GPU processors, you can use the CUDA version. The dynamic link libraries (64 bit: 'cudart64_55.dll' and 'cufft64_55.dll'; 32 bit: 'cudart32_55.dll' and 'cufft32_55.dll') should be placed in the folder where the RecView CUDA executable is extracted. These library files are also available from the <a href="http://www.nvidia.com/object/cuda_home.html">official NVIDIA site</a> as part of the CUDA toolkit. ATI stream processors Radeon, FireStream, and FirePro are also supported. To run the executable with ATI processors, you should install the [ATI Catalyst driver suite](http://www.amd.com/en-gb/innovations/software-technologies/catalyst) to add the OpenCL library 'OpenCL.dll' to the Windows folder. 
 
 A test dataset in TIFF format is also provided in the binary folder.
 
@@ -45,8 +46,8 @@ A test dataset in TIFF format is also provided in the binary folder.
     <UL>
     <LI>Tau (Quadro K4200, 1344 cores, 780 MHz) = 0.27 nsec (2.1 sec for a 2048x2048 tomogram from 1800 projections),
     <LI>Tau (Core i5-4670 (x64), 4 threads, 3.4 GHz) = 0.34 nsec (2.6 sec for a 2048x2048 tomogram from 1800 projections),
-    <LI>Tau (Core i5-4670 (x86), 4 threads, 3.4 GHz) = 0.34 nsec (2.5 sec for a 2048x2048 tomogram from 1800 projections),
-    </UL>  
+    <LI>Tau (Core i5-4670 (x86), 4 threads, 3.4 GHz) = 0.34 nsec (2.5 sec for a 2048x2048 tomogram from 1800 projections).
+    </UL>
   <LI>v5.1.0 (released 12 Sep 2016). OpenCL routines for ATI processors were updated. Performances are:
     <UL>
     <LI>Tau (Quadro K5000, 1536 cores, 706 MHz) = 0.23 nsec (1.75 sec for a 2048x2048 tomogram from 1800 projections),
@@ -159,4 +160,6 @@ Kitakaname 4-1-1, Hiratsuka, Kanagawa 259-1292, Japan
 E-mail ryuta(at)tokai-u.jp  
 https://mizutanilab.github.io/<br>
 <A href="http://www.linkedin.com/pub/ryuta-mizutani/79/832/115">Linkedin</A> - 
-<A href="http://www.facebook.com/people/Ryuta-Mizutani/100005433369640">Facebook</A><BR>
+<A href="http://www.facebook.com/people/Ryuta-Mizutani/100005433369640">Facebook</A> - 
+<A href="http://www.youtube.com/user/mizutaniLab">YouTube</A>
+<BR>
