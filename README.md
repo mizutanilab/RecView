@@ -36,12 +36,12 @@ RecView is provided under the BSD 2-Clause License.
 </ul>
 
 ## Release notes
-The binary folder contains several executables. Please use 'RecView.exe' appropriate for your PC platform. The executables were generated using Visual Studio 2008 C++ compiler, MASM for x64, CUDA toolkit 5.5, and ATI Stream SDK 2.1. If your PC has NVIDIA Tesla, GeForce or Quadro GPU processors, you can use the CUDA version. The dynamic link libraries (64 bit: 'cudart64_55.dll' and 'cufft64_55.dll'; 32 bit: 'cudart32_55.dll' and 'cufft32_55.dll') should be placed in the folder where the RecView CUDA executable is extracted. These library files are also available from the <a href="http://www.nvidia.com/object/cuda_home.html">official NVIDIA site</a> as part of the CUDA toolkit. ATI stream processors Radeon, FireStream, and FirePro are also supported. To run the executable with ATI processors, you should install the [ATI Catalyst driver suite](http://www.amd.com/en-gb/innovations/software-technologies/catalyst) to use the OpenCL library 'OpenCL.dll'. 
+The binary folder contains several executables. Please use 'RecView.exe' appropriate for your PC platform. The executables were generated using Visual Studio 2008 C++ compiler, MASM for x64, CUDA toolkit 5.5, and ATI Stream SDK 2.1. If your PC has NVIDIA Tesla, GeForce or Quadro GPU processors, you can use the CUDA version. The dynamic link libraries (64 bit: 'cudart64_55.dll' and 'cufft64_55.dll'; 32 bit: 'cudart32_55.dll' and 'cufft32_55.dll') should be placed in the folder where the RecView CUDA executable is extracted. These library files are also available from the <a href="http://www.nvidia.com/object/cuda_home.html">official NVIDIA site</a> as part of the CUDA toolkit. ATI stream processors Radeon, FireStream, and FirePro are also supported. To run the executable with ATI processors, you should install the [ATI Catalyst driver suite](http://www.amd.com/en-gb/innovations/software-technologies/catalyst) to add the OpenCL library 'OpenCL.dll'. 
 
 A test dataset in TIFF format is also provided in the binary folder.
 
 <UL>
-  <LI>v5.1.1 (released 18 Sep 2016). Reconstruction kernels for x86/x64 processors were updated using assembly code. The x86 kernel is accelerated with vectorized instructions. The /arch:SSE2 compiler option didn't work well with our routine. Performances are:
+  <LI>v5.1.1 (released 18 Sep 2016). Reconstruction kernels for x86/x64 processors were updated using assembly code. The kernels are accelerated with vectorized instructions (compiler option /arch:SSE2 didn't work well with our routine). Performances are:
     <UL>
     <LI>Tau (Quadro K4200, 1344 cores, 780 MHz) = 0.27 nsec (2.1 sec for a 2048x2048 tomogram from 1800 projections),
     <LI>Tau (Core i5-4670 (x64), 4 threads, 3.4 GHz) = 0.34 nsec (2.6 sec for a 2048x2048 tomogram from 1800 projections),
