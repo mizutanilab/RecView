@@ -42,6 +42,7 @@ The binary folder contains several executables. Please use 'RecView.exe' appropr
 A test dataset in TIFF format is also provided in the binary folder.
 
 <UL>
+  <LI>v5.1.2 (22 Oct 2016). Bug fix release.
   <LI>v5.1.1 (released 18 Sep 2016). Reconstruction kernels for x86/x64 processors were updated using assembly code. The kernels are accelerated with vectorized instructions (compiler option /arch:SSE2 didn't work well with our routine). Performances are:
     <UL>
     <LI>Tau (Quadro K4200, 1344 cores, 780 MHz) = 0.27 nsec (2.1 sec for a 2048x2048 tomogram from 1800 projections),
