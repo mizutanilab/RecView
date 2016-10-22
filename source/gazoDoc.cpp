@@ -1445,7 +1445,8 @@ TErr CGazoDoc::BatchReconst(RECONST_QUEUE* rq) {
 			fn.Format(" layer %d center %.3f", iLayer, fc);
 			pf->m_wndStatusBar.SetPaneText(1, "Backprojection " + dataName + fn);
 			double tcpu = 0; float pixelBase = 0, pixelDiv = 1;
-			if ( err = DeconvBackProj(rq, fc, iMultiplex, j,//&ifp, &nifp, 
+//161022	if ( err = DeconvBackProj(rq, fc, iMultiplex, j,//&ifp, &nifp, 
+			if ( err = DeconvBackProj(rq, fc, iMultiplex, j/iBinning, 
 										&numOfSampleSinogr, &tcpu, &pixelBase, &pixelDiv) ) {
 				error.Log(err);
 			}
