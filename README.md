@@ -116,7 +116,7 @@ The 'Tomography'-'Histogram/Conversion' menu provides several tools for trimming
 ## Frequently asked questions
 <OL>
   <LI><b>System requirements</b></LI>
-    RecView can be executed on a Windows PC running XP, Vista, or Windows 7-10 with an x86 or x64 CPU and local storage. If you don't have a GPU, we recommend CPUs released after 2005, because SSE2 SIMD instructions are used in the x86/x64 reconstruction kernels. This is not the requirement, but the performance differs by a factor of 2-3 with or without SSE2.<br><br>
+    RecView can be executed on a Windows PC running XP, Vista, or Windows 7-10 with an x86 or x64 CPU and local storage. If you run RecView without GPU processor, we recommend CPUs released after approx 2005 (Pentium4 / Athlon64 or later), because SSE2 SIMD instructions are used in the x86/x64 reconstruction kernels. This is not the requirement, but the performance differs by a factor of 2-3 with or without SSE2.<br><br>
   <LI><b>Manuals</b></LI>
     A brief how-to-use guide has been published as the appendix of the following paper. A step-by-step manual in Japanese is provided in the docs folder.<BR><BR>
 R. Mizutani, A. Takeuchi, K. Uesugi, S. Takekoshi, R.Y. Osamura and Y. Suzuki (2009). Three-dimensional microstructural analysis of human brain tissue by using synchrotron radiation microtomographs. In <I>Handbook on White Matter</I>, eds. Westland, T.B. & Calton, R.N., New York, Nova Science Publishers, pp. 247-277.
