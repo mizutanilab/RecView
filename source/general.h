@@ -17,7 +17,7 @@ typedef double TReal;
 typedef float TCmpElmnt;
 
 class CGazoDoc;
-class CHDR5;//160521
+class CHDF5;//160521
 
 //HIS format
 #define HIS_Header_Size 64
@@ -70,9 +70,9 @@ TErr SkipHISframe(CFile* fp, int nframe);
 TErr SkipHISframeFast(CFile* fp, int nframe);
 TErr ReadHISstrip(CFile* fp, unsigned char** uctmp, int* pMaxTmp, short* sbuffer, 
 				  int iLine, int iWidth, int iMultiplex, HISHeader* his);
-TErr ReadHDR5Frame(CFile* fp, int** buffer, int* pMaxBuffer, int* iHeight, int* iWidth, CHDR5* pHDR5, 
+TErr ReadHDF5Frame(CFile* fp, int** buffer, int* pMaxBuffer, int* iHeight, int* iWidth, CHDF5* pHDF5, 
 			  unsigned int uiFrame = 0, int iDataEntry = -1, CString* pComment = NULL);
-TErr ReadHDR5Theta(CFile* fp, CHDR5* pHDR5, float* pfDeg, DWORD* pdwFrame, CString* pComment = NULL);
+TErr ReadHDF5Theta(CFile* fp, CHDF5* pHDF5, float* pfDeg, DWORD* pdwFrame, CString* pComment = NULL);
 TErr GetFileList(CString sFilter, CString* psFileList);
 
 //math

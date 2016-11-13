@@ -8,6 +8,7 @@
 #include "gazoView.h"
 #include "DlgReconOpt.h"
 #include "DlgMessage.h"
+#include "DlgFrameList.h"
 //CUDA declaration
 #include "cudaReconst.h"
 //OpenCL
@@ -70,6 +71,9 @@ CDlgReconst::CDlgReconst(CWnd* pParent /*=NULL*/)
 	m_iDataseForCenter2 = -1;
 
 	m_bSkipInitialFlatsInHDF5 = false;
+
+	m_iDlgFL_SampleFrameStart = 0;
+	m_iDlgFL_SampleFrameEnd = 0;
 }
 
 void CDlgReconst::SetDoc(CGazoDoc* pDoc) {if (pDoc) pd = pDoc;}
@@ -137,6 +141,7 @@ void CDlgReconst::EnableCtrl() {
 	GetDlgItem(IDC_RECONST_OFFCT)->EnableWindow(FALSE);
 	GetDlgItem(IDC_RECONST_OFFAXIS)->EnableWindow(FALSE);
 	GetDlgItem(IDC_RECONST_STOP)->EnableWindow(TRUE);
+	GetDlgItem(IDC_RECONST_SELECT)->EnableWindow(FALSE);//select frame
 	GetDlgItem(IDOK)->EnableWindow(FALSE);
 	if (iStatus & CDLGRECONST_SHOWIMAGE) return;
 	//
@@ -152,6 +157,7 @@ void CDlgReconst::EnableCtrl() {
 	GetDlgItem(IDC_RECONST_SHOW2)->EnableWindow(TRUE);
 	GetDlgItem(IDC_RECONST_SINO1)->EnableWindow(TRUE);
 	//GetDlgItem(IDC_RECONST_RESOLN)->EnableWindow(TRUE);
+	GetDlgItem(IDC_RECONST_SELECT)->EnableWindow(TRUE);//select frame
 	GetDlgItem(IDC_RECONST_QUEUE)->EnableWindow(TRUE);//////////////
 	GetDlgItem(IDCANCEL)->EnableWindow(TRUE);
 	GetDlgItem(IDOK)->EnableWindow(TRUE);
@@ -227,7 +233,8 @@ BEGIN_MESSAGE_MAP(CDlgReconst, CDialog)
 	ON_EN_SETFOCUS(IDC_RECONST_CENT2, &CDlgReconst::OnEnSetfocusReconstCent2)
 	ON_EN_SETFOCUS(IDC_RECONST_SLICE1, &CDlgReconst::OnEnSetfocusReconstSlice1)
 	ON_EN_SETFOCUS(IDC_RECONST_SLICE2, &CDlgReconst::OnEnSetfocusReconstSlice2)
-	ON_BN_CLICKED(IDC_RECONST_RESOLN, &CDlgReconst::OnBnClickedReconstResoln)
+//	ON_BN_CLICKED(IDC_RECONST_RESOLN, &CDlgReconst::OnBnClickedReconstResoln)
+	ON_BN_CLICKED(IDC_RECONST_SELECT, &CDlgReconst::OnBnClickedReconstSelect)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -280,6 +287,9 @@ void CDlgReconst::OnReconstQueue()
 	if (m_bDriftList) rq.dReconFlags |= RQFLAGS_DRIFTLIST;
 	if (m_bDriftParams) rq.dReconFlags |= RQFLAGS_DRIFTPARAMS;
 	rq.sDriftListPath = m_sDriftListPath;
+	rq.sFramesToExclude = pd->m_sFramesToExclude;
+	rq.iSampleFrameStart = pd->dlgReconst.m_iDlgFL_SampleFrameStart;
+	rq.iSampleFrameEnd = pd->dlgReconst.m_iDlgFL_SampleFrameEnd;
 	//rq.iDatasetSize = m_iDatasetSize;
 	rq.iDatasetSel = m_iDatasetSel;
 	rq.bReconOptionUpdated = true;
@@ -396,6 +406,9 @@ void CDlgReconst::OnOK()
 		if (m_bDriftList) rq.dReconFlags |= RQFLAGS_DRIFTLIST;
 		if (m_bDriftParams) rq.dReconFlags |= RQFLAGS_DRIFTPARAMS;
 		rq.sDriftListPath = m_sDriftListPath;
+		rq.sFramesToExclude = pd->m_sFramesToExclude;
+		rq.iSampleFrameStart = pd->dlgReconst.m_iDlgFL_SampleFrameStart;
+		rq.iSampleFrameEnd = pd->dlgReconst.m_iDlgFL_SampleFrameEnd;
 		//rq.iDatasetSize = m_iDatasetSize;
 		rq.iDatasetSel = m_iDatasetSel;
 		rq.iLossFrameSet = pd->iLossFrameSet;//120715
@@ -548,6 +561,9 @@ void CDlgReconst::OnReconstShow1()
 		if (m_bDriftList) rq.dReconFlags |= RQFLAGS_DRIFTLIST;
 		if (m_bDriftParams) rq.dReconFlags |= RQFLAGS_DRIFTPARAMS;
 		rq.sDriftListPath = m_sDriftListPath;
+		rq.sFramesToExclude = pd->m_sFramesToExclude;
+		rq.iSampleFrameStart = pd->dlgReconst.m_iDlgFL_SampleFrameStart;
+		rq.iSampleFrameEnd = pd->dlgReconst.m_iDlgFL_SampleFrameEnd;
 		//rq.iDatasetSize = m_iDatasetSize;
 		rq.iDatasetSel = m_iDatasetSel;
 		rq.iLossFrameSet = pd->iLossFrameSet;//120715
@@ -622,6 +638,9 @@ void CDlgReconst::OnReconstShow2()
 		if (m_bDriftList) rq.dReconFlags |= RQFLAGS_DRIFTLIST;
 		if (m_bDriftParams) rq.dReconFlags |= RQFLAGS_DRIFTPARAMS;
 		rq.sDriftListPath = m_sDriftListPath;
+		rq.sFramesToExclude = pd->m_sFramesToExclude;
+		rq.iSampleFrameStart = pd->dlgReconst.m_iDlgFL_SampleFrameStart;
+		rq.iSampleFrameEnd = pd->dlgReconst.m_iDlgFL_SampleFrameEnd;
 		//rq.iDatasetSize = m_iDatasetSize;
 		rq.iDatasetSel = m_iDatasetSel;
 		rq.iLossFrameSet = pd->iLossFrameSet;//120715
@@ -689,6 +708,9 @@ void CDlgReconst::OnBnClickedReconstSino1()
 		if (m_bDriftList) rq.dReconFlags |= RQFLAGS_DRIFTLIST;
 		if (m_bDriftParams) rq.dReconFlags |= RQFLAGS_DRIFTPARAMS;
 		rq.sDriftListPath = m_sDriftListPath;
+		rq.sFramesToExclude = pd->m_sFramesToExclude;
+		rq.iSampleFrameStart = pd->dlgReconst.m_iDlgFL_SampleFrameStart;
+		rq.iSampleFrameEnd = pd->dlgReconst.m_iDlgFL_SampleFrameEnd;
 		//rq.iDatasetSize = m_iDatasetSize;
 		rq.iDatasetSel = m_iDatasetSel;
 		rq.iLossFrameSet = pd->iLossFrameSet;//120715
@@ -827,5 +849,15 @@ void CDlgReconst::OnEnSetfocusReconstSlice2()
 	SetDefID(IDC_RECONST_SHOW2);
 }
 
-void CDlgReconst::OnBnClickedReconstResoln(){
+//void CDlgReconst::OnBnClickedReconstResoln(){
+//}
+
+void CDlgReconst::OnBnClickedReconstSelect()
+{
+	CDlgFrameList dlg;
+	dlg.m_sFramesToExclude = pd->m_sFramesToExclude;
+	dlg.pd = this->pd;
+	if (dlg.DoModal() == IDCANCEL) return;
+	pd->m_sFramesToExclude = dlg.m_sFramesToExclude;
+	bOptionUpdated = true;
 }

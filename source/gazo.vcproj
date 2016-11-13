@@ -1330,7 +1330,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\chdr5.cpp"
+				RelativePath=".\chdf5.cpp"
 				>
 			</File>
 			<File
@@ -2671,7 +2671,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\chdr5.h"
+				RelativePath=".\chdf5.h"
 				>
 			</File>
 			<File

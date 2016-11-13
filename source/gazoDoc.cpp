@@ -7,6 +7,7 @@
 #include <math.h>
 #include <sys\timeb.h> //_timeb, _ftime
 #include <process.h> //_beginthread
+#include <float.h> // FLT_MAX
 #include "gazoDoc.h"
 #include "gazoView.h"
 #include "MainFrm.h"
@@ -158,8 +159,10 @@ void CGazoDoc::ClearAll() {
 		ri[i].piDrift = NULL;
 	}
 	uiDocStatus = CGAZODOC_STATUS_RESET;
-	iHDF5DummyFrame = 0;
+	m_iFlag = 0;
 	bColor = false;
+	m_sFramesToExclude.Empty();
+	m_lHDF5DataSize0 = 0;
 }
 
 void CGazoDoc::InitAll() {
@@ -989,15 +992,15 @@ TErr CGazoDoc::ReadFile(CFile* fp) {
 	} else if ((_tcscmp(ext, ".h5") == 0)||(_tcscmp(ext, ".H5") == 0)) {
 		/*/160616
 		CString msg;
-		hdr5.SetFile(fp);
-		hdr5.Dump(&msg);
+		hdf5.SetFile(fp);
+		hdf5.Dump(&msg);
 		CDlgMessage dlg;
 		dlg.m_Msg = msg;
 		dlg.DoModal();
 		return;
 		///*///
 		fileComment.Empty();
-		err = ReadHDR5Frame(fp, &pPixel, &maxPixel, &iydim, &ixdim, &hdr5, 0, -1, &fileComment);
+		err = ReadHDF5Frame(fp, &pPixel, &maxPixel, &iydim, &ixdim, &hdf5, 0, -1, &fileComment);
 		error.Log(err);
 	} else {//(_tcscmp(ext, ".his") == 0)
 		HRESULT hResult = m_cimage.Load(fp->GetFilePath());
@@ -1189,6 +1192,8 @@ void CGazoDoc::OnTomoReconst()
 //AfxMessageBox(title);
 		//
 		if ( err = LoadLogFile() ) {error.Log(err); return;}
+		SetFramesToExclude();
+
 		//121013 iLenSinogr is determined in LoadLogFile
 		const int ideg = (int)(log10((double)iLenSinogr)) + 1;
 		const int ipos = dataPrefix.GetLength() - ideg;
@@ -1297,7 +1302,8 @@ TErr CGazoDoc::BatchReconst(RECONST_QUEUE* rq) {
 	bCmdLine = true;
 	double fc;
 	//const int ideg = (int)(log10(iydim)) + 1;
-	const int ideg = 4;
+	//161113 const int ideg = 4;
+	const int ideg = (int)(log10((double)rq->iYdim)) + 1;
 	//120501 log output
 	CStdioFile flog;
 	CString sLogFileName = "recviewlog.txt";
@@ -1370,6 +1376,13 @@ TErr CGazoDoc::BatchReconst(RECONST_QUEUE* rq) {
 				flog.WriteString(line);
 			}
 		}
+		if ( !(rq->sFramesToExclude.IsEmpty()) ) {
+			flog.WriteString(" Frames not used in reconstruction: ");
+			flog.WriteString(rq->sFramesToExclude + "\r\n");
+			flog.WriteString("  (frame# h0000=HISdark/white; b0000=HDF5dark; w0000=HDF5white; s0000=skip; 0000=replacedWithAdjacents)\r\n");
+		}
+		line.Format(" Sample frame range: %d - %d\r\n", rq->iSampleFrameStart, rq->iSampleFrameEnd);
+		flog.WriteString(line);
 		if ((rq->dReconFlags) & RQFLAGS_DRIFTLIST) {
 			flog.WriteString(" Drift correction\r\n  Drift list: ");
 			flog.WriteString(rq->sDriftListPath + "\r\n");
@@ -1523,7 +1536,8 @@ void CGazoDoc::ShowTomogram(RECONST_QUEUE* rq, int iy, double fc) {//, int ifilt
 	pcd->UpdateView(/*bInit=*/true);
 	CString title, fn;
 	fn.Format("%09d", iy);
-	fn = fsuffix + fn.Right((int)(log10((double)iLenSinogr)) + 1);
+	//161113 fn = fsuffix + fn.Right((int)(log10((double)iLenSinogr)) + 1);
+	fn = fsuffix + fn.Right((int)(log10((double)rq->iYdim)) + 1);
 	title.Format("%s reconstructed (y=%d center=%.1f) from %s / %.2f sec",
 										fn, iy, fc, rq->dataPath, tcpu);
 	pcd->SetTitle(title);
@@ -1634,7 +1648,7 @@ TErr CGazoDoc::LoadLogFileAlloc(DWORD ilen) {
 
 TErr CGazoDoc::LoadLogFile(BOOL bOffsetCT) {
 	DWORD ipos = 0;
-//	__int64 lDataSize0 = hdr5.m_plDataSize[0];
+//	__int64 lDataSize0 = hdf5.m_plDataSize[0];
 	if (dataSuffix.MakeUpper() == ".H5") {
 		//APS HDF5
 		CString fn = dataPath + dataPrefix + dataSuffix;
@@ -1642,38 +1656,29 @@ TErr CGazoDoc::LoadLogFile(BOOL bOffsetCT) {
 		if (!fhdf5.Open(fn, CFile::modeRead | CFile::shareDenyWrite)) {
 				fhdf5.Close(); AfxMessageBox("file open error"); return 1652601;
 		}
-		//get lDataSize0
-		hdr5.SetFile(&fhdf5);
+		//get m_lHDF5DataSize0
+		hdf5.SetFile(&fhdf5);
 		TErr err = 0;
-		if (err = hdr5.ReadSuperBlock(NULL)) return err;
-		if (err = hdr5.FindChildSymbol("exchange", -1, NULL)) return err;
-		hdr5.MoveToChildTree();
-		if (err = hdr5.FindChildSymbol("data", -1, NULL)) return err;
-		if (hdr5.m_sChildTitle.Left(4) != "data") return 16052221;
-		if (err = hdr5.GetDataObjHeader(NULL)) return err;
-		const __int64 lDataSize0 = hdr5.m_plDataSize[0];
+		if (err = hdf5.ReadSuperBlock(NULL)) return err;
+		if (err = hdf5.FindChildSymbol("exchange", -1, NULL)) return err;
+		hdf5.MoveToChildTree();
+		if (err = hdf5.FindChildSymbol("data", -1, NULL)) return err;
+		if (hdf5.m_sChildTitle.Left(4) != "data") return 16052221;
+		if (err = hdf5.GetDataObjHeader(NULL)) return err;
+		m_lHDF5DataSize0 = hdf5.m_plDataSize[0];
 		//
-		err = ReadHDR5Theta(&fhdf5, &hdr5, NULL, &ipos, &fileComment);
+		err = ReadHDF5Theta(&fhdf5, &hdf5, NULL, &ipos, &fileComment);
 		if (err) {//fly scan
-			iHDF5DummyFrame = 1;//skip the first frame because it's a white image
-			//if (bFromQueue) {
-			//	hdr5.SetFile(&fhdf5);
-			//	TErr err = 0;
-			//	if (err = hdr5.ReadSuperBlock(NULL)) return err;
-			//	if (err = hdr5.FindChildSymbol("exchange", -1, NULL)) return err;
-			//	hdr5.MoveToChildTree();
-			//	if (err = hdr5.FindChildSymbol("data", -1, NULL)) return err;
-			//	if (hdr5.m_sChildTitle.Left(4) != "data") return 16052221;
-			//	if (err = hdr5.GetDataObjHeader(NULL)) return err;
-			//	lDataSize0 = hdr5.m_plDataSize[0];
-			//}
+			m_iFlag &= ~CGAZODOC_FLAG_HDF5STEPSCAN;
 			fhdf5.Close();
-			ipos = (DWORD)(lDataSize0 - iHDF5DummyFrame - 1);//-1 is to skip the last image. It's probably 180 deg image.
+//161107	iHDF5DummyFrame = 1;//skip the first frame because it's a white image
+			//161106 ipos = (DWORD)(lDataSize0 - iHDF5DummyFrame - 1);//-1 is to skip the last image. It's probably 180 deg image.
+			ipos = (DWORD)(m_lHDF5DataSize0);//-1 is to skip the last image. It's probably 180 deg image.
 			ipos += 2;//+2 to include pre and post white images
-//CString msg; msg.Format("160617 %d %lld", ipos, hdr5.m_plDataSize[0]); AfxMessageBox(msg);
+//CString msg; msg.Format("160617 %d %lld", ipos, hdf5.m_plDataSize[0]); AfxMessageBox(msg);
 			if (err = LoadLogFileAlloc((DWORD)ipos)) return err;
 			for (int i=1; i<=(int)(ipos-2); i++) {
-				fdeg[i] = 180.f * i / (ipos-2);
+				fdeg[i] = 180.f * i / (ipos-2 - 1);//-1 to exclude the last sample image which is same with a flat image
 				fexp[i] = fdeg[i];
 				fname[i].Format("%05d", i);
 				bInc[i] = CGAZODOC_BINC_SAMPLE;
@@ -1691,11 +1696,12 @@ TErr CGazoDoc::LoadLogFile(BOOL bOffsetCT) {
 			iLenSinogr = ipos + 1;//including dark.img
 //CString msg; msg.Format("160629-2 %d", iLenSinogr); AfxMessageBox(msg);
 		} else {//step scan
-			if (ipos > 450) iHDF5DummyFrame = 3;//ignore the first 3 frames when it's real data but not the test set
+//161112			if (ipos > 450) iHDF5DummyFrame = 3;//ignore the first 3 frames when it's real data but not the test set
+			m_iFlag |= CGAZODOC_FLAG_HDF5STEPSCAN;
 			ipos += 2;//+2 to include pre and post white images
 			const DWORD ilen = ipos;
 			if (err = LoadLogFileAlloc(ilen)) {fhdf5.Close(); return err;}
-			err = hdr5.ReadTheta(&(fdeg[1]), NULL);//fdeg[0] is the entry for pre white image;
+			err = hdf5.ReadTheta(&(fdeg[1]), NULL);//fdeg[0] is the entry for pre white image;
 			fhdf5.Close();
 			if (err) return err;
 			//fill with dummy data
@@ -1710,19 +1716,19 @@ TErr CGazoDoc::LoadLogFile(BOOL bOffsetCT) {
 			fname[0].Format("%05d", 0);
 			bInc[0] = CGAZODOC_BINC_WHITE;
 			//
-			if (fabs(fabs(fdeg[1] - fdeg[ipos-2]) - 180.) < 1E-6) {
-				//if the last sample frame is 180 deg from the start, 
-				// do not use that frame and replace with white image
-				bInc[ipos-2] = CGAZODOC_BINC_WHITE;
-				iLenSinogr = ipos;//place dark.img at the end of sinogram
-			} else {
+//161112			if (fabs(fabs(fdeg[1] - fdeg[ipos-2]) - 180.) < 1E-6) {
+//				//if the last sample frame is 180 deg from the start, 
+//				// do not use that frame and replace with white image
+//				bInc[ipos-2] = CGAZODOC_BINC_WHITE;
+//				iLenSinogr = ipos;//place dark.img at the end of sinogram
+//			} else {
 				//generate an entry for the post white image
 				fdeg[ipos-1] = fdeg[ipos-2] + 1;
 				fexp[ipos-1] = fexp[ipos-2] + 1;
 				fname[ipos-1].Format("%05d", ipos-1);
 				bInc[ipos-1] = CGAZODOC_BINC_WHITE;
 				iLenSinogr = ipos + 1;//including dark.img
-			}
+//			}
 		}
 	} else {
 		//SPring-8 output.log
@@ -1777,21 +1783,22 @@ TErr CGazoDoc::LoadLogFile(BOOL bOffsetCT) {
 		logPath = fn;
 		//141204==>
 		//degree column seems to be given in #pulse in some beamtimes.
-		int ideg = (int)(fdeg[ipos-1]);
-		if ((ideg != 180)&&(ideg != 360)) {
-			//AfxMessageBox("output.log angle");
-			const int nframe = (int)(ipos / 10) * 10;
-			double dstep = 180.0 / nframe;
-			if (bOffsetCT) dstep = 360.0 / nframe;
-			//CString line; line.Format("nframe %d\r\nfstep%f", nframe, dstep); AfxMessageBox(line);
-			double dangle = 0.0;
-			for (unsigned int i=0; i<ipos-3; i++) {
-				fdeg[i] = (float)dangle;
-				dangle += dstep;
-			}
-			fdeg[ipos-3] = fdeg[ipos-4];
-			fdeg[ipos-2] = fdeg[ipos-4] + (float)dstep;
-			fdeg[ipos-1] = fdeg[ipos-2];
+//161103		int ideg = (int)(fdeg[ipos-1]);
+//161103		if ((ideg != 180)&&(ideg != 360)) {
+		if ((abs(fdeg[ipos-1] - 180) > 3)&&(abs(fdeg[ipos-1] - 360) > 3)) {
+			for (unsigned int i=0; i<ipos; i++) {fdeg[i] /= 500.;}
+//161112
+//			const int nframe = (int)(ipos / 10) * 10;
+//			double dstep = 180.0 / nframe;
+//			if (bOffsetCT) dstep = 360.0 / nframe;
+//			double dangle = 0.0;
+//			for (unsigned int i=0; i<ipos-3; i++) {
+//				fdeg[i] = (float)dangle;
+//				dangle += dstep;
+//			}
+//			fdeg[ipos-3] = fdeg[ipos-4];
+//			fdeg[ipos-2] = fdeg[ipos-4] + (float)dstep;
+//			fdeg[ipos-1] = fdeg[ipos-2];
 			//CString msg = "";
 			//msg.Format("output.log angle\r\n%d %f\r\n%d %f\r\n%d %f\r\n%d %f\r\n%d %f",
 			//	0, fdeg[0], ipos-4, fdeg[ipos-4], ipos-3, fdeg[ipos-3], 
@@ -1800,8 +1807,8 @@ TErr CGazoDoc::LoadLogFile(BOOL bOffsetCT) {
 		}
 		//==>141204
 		iLenSinogr = ipos + 1;//including dark.img
-//CString msg; msg.Format("160629-1 %d %d %d", iLenSinogr, ipos, ilen); AfxMessageBox(msg);
 	}
+if (bDebug) {CString msg; msg.Format("160629-1 iLenSinogr=%d ipos=%d", iLenSinogr, ipos); AfxMessageBox(msg);}
 	//
 //	for (int i=0; i<ipos; i++) {
 //		CString line; line.Format("%s %f %f %d\r\n", fname[i], fexp[i], fdeg[i], bInc[i]);
@@ -1811,6 +1818,99 @@ TErr CGazoDoc::LoadLogFile(BOOL bOffsetCT) {
 //	dlg.m_Msg = msg;
 //	dlg.DoModal();
 //	msg.Format("%d", ipos); AfxMessageBox(msg);
+
+	return 0;
+}
+
+TErr CGazoDoc::SetFramesToExclude() {
+	//161105
+	if (!m_sFramesToExclude.IsEmpty()) return 0;
+	const int ipos = iLenSinogr - 1;
+	m_sFramesToExclude = " ";
+	const int idigit = (int)log10((double)ipos) + 1;
+	CString fmt;
+	fmt.Format(" s%%0%dd", idigit);
+//	float fdegmin = FLT_MAX, fdegmax = -FLT_MAX;
+//	for (int i=0; i<(int)ipos; i++) {
+//		fdegmin = ((fdeg[i] < fdegmin)&&(bInc[i] & CGAZODOC_BINC_SAMPLE)) ? fdeg[i] : fdegmin;
+//		fdegmax = ((fdeg[i] > fdegmax)&&(bInc[i] & CGAZODOC_BINC_SAMPLE)) ? fdeg[i] : fdegmax;
+//	}
+	float fdegStart = 0, fdegEnd = 180;
+	for (int i=0; i<(int)ipos; i++) {
+		if (!(bInc[i] & CGAZODOC_BINC_SAMPLE)) continue;
+		fdegStart = fdeg[i]; break;
+	}
+	for (int i=ipos-1; i>=0; i--) {
+		if (!(bInc[i] & CGAZODOC_BINC_SAMPLE)) continue;
+		fdegEnd = fdeg[i]; break;
+	}
+	const double dDegEnd = (abs(fdegEnd - fdegStart - 360) < 10) ? 359.99 : 179.99;
+	//m_iDlgFL_SampleFrameStart represents frame# for HDF5 and the fdeg[] array position for other formats
+	if (dataSuffix.MakeUpper() == ".H5") {
+		if ((m_iFlag & CGAZODOC_FLAG_HDF5STEPSCAN)&&(m_lHDF5DataSize0 > 0)) {
+			const int inSampleFrames = ipos - 2;
+			dlgReconst.m_iDlgFL_SampleFrameStart = (int)(m_lHDF5DataSize0 - inSampleFrames);
+			for (int i=0; i<dlgReconst.m_iDlgFL_SampleFrameStart; i++) {
+				CString line; line.Format(fmt, i); m_sFramesToExclude += line;
+			}
+			for (int i=1; i<(int)ipos; i++) {
+				if (!(bInc[i] & CGAZODOC_BINC_SAMPLE)) continue;
+				if (fdeg[i] - fdegStart >= dDegEnd) {
+					CString line; line.Format(fmt, i-1 + dlgReconst.m_iDlgFL_SampleFrameStart); m_sFramesToExclude += line;
+				} else {
+					dlgReconst.m_iDlgFL_SampleFrameEnd = i-1 + dlgReconst.m_iDlgFL_SampleFrameStart;
+				}
+			}
+		} else {
+			//dlgReconst.m_iDlgFL_SampleFrameStart = i-1 because an averaged white frame is not at the beginning of the "data" block
+			for (int i=0; i<(int)ipos; i++) {
+				if ((bInc[i] & CGAZODOC_BINC_SAMPLE)&&(fdeg[i] == fdegStart)) {dlgReconst.m_iDlgFL_SampleFrameStart = i-1; break;}
+			}
+			for (int i=1; i<(int)ipos; i++) {
+				if (bInc[i] & CGAZODOC_BINC_SAMPLE) {
+					if (fdeg[i] - fdegStart >= dDegEnd) {
+						CString line; line.Format(fmt, i-1); m_sFramesToExclude += line;
+					} else {
+						dlgReconst.m_iDlgFL_SampleFrameEnd = i-1;
+					}
+				}
+			}
+			CString fmt2; fmt2.Format(" b%%0%dd", idigit);
+			CString line; line.Format(fmt2, 0);
+			m_sFramesToExclude += line;
+		}
+
+		if (bDebug) {
+			CString line; 
+			line.Format("ipos: %d\r\nstart: %d\r\nend: %d\r\nexclude: %s", 
+				ipos, dlgReconst.m_iDlgFL_SampleFrameStart, dlgReconst.m_iDlgFL_SampleFrameEnd,
+				m_sFramesToExclude);
+			AfxMessageBox(line);
+		}
+	} else {
+		//dlgReconst.m_iDlgFL_SampleFrameStart = 1 because an averaged white frame is at the beginning
+		for (int i=0; i<(int)ipos; i++) {
+			if ((bInc[i] & CGAZODOC_BINC_SAMPLE)&&(fdeg[i] == fdegStart)) {dlgReconst.m_iDlgFL_SampleFrameStart = i; break;}
+		}
+		for (int i=0; i<(int)ipos; i++) {
+			if (bInc[i] & CGAZODOC_BINC_SAMPLE) {
+				if (fdeg[i] - fdegStart >= dDegEnd) {
+					CString line; line.Format(fmt, i); m_sFramesToExclude += line;
+				} else {
+					dlgReconst.m_iDlgFL_SampleFrameEnd = i;
+				}
+			}
+		}
+
+		if (bDebug) {
+			CString line;
+			line.Format("start: %d %f\r\nend: %d %f\r\nexclude: %s", 
+				dlgReconst.m_iDlgFL_SampleFrameStart, fdeg[dlgReconst.m_iDlgFL_SampleFrameStart], 
+				dlgReconst.m_iDlgFL_SampleFrameEnd, fdeg[dlgReconst.m_iDlgFL_SampleFrameEnd],
+				m_sFramesToExclude);
+			AfxMessageBox(line);
+		}
+	}
 
 	return 0;
 }
@@ -1951,6 +2051,7 @@ TErr CGazoDoc::SetConvList(CString sDataPath, CString sFilePrefix, CString sFile
 	for (unsigned int i=0; i<ilen; i++) {
 		if (convList[i].IsEmpty()) return 21019;
 	}
+//	CString line2; line2.Format("%s\r\n%s\r\n%s\r\n%d", sDataPath, sFilePrefix, sFileSuffix, iDatasetSel); AfxMessageBox(line2);
 	return 0;
 }
 
@@ -2042,45 +2143,91 @@ int CalcAvgFromHisCompare( const void *arg1, const void *arg2 ) {
 }
 
 TErr CGazoDoc::CalcAvgFromHis(CString path, CString fnhis, CString* files, int nfiles, int iDatasetSel) {
-	CFile fimg;
-	//return if exists
-	if (fimg.Open(path + files[nfiles-1], CFile::modeRead | CFile::shareDenyWrite)) {fimg.Close(); return 0;}
 	int ixdim = 0;
 	int iydim = 0;
 	int* pData = NULL;
 	int maxData = 0;
 	int* pSum = NULL;
 	TErr err = 0;
-	int iavg = 0;
 	CString comment = "";
 	//111108
 	CountFrameFromConvBat();
 	//141229 const int nset = maxHisFrame / iFramePerDataset;
 	const int nset = dlgReconst.m_nDataset;
 	//
+	const int idigit = (int)log10((double)iFramePerDataset) + 1;
+	CString fmt; fmt.Format(" h%%0%dd", idigit);
+	CFile fimg;
+	//return if the same file exists
+	if (fimg.Open(path + files[nfiles-1], CFile::modeRead | CFile::shareDenyWrite)) {
+		int iDummy = 0;
+		CString sPrevComment = "";
+		TErr err = ReadITEX(&fimg, NULL, NULL, &iDummy, &iDummy, &sPrevComment);
+		fimg.Close();
+//AfxMessageBox(files[nfiles-1] + "\r\n" + sPrevComment);
+CString msg = files[nfiles-1] + "\r\n" + sPrevComment + "\r\n", line;
+		//if (sPrevComment.Find("skip ") < 0) return 0;
+		bool bReturn = true;
+		for (int i=0; i<nfiles-1; i++) {
+			int iframetag = atoi(files[i].SpanExcluding(".").Mid(1)) - 1;
+			if (nset > 1) {
+				//calc iframe corresponding to set 0
+				if (nDarkFrame > 0) {//141229 if dark frames were taken only in the first set.
+					if (files[nfiles -1].Left(4) == "dark") {
+						//141229 iframe is OK
+					} else {
+						iframetag = ((iframetag-nDarkFrame) % (iFramePerDataset-nDarkFrame)) + nDarkFrame;
+					}
+				} else {//if dark frames were taken at every dataset.
+					iframetag = (iframetag % iFramePerDataset);//111108
+				}
+			}
+			//iframe % iFramePerDataset is taken because the avg_img command points incident images at the end of the a.his.
+			if (iLossFrameSet >= 0) {
+				if (iLossFrameSet == iDatasetSel) {
+					if ((iframetag-nDarkFrame) % (iFramePerDataset-nDarkFrame) > (iFramePerDataset-nDarkFrame) / 2) {iframetag--;}
+				} else if (iLossFrameSet < iDatasetSel) {iframetag--;}
+			}
+if (bDebug) {line.Format("%d ", iframetag); msg += line;}
+			CString sTag; sTag.Format(fmt, iframetag);
+			if ((m_sFramesToExclude.Find(sTag) >= 0)&&(sPrevComment.Find(sTag) >= 0)) continue;
+			else if ((m_sFramesToExclude.Find(sTag) < 0)&&(sPrevComment.Find(sTag) < 0)) continue;
+			else {bReturn = false; break;}
+		}
+if (bDebug) AfxMessageBox(msg);
+		if (bReturn) return 0;
+	}
+	//
 	CFile fhis;
 	if (!fhis.Open(path + fnhis, CFile::modeRead | CFile::shareDenyWrite)) return 23014;
 	int icurrFrame = 0;
-	CString msg = "", line;
+	//CString msg = "", line;
 	//120427
 	CString** pfiles = new CString*[nfiles-1];
 	for (int j=0; j<nfiles-1; j++) {pfiles[j] = &(files[j]);}
 	qsort( (void *)pfiles, (size_t)nfiles-1, sizeof(CString*), CalcAvgFromHisCompare );
 	//120427
+	CString sComment = "skip ";
+	int iavg = 0;
 	for (int i=0; i<nfiles-1; i++) {
 		int ixprev = ixdim;
 		int iyprev = iydim;
 		//120427 int iframe = atoi((files[i]).SpanExcluding(".").Mid(1)) - 1;
 		int iframe = atoi((pfiles[i])->SpanExcluding(".").Mid(1)) - 1;
+		int iframetag = iframe;
+//		CString sTag; sTag.Format(fmt, iframe);
+//		if (m_sFramesToExclude.Find(sTag) >= 0) {sComment += sTag; continue;}
 		if (nset > 1) {
 			if (nDarkFrame > 0) {//141229 if dark frames were taken only in the first set.
 				if (files[nfiles -1].Left(4) == "dark") {
 					//141229 iframe is OK
 				} else {
 					iframe = ((iframe-nDarkFrame) % (iFramePerDataset-nDarkFrame)) + (iFramePerDataset-nDarkFrame) * iDatasetSel + nDarkFrame;
+					iframetag = ((iframetag-nDarkFrame) % (iFramePerDataset-nDarkFrame)) + nDarkFrame;
 				}
 			} else {//if dark frames were taken at every dataset.
 				iframe = (iframe % iFramePerDataset) + iFramePerDataset * iDatasetSel;//111108
+				iframetag = (iframetag % iFramePerDataset);
 			}
 		}
 		//iframe % iFramePerDataset is taken because the avg_img command points incident images at the end of the a.his.
@@ -2088,11 +2235,15 @@ TErr CGazoDoc::CalcAvgFromHis(CString path, CString fnhis, CString* files, int n
 		if (iLossFrameSet >= 0) {
 			if (iLossFrameSet == iDatasetSel) {
 				//141229 if (iframe % iFramePerDataset > iFramePerDataset / 2) {iframe--;}
-				if ((iframe-nDarkFrame) % (iFramePerDataset-nDarkFrame) > (iFramePerDataset-nDarkFrame) / 2) {iframe--;}
-			} else if (iLossFrameSet < iDatasetSel) {iframe--;}
+				if ((iframe-nDarkFrame) % (iFramePerDataset-nDarkFrame) > (iFramePerDataset-nDarkFrame) / 2) {iframe--; iframetag--;}
+			} else if (iLossFrameSet < iDatasetSel) {iframe--; iframetag--;}
 		}
 		//120715
 		if (iframe < 0) continue;
+		//161113
+		CString sTag; sTag.Format(fmt, iframetag);
+		if (m_sFramesToExclude.Find(sTag) >= 0) {sComment += sTag; continue;}
+
 		if (iframe > icurrFrame) {
 			if (err = SkipHISframe(&fhis, iframe - icurrFrame)) {
 				//141229 CString msg; msg.Format("%d", err); AfxMessageBox(msg);
@@ -2146,13 +2297,19 @@ TErr CGazoDoc::CalcAvgFromHis(CString path, CString fnhis, CString* files, int n
 		AfxMessageBox(msg);
 		if (pData) delete [] pData; return 23013;
 	}
-	//save
-	for (int j=0; j<maxData; j++) {pSum[j] /= iavg;}
-	const CString fn = path + files[nfiles-1];
-	if (fimg.Open(fn, CFile::modeCreate | CFile::modeReadWrite | CFile::shareDenyWrite)) {
-		err = WriteITEX(&fimg, pSum, iydim, ixdim, comment, 0, 0, 2);
-		if (err) AfxMessageBox("ERROR in averaging. File output:\r\n " + fn);
-		fimg.Close();
+	if (iavg) {
+		//save
+		for (int j=0; j<maxData; j++) {pSum[j] /= iavg;}
+		if (bDebug) {CString msg; msg.Format("iavg %d\r\n%s", iavg, sComment); AfxMessageBox(msg);}
+		const CString fn = path + files[nfiles-1];
+		if (fimg.Open(fn, CFile::modeCreate | CFile::modeReadWrite | CFile::shareDenyWrite)) {
+			err = WriteITEX(&fimg, pSum, iydim, ixdim, sComment, 0, 0, 2);
+			//AfxMessageBox("CalcAvg WriteITEX 161105\r\n" + sComment);
+			if (err) AfxMessageBox("ERROR in averaging. File output:\r\n " + fn);
+			fimg.Close();
+		}
+	} else {
+		err = 16111201;
 	}
 	if (pData) delete [] pData;
 	if (pSum) delete [] pSum;
@@ -2193,6 +2350,12 @@ TErr CGazoDoc::GenerateSinogram(RECONST_QUEUE* rq, int iLayer, double center, do
 	iCurrTrim = -1;
 	iCurrSinogr = -1;
 	CString fn = "", line;
+	m_sFramesToExclude = rq->sFramesToExclude;//161106
+//CString msg;
+//msg.Format("%d %d\r\n%d %d", dlgReconst.m_iDlgFL_SampleFrameStart, rq->iSampleFrameStart, dlgReconst.m_iDlgFL_SampleFrameEnd, rq->iSampleFrameEnd);
+//AfxMessageBox(msg);
+	dlgReconst.m_iDlgFL_SampleFrameStart = rq->iSampleFrameStart;
+	dlgReconst.m_iDlgFL_SampleFrameEnd = rq->iSampleFrameEnd;
 	//
 	//if (maxLenSinogr < isino * ixlen * iMultiplex) {
 	if ((maxSinogrLen < isino * iMultiplex)||(maxSinogrWidth < ixlen)) {
@@ -2262,13 +2425,13 @@ TErr CGazoDoc::GenerateSinogram(RECONST_QUEUE* rq, int iLayer, double center, do
 			AfxMessageBox("Image file not found: " + fn);
 			return 21012;
 		}
-		hdr5.SetFile(&fimg);
-		if (err = hdr5.ReadSuperBlock()) {fimg.Close(); return err;}
-		if (err = hdr5.FindChildSymbol("exchange", -1)) {fimg.Close(); return err; }
-		hdr5.MoveToChildTree();
-		if (err = hdr5.FindChildSymbol("data", -1)) {fimg.Close(); return err; }
-		if (hdr5.m_sChildTitle.Left(4) != "data") {fimg.Close(); return 16052701;}
-		if (err = hdr5.GetDataObjHeader()) {fimg.Close(); return err; }
+		hdf5.SetFile(&fimg);
+		if (err = hdf5.ReadSuperBlock()) {fimg.Close(); return err;}
+		if (err = hdf5.FindChildSymbol("exchange", -1)) {fimg.Close(); return err; }
+		hdf5.MoveToChildTree();
+		if (err = hdf5.FindChildSymbol("data", -1)) {fimg.Close(); return err; }
+		if (hdf5.m_sChildTitle.Left(4) != "data") {fimg.Close(); return 16052701;}
+		if (err = hdf5.GetDataObjHeader()) {fimg.Close(); return err; }
 		//
 		try {pibuf = new int[ixFrm * iMultiplex * iBinning];}
 		catch(CException* e) {
@@ -2277,8 +2440,8 @@ TErr CGazoDoc::GenerateSinogram(RECONST_QUEUE* rq, int iLayer, double center, do
 			fimg.Close();
 			return 16052702;
 		}
-//		const __int64 lImageHeight = pHDR5->m_plDataSize[1];
-//		const __int64 lImageWidth = pHDR5->m_plDataSize[2];
+//		const __int64 lImageHeight = pHDF5->m_plDataSize[1];
+//		const __int64 lImageWidth = pHDF5->m_plDataSize[2];
 //		CDlgMessage dlg;
 //		dlg.m_Msg = msg;
 //		dlg.DoModal();
@@ -2292,6 +2455,7 @@ TErr CGazoDoc::GenerateSinogram(RECONST_QUEUE* rq, int iLayer, double center, do
 	if (nset > 1) line.Format("Reading layer %d of dataset %d ", iLayer, iDatasetSel);
 	else line.Format("Reading layer %d of ", iLayer);
 //CString msg = "";
+	for (int i=0; i<isino-1; i++) {bInc[i] &= ~(CGAZODOC_BINC_NOUSE | CGAZODOC_BINC_SKIP);}
 	for (int i=0; i<isino; i++) {
 		::ProcessMessage();
 		if ((i % iProgStep == 0)&&(dlgReconst.m_hWnd)) dlgReconst.m_Progress.StepIt();
@@ -2413,57 +2577,73 @@ TErr CGazoDoc::GenerateSinogram(RECONST_QUEUE* rq, int iLayer, double center, do
 			if ((i >= isino-2)||(i == 0)) {//dark or white
 				const CString sSymbol = (i == isino-1) ? "data_dark" : "data_white";
 //AfxMessageBox(sSymbol);
-				if (err = hdr5.FindChildSymbol(sSymbol, -1)) {if (pibuf) delete [] pibuf; fimg.Close(); return err;}
-				if (err = hdr5.GetDataObjHeader()) {if (pibuf) delete [] pibuf; fimg.Close(); return err;}
+				if (err = hdf5.FindChildSymbol(sSymbol, -1)) {if (pibuf) delete [] pibuf; fimg.Close(); return err;}
+				if (err = hdf5.GetDataObjHeader()) {if (pibuf) delete [] pibuf; fimg.Close(); return err;}
 				memset(pibuf, 0, sizeof(int) * ixFrm * iMultiplex * iBinning);
 				int kstart, kend;
+				const int idigit = (int)log10((double)isino) + 1;
+				CString fmts;
 				if (i == 0) {//pre white
-					if (rq->dReconFlags & RQFLAGS_SKIPINITIALFLATSINHDF5) {
-						kstart = (int)(hdr5.m_plDataSize[0] / 2);
-						kend = (int)(hdr5.m_plDataSize[0]);
-//CString msg; msg.Format("%d %d %lld", kstart, kend, hdr5.m_plDataSize[0]); AfxMessageBox(msg);
-					} else {
+					fmts.Format(" w%%0%dd", idigit);
+//					if (rq->dReconFlags & RQFLAGS_SKIPINITIALFLATSINHDF5) {
+//						kstart = (int)(hdf5.m_plDataSize[0] / 2);
+//						kend = (int)(hdf5.m_plDataSize[0]);
+//					} else {
 						kstart = 0;
-						kend = (int)(hdr5.m_plDataSize[0] / 2);
-					}
+						kend = (int)(hdf5.m_plDataSize[0] / 2);
+//					}
 				} else if (i == isino-2) {//post white
-					kstart = (int)(hdr5.m_plDataSize[0] / 2);
-					kend = (int)(hdr5.m_plDataSize[0]);
+					fmts.Format(" w%%0%dd", idigit);
+					kstart = (int)(hdf5.m_plDataSize[0] / 2);
+					kend = (int)(hdf5.m_plDataSize[0]);
 				} else {//dark
-					kstart = 1;//not to use the first dark image because it's a sample image when flyscan
-					kend = (int)(hdr5.m_plDataSize[0]);
+					fmts.Format(" b%%0%dd", idigit);
+					//161106 kstart = 1;//not to use the first dark image because it's a sample image when flyscan
+					kstart = 0;//now this can be done with sFramesToExclude
+					kend = (int)(hdf5.m_plDataSize[0]);
 				}
-				//const int kstart = i ? (int)(hdr5.m_plDataSize[0] / 2) : 0;//post:pre white images
-				//const int kend = i ? (int)(hdr5.m_plDataSize[0]) : (int)(hdr5.m_plDataSize[0] / 2);//post:pre white images
+				//const int kstart = i ? (int)(hdf5.m_plDataSize[0] / 2) : 0;//post:pre white images
+				//const int kend = i ? (int)(hdf5.m_plDataSize[0]) : (int)(hdf5.m_plDataSize[0] / 2);//post:pre white images
+CString msg = "161106GenSino\r\n";
+if (bDebug) msg += sSymbol + "\r\n";
 				int kcount = 0;
 				for (int k=kstart; k<kend; k++) {
-					if (err = hdr5.ReadStrip(sbuf, k, iLayer, iMultiplex * iBinning)) {
-//CString msg; msg.Format("BW: %d %d %d %lld", kstart, kend, k, hdr5.m_plDataSize[0]); AfxMessageBox(msg);
-						AfxMessageBox("Error in HDR5 image format");
+					CString sTag; sTag.Format(fmts, k);
+					if (m_sFramesToExclude.Find(sTag) >= 0) {msg += sTag + "\r\n" ; continue;}
+					if (err = hdf5.ReadStrip(sbuf, k, iLayer, iMultiplex * iBinning)) {
+						AfxMessageBox("Error in HDF5 image format");
 						fimg.Close();
 						if (pibuf) delete [] pibuf;
 						return err;
 					}
+if (bDebug) {CString line; line.Format("k=%d sbuf[5]=%d\r\n", k, (int)(sbuf[5])); msg += line;}
 					for (int j=0; j<ixFrm * iMultiplex * iBinning; j++) {pibuf[j] += sbuf[j];}
 					kcount++;
 				}
-				for (int j=0; j<ixFrm * iMultiplex * iBinning; j++) {sbuf[j] = (short)(pibuf[j] / kcount);}
-				if (i == 0) {
-					if (err = hdr5.FindChildSymbol("data", -1)) {if (pibuf) delete [] pibuf; fimg.Close(); return err;}
-					if (err = hdr5.GetDataObjHeader()) {if (pibuf) delete [] pibuf; fimg.Close(); return err;}
+				if (kcount) {
+					for (int j=0; j<ixFrm * iMultiplex * iBinning; j++) {sbuf[j] = (short)(pibuf[j] / kcount);}
+				} else {
+					if ((i == 0)||(i == isino-2)) bInc[i] |= CGAZODOC_BINC_NOUSE;//white
+					for (int j=0; j<ixFrm * iMultiplex * iBinning; j++) {sbuf[j] = 0;}
 				}
+				if (i == 0) {
+					if (err = hdf5.FindChildSymbol("data", -1)) {if (pibuf) delete [] pibuf; fimg.Close(); return err;}
+					if (err = hdf5.GetDataObjHeader()) {if (pibuf) delete [] pibuf; fimg.Close(); return err;}
+				}
+if (bDebug) AfxMessageBox(msg + fmts);
 			} else {//data
-				//160718///////////////////////////////////////////////
-				int idata = i;
-				if (idata == isino-3) idata--;//not to use last two images, but copy from its precedent one. 
+//161112				int idata = i;
+//161106		if (idata == isino-3) idata--;//not to use last two images, but copy from its precedent one. 
+//The above can be done with the frame selection dialog if needed
 				//The last image is ignored by LoadLogfile (line1599).
 				//Its precedent (isino-3) is replaced with these codes.
 				//isino-1 = dark; isino-2 = white; isino-3 = sample image; 
 				//////////////////////////////////////////////////
-				if (err = hdr5.ReadStrip(sbuf, idata + iHDF5DummyFrame -1, iLayer, iMultiplex * iBinning)) {
+//161106		if (err = hdf5.ReadStrip(sbuf, idata + iHDF5DummyFrame -1, iLayer, iMultiplex * iBinning)) {
+				if (err = hdf5.ReadStrip(sbuf, i - 1, iLayer, iMultiplex * iBinning)) {
 					//-1 is to include the pre white image
-//CString msg; msg.Format("Sample: %d %d %d %lld", i, idata + iHDF5DummyFrame-1, iLayer, hdr5.m_plDataSize[0]); AfxMessageBox(msg);
-					AfxMessageBox("Error in HDR5 image format");
+//CString msg; msg.Format("Sample: %d %d %d %lld", i, idata + iHDF5DummyFrame-1, iLayer, hdf5.m_plDataSize[0]); AfxMessageBox(msg);
+					AfxMessageBox("Error in HDF5 image format");
 					fimg.Close();
 					if (pibuf) delete [] pibuf;
 					return err;
@@ -2481,8 +2661,7 @@ TErr CGazoDoc::GenerateSinogram(RECONST_QUEUE* rq, int iLayer, double center, do
 		//}
 		if (iBinning == 1) {
 			for (int j=0; j<iMultiplex; j++) {
-				memcpy_s(iSinogr[i * iMultiplex + j], isize, 
-												&(sbuf[j * ixFrm + iTrimShift]), isize);
+				memcpy_s(iSinogr[i * iMultiplex + j], isize, &(sbuf[j * ixFrm + iTrimShift]), isize);
 			}
 		} else {
 			const int iBin2 = iBinning * iBinning;
@@ -2526,6 +2705,107 @@ TErr CGazoDoc::GenerateSinogram(RECONST_QUEUE* rq, int iLayer, double center, do
 		}
 	}
 	//===>120501
+	//161105===>
+	//for (int i=0; i<isino-1; i++) {bInc[i] &= ~(CGAZODOC_BINC_NOUSE | CGAZODOC_BINC_SKIP);}
+	if (! (rq->sFramesToExclude.IsEmpty()) ) {
+		CString sList = rq->sFramesToExclude;
+		sList.TrimLeft();
+		int iPos = 0;
+		CString msg = "sFramesToExclude 161105\r\n";
+		do {
+			CString sframe = sList.Tokenize(_T(" "), iPos);
+			if (sframe.IsEmpty()) break;
+			if (sframe.GetAt(0) == 'h') {
+				if (bDebug) msg += sframe + "\r\n";
+				//TODO: if all white frames before or after the sample were skipped, NOUSE flag must be set.
+			} else if (sframe.GetAt(0) == 'b') {
+				if (bDebug) msg += sframe + "\r\n";
+				//HDF5
+			} else if (sframe.GetAt(0) == 'w') {
+				if (bDebug) msg += sframe + "\r\n";
+				//HDF5
+			} else if (sframe.GetAt(0) == 's') {
+				sframe = sframe.Mid(1);
+				int idx = atoi(sframe);
+				if (rq->itexFileSuffix.MakeUpper() == ".H5") {
+					idx++;//list is numbered from zero and bInc[0] is a white frame
+					idx -= dlgReconst.m_iDlgFL_SampleFrameStart;
+				}
+				if ((idx < 0)||(idx >= isino-1)) continue;
+				if (!(bInc[idx] & CGAZODOC_BINC_SAMPLE)) continue;//tokens starting with 's' are used only for sample frames 
+				bInc[idx] |= (CGAZODOC_BINC_NOUSE | CGAZODOC_BINC_SKIP);
+				if (bDebug) {CString line; line.Format("(%d %f)\r\n", idx, fdeg[idx]); msg += line;}
+			} else {
+				int idx = atoi(sframe);
+				if (rq->itexFileSuffix.MakeUpper() == ".H5") {
+					idx++;//list is numbered from zero and bInc[0] is a white frame
+					idx -= dlgReconst.m_iDlgFL_SampleFrameStart;
+				}
+				if ((idx < 0)||(idx >= isino-1)) continue;
+				int ismp0 = -1, ismp1 = -1;
+				if (!(bInc[idx] & CGAZODOC_BINC_SAMPLE)) bInc[idx] |= CGAZODOC_BINC_NOUSE;
+				else {
+					for (int i=idx-1; i>=0; i--) {
+						if (i < 0) break;
+						if ((bInc[i] & CGAZODOC_BINC_SAMPLE)&&(!(bInc[i] & CGAZODOC_BINC_NOUSE))) {
+							int iPos2 = 0;
+							bool bHit = true;
+							do {//search that frame in the exclusion list
+								CString sframe2 = sList.Tokenize(_T(" "), iPos2);
+								if (sframe2.IsEmpty()) break;
+								const char clabel = sframe2.GetAt(0);
+								if ((clabel == 'h')||(clabel == 'b')||(clabel == 'w')) continue;
+								if (clabel == 's') sframe2 = sframe2.Mid(1);
+								int idx2 = atoi(sframe2);
+								if (rq->itexFileSuffix.MakeUpper() == ".H5") {
+									idx2++;//list is numbered from zero and bInc[0] is a white frame
+									idx2 -= dlgReconst.m_iDlgFL_SampleFrameStart;
+								}
+								if (idx2 == i) {bHit = false; break;}
+							} while (true);
+							if (bHit) {ismp0 = i; break;}
+						}
+					}
+					for (int i=idx+1; i<isino-1; i++) {
+						if (i >= isino-1) break;
+						if ((bInc[i] & CGAZODOC_BINC_SAMPLE)&&(!(bInc[i] & CGAZODOC_BINC_NOUSE))) {
+							int iPos2 = 0;
+							bool bHit = true;
+							do {//search that frame in the exclusion list
+								CString sframe2 = sList.Tokenize(_T(" "), iPos2);
+								if (sframe2.IsEmpty()) break;
+								const char clabel = sframe2.GetAt(0);
+								if ((clabel == 'h')||(clabel == 'b')||(clabel == 'w')) continue;
+								if (clabel == 's') sframe2 = sframe2.Mid(1);
+								int idx2 = atoi(sframe2);
+								if (rq->itexFileSuffix.MakeUpper() == ".H5") {
+									idx2++;//list is numbered from zero and bInc[0] is a white frame
+									idx2 -= dlgReconst.m_iDlgFL_SampleFrameStart;
+								}
+//								CString line; line.Format(" ismp1 sframe2=%s idx2=%d i=%d\r\n", sframe2, idx2, i); msg += line;
+								if (idx2 == i) {bHit = false; break;}
+							} while (true);
+							if (bHit) {ismp1 = i; break;}
+						}
+					}
+					if ((ismp0 >= 0)||(ismp1 >= 0)) {
+						for (int j=0; j<iMultiplex; j++) {
+							for (int k=0; k<ixlen; k++) {
+								int isum = 0, nsum = 0;
+								if (ismp0 >= 0) {isum += (iSinogr[ismp0 * iMultiplex + j])[k]; nsum++;}
+								if (ismp1 >= 0) {isum += (iSinogr[ismp1 * iMultiplex + j])[k]; nsum++;}
+								(iSinogr[idx * iMultiplex + j])[k] = (short)(isum / nsum);
+							}
+						}
+					} else {
+						bInc[idx] |= (CGAZODOC_BINC_NOUSE | CGAZODOC_BINC_SKIP);
+					}
+				}
+				if (bDebug) {CString line; line.Format("%s\r\n(%d %f) %d %d\r\n", sList, idx, fdeg[idx], ismp0, ismp1); msg += line;}
+			}
+		} while (true);
+		if (bDebug) AfxMessageBox(msg);
+	}//===>161105
 	//090806===>
 	//struct _timeb tstruct; double tm0;
 	//_ftime_s( &tstruct );
@@ -2784,7 +3064,7 @@ void CGazoDoc::OnHlpDebug()
 	if (!pos) return;
 	CGazoView* pv = (CGazoView*) GetNextView( pos );
 	CMainFrame* pf = (CMainFrame*) AfxGetMainWnd();
-	if (bDebug) bDebug = false; else bDebug = true;
+	if (bDebug) bDebug = false; else bDebug = true; return;
 
 	float f1 = 10.3f, f2 = 10.6f;
 	int i1 = (int)f1, i2 = (int)f2;
@@ -3158,7 +3438,7 @@ TErr CGazoDoc::GetAxis(int iTargetSlice, double* pCenter, double* pGrad,
 //	int idxIncident1 = -1;
 //	minDiff = (float)iLenSinogr;
 //	for (int i=iLenSinogr-2; i>=0; i--) {
-//		if (bInc[i]) continue;
+//		if (bInc[i] & CGAZODOC_BINC_SAMPLE) continue;
 //		diff = (float)abs(i - idxSample1);
 //		if (diff < minDiff) {idxIncident1 = i; minDiff = diff;}
 //	}
@@ -3406,7 +3686,7 @@ TErr CGazoDoc::GetAxis(int iTargetSlice, double* pCenter, double* pGrad,
 		const CString fn = GetPathName();//"*.h5";
 		CFile file;
 		if (!file.Open(fn, CFile::modeRead | CFile::shareDenyWrite)) return 28001;
-		hdr5.SetFile(&file);
+		hdf5.SetFile(&file);
 		for (int i=0; i<5; i++) {
 			::ProcessMessage();
 			switch (i) {
@@ -3414,20 +3694,20 @@ TErr CGazoDoc::GetAxis(int iTargetSlice, double* pCenter, double* pGrad,
 					//dark not used
 					break;}
 				case 1: {
-					err = ReadHDR5Frame(&file, &iSample0, &maxSample0, &iySample0, &ixSample0, &hdr5, 
+					err = ReadHDF5Frame(&file, &iSample0, &maxSample0, &iySample0, &ixSample0, &hdf5, 
 										idxSample0, -1);
 					break;}
 				case 2: {
-					err = ReadHDR5Frame(&file, &iSample1, &maxSample1, &iySample1, &ixSample1, &hdr5, 
+					err = ReadHDF5Frame(&file, &iSample1, &maxSample1, &iySample1, &ixSample1, &hdf5, 
 										idxSample1, -1);
 					break;}
 				case 3: {//incident0
-					if (err = hdr5.ReadSuperBlock()) break;
-					if (err = hdr5.FindChildSymbol("exchange", -1)) break;
-					hdr5.MoveToChildTree();
-					if (err = hdr5.FindChildSymbol("data_white", -1)) break;
-					const int ientry = hdr5.m_iChildEntry;
-					err = ReadHDR5Frame(&file, &iIncident0, &maxIncident0, &iyIncident0, &ixIncident0, &hdr5, 
+					if (err = hdf5.ReadSuperBlock()) break;
+					if (err = hdf5.FindChildSymbol("exchange", -1)) break;
+					hdf5.MoveToChildTree();
+					if (err = hdf5.FindChildSymbol("data_white", -1)) break;
+					const int ientry = hdf5.m_iChildEntry;
+					err = ReadHDF5Frame(&file, &iIncident0, &maxIncident0, &iyIncident0, &ixIncident0, &hdf5, 
 										0, ientry);
 					break;}
 				case 4: {
@@ -4001,7 +4281,7 @@ TErr CGazoDoc::ProceedImage(int nproc) {
 		file.Close();
 	} else if (sExt == ".H5") {
 		CString docTitle = this->GetTitle();
-		int iframe = 0;//ientry = hdr5.m_iChildEntry;
+		int iframe = 0;//ientry = hdf5.m_iChildEntry;
 		CString sSymbol = "data";
 		if (docTitle.GetAt(0) == '[') {
 			const CString sFrame = docTitle.Mid(1).SpanIncluding("0123456789");
@@ -4011,47 +4291,47 @@ TErr CGazoDoc::ProceedImage(int nproc) {
 //CString msg; msg.Format("%d %s", iframe, sSymbol); AfxMessageBox(msg);
 		CFile file;
 		if (!file.Open(fpath, CFile::modeRead | CFile::shareDenyWrite)) return 28001;
-		hdr5.SetFile(&file);
+		hdf5.SetFile(&file);
 		TErr err = 0;
-		if (err = hdr5.ReadSuperBlock()) return err;
-		if (err = hdr5.FindChildSymbol("exchange", -1)) return err;
-		hdr5.MoveToChildTree();
-		if (err = hdr5.FindChildSymbol(sSymbol, -1)) return err;
-		int ientry = hdr5.m_iChildEntry;
-		if (err = hdr5.GetDataObjHeader()) return err;
+		if (err = hdf5.ReadSuperBlock()) return err;
+		if (err = hdf5.FindChildSymbol("exchange", -1)) return err;
+		hdf5.MoveToChildTree();
+		if (err = hdf5.FindChildSymbol(sSymbol, -1)) return err;
+		int ientry = hdf5.m_iChildEntry;
+		if (err = hdf5.GetDataObjHeader()) return err;
 		if (iframe + nproc < 0) {
 			iframe += nproc;
 			while (true) {
 				ientry--;
 				if (ientry < 0) break;
-				if (hdr5.FindChildSymbol("null", ientry)) break;
-				if (hdr5.m_sChildTitle.Left(4) != "data") continue;
-				if (hdr5.GetDataObjHeader()) break;
-				iframe += (int)hdr5.m_plDataSize[0];
+				if (hdf5.FindChildSymbol("null", ientry)) break;
+				if (hdf5.m_sChildTitle.Left(4) != "data") continue;
+				if (hdf5.GetDataObjHeader()) break;
+				iframe += (int)hdf5.m_plDataSize[0];
 				if (iframe >= 0) break;
 			}
 			if (iframe < 0) {file.Close(); return 28001;}
-		} else if (iframe + nproc < hdr5.m_plDataSize[0]) {
+		} else if (iframe + nproc < hdf5.m_plDataSize[0]) {
 			iframe += nproc;
 		} else {
-			iframe = iframe + nproc - (int)hdr5.m_plDataSize[0];
+			iframe = iframe + nproc - (int)hdf5.m_plDataSize[0];
 			const int ientryOrg = ientry;
 			bool bFound = false;
 			while (true) {
 				ientry++;
-				if (hdr5.FindChildSymbol("null", ientry)) break;
-				if (hdr5.m_sChildTitle.Left(4) != "data") continue;
-				if (hdr5.GetDataObjHeader()) break;
-				if (iframe < hdr5.m_plDataSize[0]) {bFound = true; break;}
-				else {iframe -= (int)hdr5.m_plDataSize[0];}
+				if (hdf5.FindChildSymbol("null", ientry)) break;
+				if (hdf5.m_sChildTitle.Left(4) != "data") continue;
+				if (hdf5.GetDataObjHeader()) break;
+				if (iframe < hdf5.m_plDataSize[0]) {bFound = true; break;}
+				else {iframe -= (int)hdf5.m_plDataSize[0];}
 			}
-			if (!bFound) {hdr5.m_iChildEntry = ientryOrg; file.Close(); return 28001;}
+			if (!bFound) {hdf5.m_iChildEntry = ientryOrg; file.Close(); return 28001;}
 		}
-		if (err = ReadHDR5Frame(&file, &pPixel, &maxPixel, &iydim, &ixdim, &hdr5, iframe, ientry)) return err;
+		if (err = ReadHDF5Frame(&file, &pPixel, &maxPixel, &iydim, &ixdim, &hdf5, iframe, ientry)) return err;
 		InitContrast();
 		UpdateView();
 		CString title;
-		title.Format("[%d(%s)] %s", iframe, hdr5.m_sChildTitle, fpath);
+		title.Format("[%d(%s)] %s", iframe, hdf5.m_sChildTitle, fpath);
 		this->SetTitle(title);
 		file.Close();
 	} else {
@@ -4360,7 +4640,7 @@ void CGazoDoc::ShowRefracCorr(REFRAC_QUEUE* refq) {
 	for (int i=0; i<iLenSinogr; i++) {
 		if (atoi(fname[i]) == iframe) {iSample = i; break;}
 	}
-	if ((iSample < 0)||(bInc[iSample] == 0)) {
+	if ((iSample < 0)||((bInc[iSample] & CGAZODOC_BINC_SAMPLE) == 0)) {
 		if (iDark) delete [] iDark;
 		return;
 	}
@@ -4368,10 +4648,10 @@ void CGazoDoc::ShowRefracCorr(REFRAC_QUEUE* refq) {
 	if ((iSample <= iInc0pos)||(iSample >= iInc1pos)) {
 		//find incident
 		for (int i=iSample; i<iLenSinogr; i++) {
-			if (bInc[i] == 0) {iInc1pos = i; break;}
+			if ((bInc[i] & CGAZODOC_BINC_SAMPLE) == 0) {iInc1pos = i; break;}
 		}
 		for (int i=iSample; i>=0; i--) {
-			if (bInc[i] == 0) {iInc0pos = i; break;}
+			if ((bInc[i] & CGAZODOC_BINC_SAMPLE) == 0) {iInc0pos = i; break;}
 		}
 		bool bIncErr = false;
 		if (iInc0pos < 0) {

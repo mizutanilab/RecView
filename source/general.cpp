@@ -18,7 +18,7 @@
 #include "cudaReconst.h"
 #include "DlgQueue.h"
 #include "clReconst.h"
-#include "chdr5.h" //160521 HDR5
+#include "chdf5.h" //160521 HDF5
 
 typedef BOOL (WINAPI *LPFN_GLPI)(PSYSTEM_LOGICAL_PROCESSOR_INFORMATION, PDWORD); //GetProcAddress
 
@@ -1500,6 +1500,9 @@ TErr ReadITEX(CFile* fp, int** buffer, int* pMaxBuffer, int* iHeight, int* iWidt
 	if (pComment) *pComment = comment;
 	//CString line1 = comment; AfxMessageBox(line1);
 	if (comment) delete [] comment;
+
+	if (!pMaxBuffer) return 0;//161106 read comment only and return
+
 	//Data
 	const int nData = iImageWidth * iImageHeight;
 	if (*pMaxBuffer < nData) {
@@ -1558,6 +1561,7 @@ TErr WriteITEX(CFile* fp, int* buffer, int iHeight, int iWidth, CString comment,
 		strcpy_s(carg, 81, comment);
 		cComment = carg;
 	}
+	iCommentLength++;//161105
 	//int iImageWidth, iImageHeight, iXoffset, iYoffset, iFileType;
 	fp->Write(&iCommentLength, sizeof(short));
 	fp->Write(&iWidth, sizeof(short));
@@ -1629,20 +1633,20 @@ TErr ReadITEXstrip(FILE* fp, short* buffer, int iLine, int iWidth, int iMultiple
 }
 
 //160521
-TErr ReadHDR5Frame(CFile* fp, int** buffer, int* pMaxBuffer, int* iHeight, int* iWidth, CHDR5* pHDR5, 
+TErr ReadHDF5Frame(CFile* fp, int** buffer, int* pMaxBuffer, int* iHeight, int* iWidth, CHDF5* pHDF5, 
 			  unsigned int uiFrame, int iDataEntry, CString* pComment) {
 	TErr err = 0;
 	//
-	pHDR5->SetFile(fp);
-	if (err = pHDR5->ReadSuperBlock(pComment)) return err;
-	if (err = pHDR5->FindChildSymbol("exchange", -1, pComment)) return err;
-	pHDR5->MoveToChildTree();
+	pHDF5->SetFile(fp);
+	if (err = pHDF5->ReadSuperBlock(pComment)) return err;
+	if (err = pHDF5->FindChildSymbol("exchange", -1, pComment)) return err;
+	pHDF5->MoveToChildTree();
 	//when iDataEntry >= 0, goto iDataEntry; if not, search for "data".
-	if (err = pHDR5->FindChildSymbol("data", iDataEntry, pComment)) return err;
-	if (pHDR5->m_sChildTitle.Left(4) != "data") return 16052221;
-	if (err = pHDR5->GetDataObjHeader(pComment)) return err;
-	const __int64 lImageHeight = pHDR5->m_plDataSize[1];
-	const __int64 lImageWidth = pHDR5->m_plDataSize[2];
+	if (err = pHDF5->FindChildSymbol("data", iDataEntry, pComment)) return err;
+	if (pHDF5->m_sChildTitle.Left(4) != "data") return 16052221;
+	if (err = pHDF5->GetDataObjHeader(pComment)) return err;
+	const __int64 lImageHeight = pHDF5->m_plDataSize[1];
+	const __int64 lImageWidth = pHDF5->m_plDataSize[2];
 	//Data
 	const int nData = (int)(lImageWidth * lImageHeight);
 	if (*pMaxBuffer < nData) {
@@ -1655,24 +1659,24 @@ TErr ReadHDR5Frame(CFile* fp, int** buffer, int* pMaxBuffer, int* iHeight, int* 
 		*pMaxBuffer = nData;
 		for (int i=0; i<*pMaxBuffer; i++) {(*buffer)[i] = 0;}
 	}
-	if (err = pHDR5->ReadFrame(uiFrame, *buffer, pComment)) return err;
+	if (err = pHDF5->ReadFrame(uiFrame, *buffer, pComment)) return err;
 	*iHeight = (int)lImageHeight; *iWidth = (int)lImageWidth;
 	return 0;
 }
 
-TErr ReadHDR5Theta(CFile* fp, CHDR5* pHDR5, float* pfDeg, DWORD* pdwFrame, CString* pComment) {
+TErr ReadHDF5Theta(CFile* fp, CHDF5* pHDF5, float* pfDeg, DWORD* pdwFrame, CString* pComment) {
 	TErr err = 0;
 	//
-	pHDR5->SetFile(fp);
-	if (err = pHDR5->ReadSuperBlock(pComment)) return err;
-	if (err = pHDR5->FindChildSymbol("exchange", -1, pComment)) return err;
-	pHDR5->MoveToChildTree();
-	if (err = pHDR5->FindChildSymbol("theta", -1, pComment)) return err;
-	if (pHDR5->m_sChildTitle != "theta") return 16052611;
-	if (err = pHDR5->GetDataObjHeader(pComment)) return err;
-	if (pHDR5->m_ucDataDim != 1) return 16052612;
+	pHDF5->SetFile(fp);
+	if (err = pHDF5->ReadSuperBlock(pComment)) return err;
+	if (err = pHDF5->FindChildSymbol("exchange", -1, pComment)) return err;
+	pHDF5->MoveToChildTree();
+	if (err = pHDF5->FindChildSymbol("theta", -1, pComment)) return err;
+	if (pHDF5->m_sChildTitle != "theta") return 16052611;
+	if (err = pHDF5->GetDataObjHeader(pComment)) return err;
+	if (pHDF5->m_ucDataDim != 1) return 16052612;
 	if (pdwFrame) {
-		if (*pdwFrame <= 0) {*pdwFrame = (DWORD)(pHDR5->m_plDataSize[0]); return 0;}
+		if (*pdwFrame <= 0) {*pdwFrame = (DWORD)(pHDF5->m_plDataSize[0]); return 0;}
 	}
 	return err;
 }
@@ -2209,6 +2213,11 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 				if (DBProjDlgCtrl(ri, iProgStep, i, &iCurrStep)) break;
 			}
 			if (!(ri->bInc[i] & CGAZODOC_BINC_SAMPLE)) continue;
+//if (ri->fdeg[i] - ri->fdeg[0] > 180.0) {///////////////////////////////161103
+//	CString line;
+//	line.Format("%d %d %d %f", ri->iLenSinogr, i, (ri->bInc[i]) & CGAZODOC_BINC_SAMPLE, ri->fdeg[i]); AfxMessageBox(line);
+//	continue;
+//}
 			//100315 const int sidx = ixdim * (i * ri->iMultiplex + ri->iOffset);
 			//if (sidx >= ri->maxLenSinogr) break;
 			//short* iStrip = &(ri->iSinogr[sidx]);
@@ -2350,16 +2359,21 @@ unsigned __stdcall GenerateSinogramThread(void* pArg) {
 		//short* iDark = iSinogr[iMultiplex * (isino - 1)];
 		//short* iIncident0 = NULL;
 		//short* iIncident1 = NULL;
-		float t0;
+//161112		float t0;
 		//121127 short* iIncidentx = new short[ixlen];
-		int* iIncidentx = new int[ixlen];
-		if (iIncidentx == NULL) {ri->iStatus = RECONST_INFO_ERROR; return 0;}
+//161112		int* iIncidentx = new int[ixlen];
+//161112		if (iIncidentx == NULL) {ri->iStatus = RECONST_INFO_ERROR; return 0;}
+		double* dIncidentx = NULL;
+		try {dIncidentx = new double[ixlen];}
+		catch (CException* e) {e->Delete(); ri->iStatus = RECONST_INFO_ERROR; return 0;}
 		int i0 = -1, i1 = -1;
 		//121019
 		for (int i=0; i<isino-1; i++) {
+			if (bInc[i] & CGAZODOC_BINC_NOUSE) continue;//161105
 			if (!(bInc[i] & CGAZODOC_BINC_SAMPLE)) {i0 = i; break;}
 		}
 		for (int i=0; i<isino-1; i++) {
+			if ((bInc[i] & CGAZODOC_BINC_NOUSE)&&(!(bInc[i] & CGAZODOC_BINC_SAMPLE))) continue;//161105
 			if (!(bInc[i] & CGAZODOC_BINC_SAMPLE)) {i0 = i; i1 = -1; continue;}
 			if (i1 < 0) {
 				for (int j=i; j<isino-1; j++) {
@@ -2376,7 +2390,7 @@ unsigned __stdcall GenerateSinogramThread(void* pArg) {
 			//100315 const int i0 = (int)(iIncident0 - iSinogr) / ixlen / iMultiplex;
 			//const int i1 = (int)(iIncident1 - iSinogr) / ixlen / iMultiplex;
 			if (i % ri->iStepSino != ri->iStartSino) continue;
-			t0 = fexp[i0];
+			float t0 = fexp[i0];
 			const float t1 = fexp[i1];
 			const float ti = fexp[i];
 			if (t0 == t1) t0 = 0;
@@ -2395,6 +2409,14 @@ unsigned __stdcall GenerateSinogramThread(void* pArg) {
 				if (i >= ri->drEnd) idrift = (int)(ri->drX * cth - ri->drY * sth);
 				else if (i > ri->drStart) idrift = (int)((ri->drX * cth - ri->drY * sth) * (i - ri->drStart) / (ri->drEnd - ri->drStart));
 			}
+			//161105 CGAZODOC_BINC_SKIP
+			if (bInc[i] & CGAZODOC_BINC_SKIP) {
+				for (int k=0; k<iMultiplex; k++) {
+					short* iStrip = iSinogr[iMultiplex * i + k];
+					for (int j=0; j<ixlen; j++) {iStrip[j] = 0;}
+				}
+				continue;
+			}
 			//120501 drift collection
 			if ((ri->dReconFlags & RQFLAGS_DRIFTLIST)&&(ri->piDrift)) idrift -= (ri->piDrift)[i];
 			//
@@ -2406,30 +2428,35 @@ unsigned __stdcall GenerateSinogramThread(void* pArg) {
 				unsigned short* iIncident0 = (unsigned short*)(iSinogr[iMultiplex * i0 + k]);
 				unsigned short* iIncident1 = (unsigned short*)(iSinogr[iMultiplex * i1 + k]);
 				for (int j=0; j<ixlen; j++) {
-					iIncidentx[j] = iIncident0[j] + (short)((iIncident1[j] - iIncident0[j] + 0.5) * t0) - iDark[j];
+//161112					iIncidentx[j] = iIncident0[j] + (short)((iIncident1[j] - iIncident0[j] + 0.5) * t0) - iDark[j];
+					dIncidentx[j] = iIncident0[j] + ((int)iIncident1[j] - (int)iIncident0[j]) * t0 - iDark[j];
 				}
 				short* iStrip = iSinogr[iMultiplex * i + k];
 				unsigned short* iuStrip = (unsigned short*)(iSinogr[iMultiplex * i + k]);//121127
 				if (ri->dReconFlags & RQFLAGS_ZERNIKE) {//110920
 					for (int j=0; j<ixlen; j++) {
-						if (iIncidentx[j] <= 0) {iStrip[j] = 0; continue;}
-						int iSample = iuStrip[j] - iDark[j];
+						if (dIncidentx[j] <= 0) {iStrip[j] = 0; continue;}
+						int iSample = (int)iuStrip[j] - iDark[j];
+//161112						int iSample = iuStrip[j] - iDark[j];
 						if (iSample < iSINOGRAM_PIXEL_MIN) {
 							iStrip[j] = 0; 
 							continue;
 						}
-						iStrip[j] = (short)(iIncidentx[j] * ZERNIKE_SCALE / iSample);//ZERNIKE_SCALE=1000 assumes min transmittance of 0.03.
+//161112						iStrip[j] = (short)(iIncidentx[j] * ZERNIKE_SCALE / iSample);//ZERNIKE_SCALE=1000 assumes min transmittance of 0.03.
+						iStrip[j] = (short)(dIncidentx[j] * ZERNIKE_SCALE / iSample + 0.5);//ZERNIKE_SCALE=1000 assumes min transmittance of 0.03.
 					}
 				} else {
 					for (int j=0; j<ixlen; j++) {
-						if (iIncidentx[j] <= 0) {iStrip[j] = 0; continue;}
-						int iSample = iuStrip[j] - iDark[j];
+						if (dIncidentx[j] <= 0) {iStrip[j] = 0; continue;}
+						int iSample = (int)iuStrip[j] - iDark[j];
+//161112						int iSample = iuStrip[j] - iDark[j];
 						if (iSample < iSINOGRAM_PIXEL_MIN) {
 							//CString msg; msg.Format("121030 %d %d %d %d", j, iSample, iStrip[j], iDark[j]); AfxMessageBox(msg); 
 							iStrip[j] = 0; 
 							continue;
 						}
-						iStrip[j] = (short)(log((double)iIncidentx[j] / (double)iSample) * LOG_SCALE + 0.5);
+//161112						iStrip[j] = (short)(log((double)iIncidentx[j] / (double)iSample) * LOG_SCALE + 0.5);
+						iStrip[j] = (short)(log(dIncidentx[j] / iSample) * LOG_SCALE + 0.5);
 					}
 				}
 				if (idrift > 0) {
@@ -2447,7 +2474,7 @@ unsigned __stdcall GenerateSinogramThread(void* pArg) {
 				}
 			}//k
 		}
-		delete [] iIncidentx;
+		delete [] dIncidentx;
 	}
 	//Commented out because of the reason above.
 	//090902===>

@@ -59,6 +59,9 @@ struct RECONST_QUEUE {
 	int iLossFrameSet;
 	CString sDriftListPath;
 	bool bReconOptionUpdated;
+	CString sFramesToExclude;
+	int iSampleFrameStart;
+	int iSampleFrameEnd;
 };
 
 struct FORMAT_QUEUE {

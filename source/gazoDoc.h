@@ -17,7 +17,7 @@
 #include "DlgRefraction.h"
 #include "DlgOverlay.h"
 //#include "DlgProperty.h"
-#include "chdr5.h"
+#include "chdf5.h"
 #include <atlimage.h> //CImage
 
 #define CGAZODOC_FILE_FWD 20
@@ -32,6 +32,8 @@
 #define CGAZODOC_STATUS_FILEREV 2
 
 #define CGAZODOC_MAXOVERLAY 500
+
+#define CGAZODOC_FLAG_HDF5STEPSCAN 1
 
 class CMainFrame;
 
@@ -123,7 +125,7 @@ public:
 	unsigned int uiDocStatus;
 	CDlgHistogram dlgHist;//150102
 	CDlgOverlay dlgOverlay;//151012
-	CHDR5 hdr5;//160521
+	CHDF5 hdf5;//160521
 	CImage m_cimage;
 	bool bColor;
 
@@ -146,6 +148,7 @@ protected:
 
 private:
 	TErr LoadLogFileAlloc(DWORD ilen);
+	TErr SetFramesToExclude();
 
 	int ixdim, iydim;
 	int maxPixel;
@@ -194,7 +197,9 @@ private:
 	unsigned int maxConvList;
 	int iFramePerDataset;
 	int nDarkFrame;
-	int iHDF5DummyFrame;
+	int m_iFlag;
+	CString m_sFramesToExclude;
+	__int64 m_lHDF5DataSize0;
 
 // 生成されたメッセージ マップ関数
 protected:

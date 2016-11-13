@@ -86,6 +86,8 @@ public:
 	bool bOptionUpdated;
 	int m_iDataseForCenter1, m_iDataseForCenter2;
 	bool m_bSkipInitialFlatsInHDF5;
+	int m_iDlgFL_SampleFrameStart;
+	int m_iDlgFL_SampleFrameEnd;
 
 // オーバーライド
 	// ClassWizard は仮想関数のオーバーライドを生成します。
@@ -131,6 +133,7 @@ public:
 	afx_msg void OnEnSetfocusReconstSlice1();
 	afx_msg void OnEnSetfocusReconstSlice2();
 	afx_msg void OnBnClickedReconstResoln();
+	afx_msg void OnBnClickedReconstSelect();
 };
 
 //{{AFX_INSERT_LOCATION}}

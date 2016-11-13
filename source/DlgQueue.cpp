@@ -729,6 +729,9 @@ TErr CDlgQueue::SaveQueue(CStdioFile* fp) {
 			line.Format("outFilePath %s\r\n", rq->outFilePath); fp->WriteString(line);
 			line.Format("outFilePrefix %s\r\n", rq->outFilePrefix); fp->WriteString(line);
 			line.Format("sDriftListPath %s\r\n", rq->sDriftListPath); fp->WriteString(line);
+			line.Format("sFramesToExclude %s\r\n", rq->sFramesToExclude); fp->WriteString(line);
+			line.Format("iSampleFrameStart %d\r\n", rq->iSampleFrameStart); fp->WriteString(line);
+			line.Format("iSampleFrameEnd %d\r\n", rq->iSampleFrameEnd); fp->WriteString(line);
 		} else if (mode == "OutputImage") {
 			FORMAT_QUEUE* fq = &(fmtQueue[idx]);
 			//line.Format(" %\r\n", fq->); fp->WriteString(line);
@@ -839,6 +842,9 @@ TErr CDlgQueue::LoadQueue(CStdioFile* fp) {
 				} else if (cmd == "outFilePath") {rq.outFilePath = param;
 				} else if (cmd == "outFilePrefix") {rq.outFilePrefix = param;
 				} else if (cmd == "sDriftListPath") {rq.sDriftListPath = param;
+				} else if (cmd == "sFramesToExclude") {rq.sFramesToExclude = " " + param; //AfxMessageBox("=" + rq.sFramesToExclude + "=");
+				} else if (cmd == "iSampleFrameStart") {if (sscanf_s(param, "%d", &(rq.iSampleFrameStart)) < 1) msg += line;
+				} else if (cmd == "iSampleFrameEnd") {if (sscanf_s(param, "%d", &(rq.iSampleFrameEnd)) < 1) msg += line;
 				} else {msg += line;
 				}
 			}

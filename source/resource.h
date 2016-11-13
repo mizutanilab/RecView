@@ -236,6 +236,8 @@
 #define IDC_OVLY_WDOWN                  1121
 #define IDC_TREE1                       1122
 #define IDC_FRAMELIST_TREE              1122
+#define IDC_SAMPLEFRAMES                1124
+#define IDC_NSAMPLEFRAMES               1124
 #define ID_TOOLBAR_MAG                  32771
 #define ID_TOOLBAR_MIN                  32772
 #define ID_TOOLBAR_DARK                 32773
@@ -297,7 +299,7 @@
 #define _APS_3D_CONTROLS                     1
 #define _APS_NEXT_RESOURCE_VALUE        148
 #define _APS_NEXT_COMMAND_VALUE         32822
-#define _APS_NEXT_CONTROL_VALUE         1124
+#define _APS_NEXT_CONTROL_VALUE         1125
 #define _APS_NEXT_SYMED_VALUE           102
 #endif
 #endif
