@@ -2,7 +2,7 @@
 RecView is a program for tomographic reconstruction and image processing. It consists of approx 22,000 lines of custom source codes in C++, CUDA C, OpenCL, and x86/x64 assembly language. RecView is designed for processing data obtained at the BL20B2, BL20XU, BL37XU, and BL47XU beamlines of the synchrotron radiation facility SPring-8 and also those taken at the 32-ID beamline of Advanced Photon Source (APS), Argonne National Laboratory.
 
 <IMG width=100 height=140 alt=testPattern src="pics/testPattern.png" align=left>
-Three-dimensional structural analysis with microtomography (micro-CT) or nanotomography (nano-CT) is performed by recording two-dimensional x-ray images while rotating the sample. Then tomographic sections are calculated from the x-ray images by convolution back-projection method. This reconstruction calculation is repeated for each tomographic slice, giving the three-dimensional structure. RecView is a program for the tomographic reconstruction calculations with graphical user interfaces. Multiple datasets can be continuously processed by using its queueing dialog. Functions for zooming reconstruction (an example is shown left), Gaussian convolution, and many other procedures for image processing are also implemented. The resolution of real sample images can be estimated with a logarithmic plot in the Fourier domain by using this program.
+Three-dimensional structural analysis with microtomography (micro-CT) or nanotomography (nano-CT) is performed by recording two-dimensional x-ray images while rotating the sample. Then tomographic sections are calculated from x-ray images by the convolution back-projection method. This reconstruction calculation is repeated for each tomographic slice, giving the three-dimensional structure. RecView is a program for the tomographic reconstruction calculations with graphical user interfaces. Multiple datasets can be continuously processed by using its queueing function. Zooming reconstruction (an example is shown left), Gaussian convolution, and many other procedures for image processing are also implemented. The resolution of real sample images can be estimated with a logarithmic plot in the Fourier domain by using this program.
 <BR clear=left>
 
 ## License
@@ -42,6 +42,7 @@ The binary folder contains several executables. Please use 'RecView.exe' appropr
 A test dataset in TIFF format is also provided in the binary folder.
 
 <UL>
+  <LI>v5.3.0 (6 Jan 2017). Routines for the dialbox input device were implemented.
   <LI>v5.2.0 (13 Nov 2016). Frame selection dialog was implemented. Routines for the sinogram generation were revised.
   <LI>v5.1.1 (released 18 Sep 2016). Reconstruction kernels for x86/x64 processors were updated using assembly code. The kernels are accelerated with vectorized instructions (compiler option /arch:SSE2 didn't work well with our routine). Performances are:
     <UL>
