@@ -56,6 +56,10 @@ BEGIN_MESSAGE_MAP(CGazoApp, CWinApp)
 	//ON_COMMAND(IDM_VIEW_BOXAXISLABEL, &CGazoApp::OnViewBoxaxislabel)
 	ON_COMMAND(IDM_VIEW_DRAGSCROLL, &CGazoApp::OnViewDragscroll)
 	ON_UPDATE_COMMAND_UI(IDM_VIEW_DRAGSCROLL, &CGazoApp::OnUpdateViewDragscroll)
+
+//	ON_COMMAND(ID_FILE_DIALBOX, &CGazoApp::OnFileDialbox)
+//	ON_MESSAGE(WM_DIALBOX, OnDialbox)//161210
+
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -72,7 +76,7 @@ CGazoApp::CGazoApp()
 	// TODO: この位置に構築用コードを追加してください。
 	// ここに InitInstance 中の重要な初期化処理をすべて記述してください。
 	iStatus = 0;
-	sProgVersion = "RecView ver5.2.0";
+	sProgVersion = "RecView ver5.3.0";
 #ifdef _WIN64
 	sProgVersion += "-x64\r\n";
 #endif
@@ -122,6 +126,7 @@ CGazoApp::CGazoApp()
 	//prevPixelWidth = -1;
 	bShowBoxAxis = true;
 	bDragScroll = false;
+
 }
 
 CGazoApp::~CGazoApp() {
@@ -1113,3 +1118,4 @@ void CGazoApp::OnUpdateViewDragscroll(CCmdUI *pCmdUI)
 	// TODO: ここにコマンド更新 UI ハンドラ コードを追加します。
 	pCmdUI->SetCheck(bDragScroll);
 }
+

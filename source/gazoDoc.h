@@ -46,6 +46,8 @@ class CGazoDoc : public CDocument
 {
 friend class CDlgReconst;
 friend class CDlgFrameList;
+friend class CMainFrame;
+
 public:
 	CGazoDoc();
 protected: // シリアライズ機能のみから作成します。
@@ -108,6 +110,8 @@ public:
 	void ShowRefracCorr(REFRAC_QUEUE* refq);
 	void BatchRefracCorr(REFRAC_QUEUE* refq);
 	void RefracCorr(REFRAC_QUEUE* refq, CFft* fft2, CCmplx* cPixel);
+	void AdjBrightness(int iAdj);
+	void AdjContrast(int iAdj);
 	//
 	int* pPixel;
 	float pixDiv, pixBase;

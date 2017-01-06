@@ -28,6 +28,7 @@
 #define IDD_OVERLAY                     145
 #define IDD_RESOLNPLOT                  146
 #define IDD_FRAMELIST                   147
+#define IDD_DIALBOX                     148
 #define IDC_RECONST_SLICE1              1000
 #define IDC_RECONST_CENT1               1001
 #define IDC_RECONST_SLICE2              1002
@@ -236,8 +237,34 @@
 #define IDC_OVLY_WDOWN                  1121
 #define IDC_TREE1                       1122
 #define IDC_FRAMELIST_TREE              1122
-#define IDC_SAMPLEFRAMES                1124
-#define IDC_NSAMPLEFRAMES               1124
+#define IDC_DIALBOX_COMPORT             1414
+#define IDC_DIALBOX_CONNECT             1415
+#define IDC_DIALBOX_DISCONNECT          1416
+#define IDC_DIALBOX_DIAL0CW             1417
+#define IDC_DIALBOX_DIAL0CCW            1418
+#define IDC_DIALBOX_DIAL0ACT            1419
+#define IDC_DIALBOX_DIAL1ACT            1420
+#define IDC_DIALBOX_DIAL2ACT            1421
+#define IDC_DIALBOX_DIAL3ACT            1422
+#define IDC_DIALBOX_DIAL4ACT            1423
+#define IDC_DIALBOX_DIAL1ACT2           1424
+#define IDC_DIALBOX_DIAL5ACT            1424
+#define IDC_DIALBOX_RX                  1425
+#define IDC_DIALBOX_DIAL3CW             1426
+#define IDC_DIALBOX_DIAL3CCW            1427
+#define IDC_DIALBOX_DIAL2CW             1428
+#define IDC_DIALBOX_DIAL2CCW            1429
+#define IDC_DIALBOX_DIAL1CW             1430
+#define IDC_DIALBOX_DIAL1CCW            1431
+#define IDC_DIALBOX_DIAL4CW             1432
+#define IDC_DIALBOX_DIAL4CCW            1433
+#define IDC_DIALBOX_DIAL0CW2            1434
+#define IDC_DIALBOX_DIAL5CW             1434
+#define IDC_DIALBOX_DIAL5CCW            1435
+#define IDC_DIALBOX_BUTTON1ACT          1438
+#define IDC_DIALBOX_BUTTON1REL          1439
+#define IDC_DIALBOX_BUTTON2ACT          1440
+#define IDC_DIALBOX_BUTTON2REL          1441
 #define ID_TOOLBAR_MAG                  32771
 #define ID_TOOLBAR_MIN                  32772
 #define ID_TOOLBAR_DARK                 32773
@@ -290,6 +317,21 @@
 #define ID_TOMOGRAPHY_GAUSSIANCONVOLUTION 32819
 #define ID_ANALYSIS_ADDNOISE            32820
 #define IDM_OVERLAY                     32821
+#define ID_FILE_DIALBOX                 32822
+#define ID_ACCKEY_A                     32823
+#define ID_ACCKEY_S                     32825
+#define ID_ACCKEY_Z                     32826
+#define ID_ACCKEY_X                     32827
+#define ID_ACCKEY_Q                     32828
+#define ID_ACCKEY_W                     32829
+#define ID_ACCKEY_E                     32830
+#define ID_ACCKEY_R                     32831
+#define ID_ACCKEY_D                     32832
+#define ID_ACCKEY_F                     32833
+#define ID_ACCKEY_C                     32834
+#define ID_ACCKEY_V                     32835
+#define ID_ACCKEY_T                     32837
+#define ID_ACCKEY_G                     32838
 #define ID_POPUPQUEUE_DEL               32860
 
 // Next default values for new objects
@@ -297,8 +339,8 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_3D_CONTROLS                     1
-#define _APS_NEXT_RESOURCE_VALUE        148
-#define _APS_NEXT_COMMAND_VALUE         32822
+#define _APS_NEXT_RESOURCE_VALUE        149
+#define _APS_NEXT_COMMAND_VALUE         32839
 #define _APS_NEXT_CONTROL_VALUE         1125
 #define _APS_NEXT_SYMED_VALUE           102
 #endif

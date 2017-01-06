@@ -292,6 +292,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="Bthprops.lib"
 				OutputFile=".\Release/gazo.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -393,6 +394,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="Bthprops.lib"
 				OutputFile=".\Release/gazo.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -695,7 +697,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="cudart.lib cufft.lib"
+				AdditionalDependencies="cudart.lib cufft.lib Bthprops.lib"
 				OutputFile=".\Release/gazo.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -798,7 +800,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="cudart.lib cufft.lib"
+				AdditionalDependencies="cudart.lib cufft.lib Bthprops.lib"
 				OutputFile=".\Release/gazo.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -900,7 +902,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="&quot;$(ATISTREAMSDKROOT)lib\x86\OpenCL.lib&quot;"
+				AdditionalDependencies="&quot;$(ATISTREAMSDKROOT)lib\x86\OpenCL.lib&quot; Bthprops.lib"
 				OutputFile=".\Release/gazo.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -1635,6 +1637,10 @@
 			</File>
 			<File
 				RelativePath=".\cxyz.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\DlgDialbox.cpp"
 				>
 			</File>
 			<File
@@ -2692,6 +2698,10 @@
 			</File>
 			<File
 				RelativePath=".\cxyz.h"
+				>
+			</File>
+			<File
+				RelativePath=".\DlgDialbox.h"
 				>
 			</File>
 			<File

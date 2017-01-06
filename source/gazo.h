@@ -22,6 +22,7 @@
 #include "DlgLsqfit.h"
 #include "DlgRenumFiles.h"
 #include <afxmt.h>//131019 CMutex
+//#include "DlgDialbox.h"
 
 /////////////////////////////////////////////////////////////////////////////
 // CGazoApp:
@@ -58,6 +59,8 @@ public:
 	CDlgHistogram prevDlgHistogram;
 
 	CMutex m_mutex;//131019
+
+//	CDlgDialbox dlgDialbox;
 
 private:
 	TErr CalcAvgImage(CString path, CString* files, int nfiles);
@@ -96,6 +99,8 @@ protected:
 	//afx_msg void OnViewBoxaxislabel();
 	afx_msg void OnViewDragscroll();
 	afx_msg void OnUpdateViewDragscroll(CCmdUI *pCmdUI);
+	//afx_msg void OnFileDialbox();
+	//afx_msg LRESULT OnDialbox(WPARAM wParam, LPARAM lParam);//161210
 };
 
 

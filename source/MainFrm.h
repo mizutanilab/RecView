@@ -9,6 +9,8 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
+#include "DlgDialbox.h"
+
 class CMainFrame : public CMDIFrameWnd
 {
 friend class CGazoView;
@@ -21,6 +23,10 @@ public:
 	CMainFrame();
 	CStatusBar  m_wndStatusBar;
 	CToolBar    m_wndToolBar;
+	CDlgDialbox dlgDialbox;
+
+private:
+	HACCEL mfrAccel;//161225
 
 // アトリビュート
 public:
@@ -50,8 +56,26 @@ protected:  // コントロール バー用メンバ
 protected:
 	//{{AFX_MSG(CMainFrame)
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
+	afx_msg void OnFileDialbox();
+	afx_msg LRESULT OnDialbox(WPARAM wParam, LPARAM lParam);//161210
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
+public:
+	afx_msg void OnAcckeyA();
+	afx_msg void OnAcckeyS();
+	afx_msg void OnAcckeyZ();
+	afx_msg void OnAcckeyX();
+	afx_msg void OnAcckeyQ();
+	afx_msg void OnAcckeyW();
+	afx_msg void OnAcckeyE();
+	afx_msg void OnAcckeyR();
+	afx_msg void OnAcckeyD();
+	afx_msg void OnAcckeyF();
+	afx_msg void OnAcckeyC();
+	afx_msg void OnAcckeyV();
+	virtual BOOL PreTranslateMessage(MSG* pMsg);
+	afx_msg void OnAcckeyT();
+	afx_msg void OnAcckeyG();
 };
 
 /////////////////////////////////////////////////////////////////////////////

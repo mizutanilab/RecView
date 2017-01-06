@@ -13,6 +13,8 @@
 
 class CGazoView : public CView
 {
+friend class CMainFrame;
+
 protected: // シリアライズ機能のみから作成します。
 	CGazoView();
 	DECLARE_DYNCREATE(CGazoView)

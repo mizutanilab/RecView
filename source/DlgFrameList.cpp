@@ -348,6 +348,11 @@ void CDlgFrameList::OnTvnSelchangedFramelistTree(NMHDR *pNMHDR, LRESULT *pResult
 //	CString msg; msg.Format("%d==>%d", m_dwSelectedFrame, dwData); AfxMessageBox(msg);
 	if (pd) {
 		if (pd->dataSuffix.MakeUpper() == ".HIS") {
+			if (pd->iLossFrameSet >= 0) {//161231
+				if (pd->iLossFrameSet == pd->dlgReconst.m_iDatasetSel) {
+					if ((int)(dwData - pd->nDarkFrame) > (pd->iFramePerDataset - pd->nDarkFrame) / 2) {dwData--;}
+				} else if (pd->iLossFrameSet < pd->dlgReconst.m_iDatasetSel) {dwData--;}
+			}
 			if (pd->nDarkFrame > 0) {//if dark frames were taken only in the first set.
 				dwData += (pd->iFramePerDataset - pd->nDarkFrame) * pd->dlgReconst.m_iDatasetSel;
 			} else {//if dark frames were taken at every dataset.

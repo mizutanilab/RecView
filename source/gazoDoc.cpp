@@ -1088,11 +1088,9 @@ void CGazoDoc::CheckDispLimit() {
 	if (iDispHigh <= iDispLow) iDispHigh = iDispLow + 1;
 }
 
-void CGazoDoc::OnToolbarBright() 
-{
-	int iContrast = iDispHigh - iDispLow;
-	iDispLow -= iContrast / 5;
-	iDispHigh -= iContrast / 5;
+void CGazoDoc::AdjBrightness(int iAdj) {
+	iDispLow += iAdj;
+	iDispHigh += iAdj;
 	CheckDispLimit();
 	//if (iBrightness - iContrast / 10 < 0) return;
 	//iBrightness -= iContrast / 10;
@@ -1100,23 +1098,30 @@ void CGazoDoc::OnToolbarBright()
 	UpdateView();
 }
 
-void CGazoDoc::OnToolbarDark() 
+void CGazoDoc::OnToolbarBright() 
 {
-	int iContrast = iDispHigh - iDispLow;
-	iDispLow += iContrast / 5;
-	iDispHigh += iContrast / 5;
-	CheckDispLimit();
-	//if (iBrightness + iContrast / 10 > iPixelMax) return;
-	//iBrightness += iContrast / 10;
-	dlgHist.UpdateParam();
-	UpdateView();
+	AdjBrightness(-(iDispHigh - iDispLow) / 5);
+//	iDispLow -= iContrast / 5;
+//	iDispHigh -= iContrast / 5;
+//	CheckDispLimit();
+//	dlgHist.UpdateParam();
+//	UpdateView();
 }
 
-void CGazoDoc::OnToolbarCntdown() 
+void CGazoDoc::OnToolbarDark() 
 {
-	int iContrast = iDispHigh - iDispLow;
-	iDispLow -= iContrast / 5;
-	iDispHigh += iContrast / 5;
+	AdjBrightness((iDispHigh - iDispLow) / 5);
+//	int iContrast = iDispHigh - iDispLow;
+//	iDispLow += iContrast / 5;
+//	iDispHigh += iContrast / 5;
+//	CheckDispLimit();
+//	dlgHist.UpdateParam();
+//	UpdateView();
+}
+
+void CGazoDoc::AdjContrast(int iAdj) {
+	iDispLow += iAdj;
+	iDispHigh -= iAdj;
 	CheckDispLimit();
 	//if (iContrast + iContrast / 10 > iPixelMax - iPixelMin) return;
 	//iContrast += iContrast / 10;
@@ -1124,16 +1129,26 @@ void CGazoDoc::OnToolbarCntdown()
 	UpdateView();
 }
 
-void CGazoDoc::OnToolbarCntup() 
+void CGazoDoc::OnToolbarCntdown() 
 {
-	int iContrast = iDispHigh - iDispLow;
-	iDispLow += iContrast / 5;
-	iDispHigh -= iContrast / 5;
-	CheckDispLimit();
-	//if (iContrast - iContrast / 10 < 1) return;
-	//iContrast -= iContrast / 10;
-	dlgHist.UpdateParam();
-	UpdateView();
+	AdjContrast(-(iDispHigh - iDispLow)/5);
+//	int iContrast = iDispHigh - iDispLow;
+//	iDispLow -= iContrast / 5;
+//	iDispHigh += iContrast / 5;
+//	CheckDispLimit();
+//	dlgHist.UpdateParam();
+//	UpdateView();
+}
+
+void CGazoDoc::OnToolbarCntup()
+{
+	AdjContrast((iDispHigh - iDispLow)/5);
+//	int iContrast = iDispHigh - iDispLow;
+//	iDispLow += iContrast / 5;
+//	iDispHigh -= iContrast / 5;
+//	CheckDispLimit();
+//	dlgHist.UpdateParam();
+//	UpdateView();
 }
 
 void CGazoDoc::OnUpdateToolbarBright(CCmdUI* pCmdUI) 
@@ -2165,7 +2180,7 @@ TErr CGazoDoc::CalcAvgFromHis(CString path, CString fnhis, CString* files, int n
 		TErr err = ReadITEX(&fimg, NULL, NULL, &iDummy, &iDummy, &sPrevComment);
 		fimg.Close();
 //AfxMessageBox(files[nfiles-1] + "\r\n" + sPrevComment);
-CString msg = files[nfiles-1] + "\r\n" + sPrevComment + "\r\n", line;
+CString msg = "CalcAvgFromHis\r\n[File]\r\n" + files[nfiles-1] + "\r\n[Previous comment]\r\n" + sPrevComment + "\r\n[Frames to be averaged (negative indicates frame loss)]\r\n", line;
 		//if (sPrevComment.Find("skip ") < 0) return 0;
 		bool bReturn = true;
 		for (int i=0; i<nfiles-1; i++) {
