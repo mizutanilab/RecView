@@ -134,6 +134,8 @@ public:
 	afx_msg void OnEnSetfocusReconstSlice2();
 	afx_msg void OnBnClickedReconstResoln();
 	afx_msg void OnBnClickedReconstSelect();
+	afx_msg void OnEnUpdateReconstCent1();
+	afx_msg void OnEnUpdateReconstCent2();
 };
 
 //{{AFX_INSERT_LOCATION}}

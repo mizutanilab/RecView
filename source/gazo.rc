@@ -97,12 +97,10 @@ IDR_MAINFRAME           BITMAP                  "res\\Toolbar.bmp"
 IDR_MAINFRAME TOOLBAR  16, 15
 BEGIN
     BUTTON      ID_FILE_OPEN
+    BUTTON      IDM_TOMO_RECONST
+    SEPARATOR
     BUTTON      ID_FILE_SAVE
-    SEPARATOR
     BUTTON      ID_EDIT_PASTE
-    SEPARATOR
-    BUTTON      ID_FILE_PRINT
-    SEPARATOR
     BUTTON      ID_APP_ABOUT
     SEPARATOR
     BUTTON      ID_TOOLBAR_MAG
@@ -225,9 +223,11 @@ BEGIN
         MENUITEM "Line projection...",          IDM_TOMO_LINE
         MENUITEM "Horizontal center...",        IDM_TOMO_HORIZCENT
         MENUITEM "Show Fourier transform",      IDM_TOMO_FOURIER
-        MENUITEM "Gaussian convolution...",     ID_TOMOGRAPHY_GAUSSIANCONVOLUTION
+        MENUITEM "PSF convolution...",          ID_TOMOGRAPHY_GAUSSIANCONVOLUTION
         MENUITEM "Add noise...",                ID_ANALYSIS_ADDNOISE
         MENUITEM "Overlay...",                  32821
+        MENUITEM "Enlarge/reduce..",            ID_ANALYSIS_ENLARGE
+        MENUITEM "Radial profile...",           ID_ANALYSIS_RADIALPROFILE
     END
     POPUP "&View"
     BEGIN
@@ -629,6 +629,8 @@ BEGIN
     EDITTEXT        IDC_INPUT2,81,21,48,12,ES_AUTOHSCROLL
     LTEXT           "Parameter 3",IDC_CAPTION3,7,36,68,8
     EDITTEXT        IDC_INPUT3,81,35,48,12,ES_AUTOHSCROLL
+    LTEXT           "Parameter 4",IDC_CAPTION4,7,50,68,8
+    EDITTEXT        IDC_INPUT4,81,49,48,12,ES_AUTOHSCROLL
 END
 
 IDD_OVERLAY DIALOGEX 0, 0, 271, 158
@@ -1110,6 +1112,11 @@ END
 STRINGTABLE 
 BEGIN
     AFX_IDS_PREVIEW_CLOSE   "Close print preview mode\nCancel Preview"
+END
+
+STRINGTABLE 
+BEGIN
+    IDM_TOMO_RECONST        "Reconst dialog"
 END
 
 #endif    // âpåÍ (ïƒçë) resources

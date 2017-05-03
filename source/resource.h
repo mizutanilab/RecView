@@ -199,7 +199,9 @@
 #define IDC_INPUT3                      1093
 #define IDC_OVLYLEFT                    1093
 #define IDC_OVLYX1                      1094
+#define IDC_CAPTION4                    1094
 #define IDC_OVLYY1                      1095
+#define IDC_INPUT4                      1095
 #define IDC_OVLYX2                      1096
 #define IDC_OVLYY2                      1097
 #define IDC_OVLYX3                      1098
@@ -332,6 +334,8 @@
 #define ID_ACCKEY_V                     32835
 #define ID_ACCKEY_T                     32837
 #define ID_ACCKEY_G                     32838
+#define ID_ANALYSIS_ENLARGE             32839
+#define ID_ANALYSIS_RADIALPROFILE       32840
 #define ID_POPUPQUEUE_DEL               32860
 
 // Next default values for new objects
@@ -340,7 +344,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_3D_CONTROLS                     1
 #define _APS_NEXT_RESOURCE_VALUE        149
-#define _APS_NEXT_COMMAND_VALUE         32839
+#define _APS_NEXT_COMMAND_VALUE         32841
 #define _APS_NEXT_CONTROL_VALUE         1125
 #define _APS_NEXT_SYMED_VALUE           102
 #endif

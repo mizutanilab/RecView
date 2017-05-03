@@ -235,6 +235,8 @@ BEGIN_MESSAGE_MAP(CDlgReconst, CDialog)
 	ON_EN_SETFOCUS(IDC_RECONST_SLICE2, &CDlgReconst::OnEnSetfocusReconstSlice2)
 //	ON_BN_CLICKED(IDC_RECONST_RESOLN, &CDlgReconst::OnBnClickedReconstResoln)
 	ON_BN_CLICKED(IDC_RECONST_SELECT, &CDlgReconst::OnBnClickedReconstSelect)
+	ON_EN_UPDATE(IDC_RECONST_CENT1, &CDlgReconst::OnEnUpdateReconstCent1)
+	ON_EN_UPDATE(IDC_RECONST_CENT2, &CDlgReconst::OnEnUpdateReconstCent2)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -860,4 +862,26 @@ void CDlgReconst::OnBnClickedReconstSelect()
 	if (dlg.DoModal() == IDCANCEL) return;
 	pd->m_sFramesToExclude = dlg.m_sFramesToExclude;
 	bOptionUpdated = true;
+}
+
+void CDlgReconst::OnEnUpdateReconstCent1()
+{
+	// TODO:  これが RICHEDIT コントロールの場合、
+	// まず、CDialog::OnInitDialog() 関数をオーバーライドして、OR 状態の ENM_CHANGE
+	// OR 状態の ENM_SCROLL フラグを IParam マスクに入れて、
+	// OR 状態の ENM_UPDATE フラグを lParam マスクに入れて、
+
+	// TODO:  ここにコントロール通知ハンドラ コードを追加してください。
+	m_iDataseForCenter1 = m_iDatasetSel;//170503
+}
+
+void CDlgReconst::OnEnUpdateReconstCent2()
+{
+	// TODO:  これが RICHEDIT コントロールの場合、
+	// まず、CDialog::OnInitDialog() 関数をオーバーライドして、OR 状態の ENM_CHANGE
+	// OR 状態の ENM_SCROLL フラグを IParam マスクに入れて、
+	// OR 状態の ENM_UPDATE フラグを lParam マスクに入れて、
+
+	// TODO:  ここにコントロール通知ハンドラ コードを追加してください。
+	m_iDataseForCenter2 = m_iDatasetSel;//170503
 }

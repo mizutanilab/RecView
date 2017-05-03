@@ -102,6 +102,8 @@ ON_COMMAND(IDM_TOMO_HORIZCENT, &CGazoDoc::OnTomoHorizcent)
 	ON_UPDATE_COMMAND_UI(ID_ANALYSIS_ADDNOISE, &CGazoDoc::OnUpdateAnalysisAddnoise)
 	ON_COMMAND(IDM_OVERLAY, &CGazoDoc::OnMenuOverlay)
 	ON_UPDATE_COMMAND_UI(IDM_OVERLAY, &CGazoDoc::OnUpdateMenuOverlay)
+	ON_COMMAND(ID_ANALYSIS_ENLARGE, &CGazoDoc::OnAnalysisEnlarge)
+	ON_COMMAND(ID_ANALYSIS_RADIALPROFILE, &CGazoDoc::OnAnalysisRadialprofile)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -4407,7 +4409,9 @@ void CGazoDoc::OnTomoStat()
 	sum2 /= nsum;
 	double sigma = sqrt(sum2 - sum * sum);
 	CString line = "", scr;
-	scr.Format("Average intensity %.1f / std deviation %.1f", sum, sigma); line += scr;
+	scr.Format("Average_intensity\t%.1f\r\nStd_deviation\t%.1f\r\nNumber_of_pixels\t%d\r\nAverage_of_intesity^2\t%.1f", 
+				sum, sigma, nsum, sum2); 
+	line += scr;
 	if (pixDiv > 0) {
 		sum = sum / pixDiv + pixBase;
 		sigma = sigma / pixDiv;
@@ -4928,12 +4932,16 @@ void CGazoDoc::OnTomographyResolutionReport()
 
 	//const int imgx = this->ixdim;
 	//const int imgy = this->iydim;
-	const int ndimxp = (int)((log((double)imgx) / LOG2)) + 1;
-	const int ndimx = (int) pow((double)2, ndimxp);
-	const int ndimyp = (int)((log((double)imgy) / LOG2)) + 1;
-	const int ndimy = (int) pow((double)2, ndimyp);
+	const int ndimxp = (int)ceil((log((double)imgx) / LOG2));
+	const int ndimyp = (int)ceil((log((double)imgy) / LOG2));
+	const int ndimp = (ndimxp > ndimyp) ? ndimxp : ndimyp;
+	const int ndimx = (int) pow((double)2, ndimp);
+	const int ndimy = (int) pow((double)2, ndimp);
+	const int ixoffset = (ndimx - imgx) / 2;
+	const int iyoffset = (ndimy - imgy) / 2;
+
 	const int istep = 5;
-	const int iAxisOmit = 10;
+	const int iAxisOmit = 1;
 	CCmplx* cPixel = NULL;
 	struct CGZD_RESOLN_LIST* psResolnList = NULL;
 	int iMaxResolnList = (ndimx/istep) * (ndimy/istep) / 2;
@@ -4956,7 +4964,8 @@ void CGazoDoc::OnTomographyResolutionReport()
 	const double sna = sin(iangle * DEG_TO_RAD);
 	int iList;
 	for (int n=0; n<nmax; n++) {
-		for (int i=0; i<ndimx*ndimy; i++) {cPixel[i].Reset();}
+		for (int i=0; i<ndimx*ndimy; i++) {cPixel[i].Reset(); cPixel[i].im = -1;}
+		double davg = 0;
 		for (int i=0; i<imgx; i++) {
 			for (int j=0; j<imgy; j++) {
 				int ipix = 0;
@@ -4974,6 +4983,7 @@ void CGazoDoc::OnTomographyResolutionReport()
 						double dy = gy - igy;
 						if ((fabs(dx) < 0.00001)&&(fabs(dy) < 0.00001)) {//090727
 							ipix = pPixel[igx + igy * kxdim];
+							if (bColor) ipix = ((ipix >> (n*8)) & 0xff);
 						} else {
 							//interpolated intensity
 							if (igx == kxdim-1) {igx--; dx = 1;}
@@ -4983,6 +4993,12 @@ void CGazoDoc::OnTomographyResolutionReport()
 							int is1 = pPixel[(igx + 1) + igy * kxdim];
 							int is2 = pPixel[igx + (igy + 1) * kxdim];
 							int is3 = pPixel[(igx + 1) + (igy + 1) * kxdim];
+							if (bColor) {//170503
+								is0 = ((is0 >> (n*8)) & 0xff);
+								is1 = ((is1 >> (n*8)) & 0xff);
+								is2 = ((is2 >> (n*8)) & 0xff);
+								is3 = ((is3 >> (n*8)) & 0xff);
+							}
 							double ap = 0.5 * (is1 + is3 - is0 - is2);
 							double bp = 0.5 * (is2 + is3 - is0 - is1);
 							double cp = 0.25 * ((is0 + is1 + is2 + is3) - 2 * (ap + bp));
@@ -4992,13 +5008,61 @@ void CGazoDoc::OnTomographyResolutionReport()
 				} else {
 					const int idx = i+j*imgx;
 					ipix = pPixel[idx];
+					if (bColor) ipix = ((ipix >> (n*8)) & 0xff);
 				}
-				if (bColor) cPixel[i+j*ndimx].re = (float)((ipix >> (n*8)) & 0xff);
-				else cPixel[i+j*ndimx].re = (float)(ipix);
+				//if (bColor) cPixel[i+j*ndimx].re = (float)((ipix >> (n*8)) & 0xff);
+				cPixel[i + ixoffset + (j + iyoffset) * ndimx].re = (float)(ipix);
+				cPixel[i + ixoffset + (j + iyoffset) * ndimx].im = 0;
+				davg += (float)(ipix);
 			}
 		}
+		//set margin to the average: this is for minimizing streaks along the axes
+		davg /= (imgx * imgy);
+		for (int i=0; i<ndimx; i++) {
+			for (int j=0; j<ndimy; j++) {
+				if (cPixel[i+j*ndimx].im != 0) {
+					cPixel[i+j*ndimx].re = (TCmpElmnt)davg;
+				}
+				cPixel[i+j*ndimx].im = 0;
+			}
+		}
+		//smooth each end using gaussian to minimize the truncation error
+		const int iwidth = ndimx / 20;
+		for (int i=0; i<iwidth; i++) {
+			for (int j=0; j<ndimy; j++) {
+				int idist2 = (iwidth - i) * (iwidth - i);
+				if (j < iwidth) idist2 += (iwidth - j) * (iwidth - j);
+				else if (j >= ndimy-iwidth) idist2 += (ndimy-iwidth - j + 1) * (ndimy-iwidth - j + 1);
+				const double blur = exp(-3. * idist2 / (iwidth * iwidth));//smooth the truncation down to its 5%
+				cPixel[i+j*ndimx].re = (TCmpElmnt)((cPixel[i+j*ndimx].re - davg) * blur + davg);
+			}
+		}
+		for (int i=ndimx-iwidth; i<ndimx; i++) {
+			for (int j=0; j<ndimy; j++) {
+				int idist2 = (ndimx-iwidth - i + 1) * (ndimx-iwidth - i + 1);
+				if (j < iwidth) idist2 += (iwidth - j) * (iwidth - j);
+				else if (j >= ndimy-iwidth) idist2 += (ndimy-iwidth - j + 1) * (ndimy-iwidth - j + 1);
+				const double blur = exp(-3. * idist2 / (iwidth * iwidth));//smooth the truncation down to its 5%
+				cPixel[i+j*ndimx].re = (TCmpElmnt)((cPixel[i+j*ndimx].re - davg) * blur + davg);
+			}
+		}
+		for (int j=0; j<iwidth; j++) {
+			for (int i=iwidth; i<ndimx-iwidth; i++) {
+				int idist2 = (iwidth - j) * (iwidth - j);
+				const double blur = exp(-3. * idist2 / (iwidth * iwidth));//smooth the truncation down to its 5%
+				cPixel[i+j*ndimx].re = (TCmpElmnt)((cPixel[i+j*ndimx].re - davg) * blur + davg);
+			}
+		}
+		for (int j=ndimy-iwidth; j<ndimy; j++) {
+			for (int i=iwidth; i<ndimx-iwidth; i++) {
+				int idist2 = (ndimy-iwidth - j + 1) * (ndimy-iwidth - j + 1);
+				const double blur = exp(-3. * idist2 / (iwidth * iwidth));//smooth the truncation down to its 5%
+				cPixel[i+j*ndimx].re = (TCmpElmnt)((cPixel[i+j*ndimx].re - davg) * blur + davg);
+			}
+		}
+
 		CFft fft2;
-		fft2.Init2(ndimxp, -1, ndimyp, -1);
+		fft2.Init2(ndimp, -1, ndimp, -1);
 		//160727 fft2.FFT2Rev(cPixel);//peak at the origin
 		fft2.FFT2(cPixel);
 
@@ -5082,12 +5146,27 @@ void CGazoDoc::OnUpdateTomoFourier(CCmdUI *pCmdUI)
 
 void CGazoDoc::OnTomoFourier()
 {
+	CDlgGeneral dlg;
+	dlg.m_sTitle = "Fourier transform";
+	dlg.m_sCaption1 = "Norm=0/log(norm)=1";
+	dlg.m_sInput1 = "1";
+	dlg.m_sCaption2 = "Full scale";
+	dlg.m_sInput2.Format("%d", 1024 * 1024 * 8 - 1);
+	if (dlg.DoModal() == IDCANCEL) return;
+	const int iOutputLog = atoi(dlg.m_sInput1);
+	if ((iOutputLog != 0)&&(iOutputLog != 1)) {AfxMessageBox("Invalid option"); return;}
+	const int iFullScale = atoi(dlg.m_sInput2);
+
 	const int imgx = this->ixdim;//refq->iXdim;
 	const int imgy = this->iydim;//refq->iYdim;
-	const int ndimxp = (int)((log((double)imgx) / LOG2)) + 1;
-	const int ndimx = (int) pow((double)2, ndimxp);
-	const int ndimyp = (int)((log((double)imgy) / LOG2)) + 1;
-	const int ndimy = (int) pow((double)2, ndimyp);
+	const int ndimxp = (int)ceil((log((double)imgx) / LOG2));
+	const int ndimyp = (int)ceil((log((double)imgy) / LOG2));
+	const int ndimp = (ndimxp > ndimyp) ? ndimxp : ndimyp;
+	const int ndimx = (int) pow((double)2, ndimp);
+	const int ndimy = (int) pow((double)2, ndimp);
+	const int ixoffset = (ndimx - imgx) / 2;
+	const int iyoffset = (ndimy - imgy) / 2;
+
 	CGazoView* pcv = (CGazoView*)( ((CGazoApp*)AfxGetApp())->RequestNew() );
 	CGazoDoc* pcd = pcv->GetDocument();
 	CCmplx* cPixel;
@@ -5101,7 +5180,6 @@ void CGazoDoc::OnTomoFourier()
 		e->Delete();
 		return;
 	}
-	for (int i=0; i<ndimx*ndimy; i++) {cPixel[i].Reset();}
 	pcd->maxPixel = ndimx * ndimy;
 	pcd->ixdim = ndimx;
 	pcd->iydim = ndimy;
@@ -5113,44 +5191,103 @@ void CGazoDoc::OnTomoFourier()
 	pcd->SetTitle("Calculating..");
 	pcd->bColor = bColor;
 
+	CMainFrame* pf = (CMainFrame*) AfxGetMainWnd();
+	if (pf) pf->m_wndStatusBar.SetPaneText(0, "Calculating..");
+
 	const double pxd = (pixDiv > 0) ? pixDiv : 1;
 	const int kmax = bColor ? 3 : 1;
 	double dClrMax = 0, dClrMin = 255;
 	for (int k=0; k<kmax; k++) {
+		for (int i=0; i<ndimx*ndimy; i++) {cPixel[i].Reset(); cPixel[i].im = -1;}
+		double davg = 0;
 		for (int i=0; i<imgx; i++) {
 			for (int j=0; j<imgy; j++) {
 				const int idx = i+j*imgx;
 				//cPixel[i+j*ndimx].re = (float)(pPixel[idx]);
 				float fpix = (bColor) ? ((pPixel[idx] >> (k*8)) & 0xff) : (float)(pPixel[idx] / pxd + pixBase);
-				cPixel[i+j*ndimx].re = fpix;
+				cPixel[i + ixoffset + (j + iyoffset) * ndimx].re = fpix;
+				cPixel[i + ixoffset + (j + iyoffset) * ndimx].im = 0;
+				davg += fpix;
+			}
+		}
+		//set margin to the average: this is for minimizing streaks along the axes
+		davg /= (imgx * imgy);
+		for (int i=0; i<ndimx; i++) {
+			for (int j=0; j<ndimy; j++) {
+				if (cPixel[i+j*ndimx].im != 0) {
+					cPixel[i+j*ndimx].re = (TCmpElmnt)davg;
+				}
+				cPixel[i+j*ndimx].im = 0;
+			}
+		}
+		//smooth each end using gaussian to minimize the truncation error
+		const int iwidth = ndimx / 20;
+		for (int i=0; i<iwidth; i++) {
+			for (int j=0; j<ndimy; j++) {
+				int idist2 = (iwidth - i) * (iwidth - i);
+				if (j < iwidth) idist2 += (iwidth - j) * (iwidth - j);
+				else if (j >= ndimy-iwidth) idist2 += (ndimy-iwidth - j + 1) * (ndimy-iwidth - j + 1);
+				const double blur = exp(-3. * idist2 / (iwidth * iwidth));//smooth the truncation down to its 5%
+				cPixel[i+j*ndimx].re = (TCmpElmnt)((cPixel[i+j*ndimx].re - davg) * blur + davg);
+			}
+		}
+		for (int i=ndimx-iwidth; i<ndimx; i++) {
+			for (int j=0; j<ndimy; j++) {
+				int idist2 = (ndimx-iwidth - i + 1) * (ndimx-iwidth - i + 1);
+				if (j < iwidth) idist2 += (iwidth - j) * (iwidth - j);
+				else if (j >= ndimy-iwidth) idist2 += (ndimy-iwidth - j + 1) * (ndimy-iwidth - j + 1);
+				const double blur = exp(-3. * idist2 / (iwidth * iwidth));//smooth the truncation down to its 5%
+				cPixel[i+j*ndimx].re = (TCmpElmnt)((cPixel[i+j*ndimx].re - davg) * blur + davg);
+			}
+		}
+		for (int j=0; j<iwidth; j++) {
+			for (int i=iwidth; i<ndimx-iwidth; i++) {
+				int idist2 = (iwidth - j) * (iwidth - j);
+				const double blur = exp(-3. * idist2 / (iwidth * iwidth));//smooth the truncation down to its 5%
+				cPixel[i+j*ndimx].re = (TCmpElmnt)((cPixel[i+j*ndimx].re - davg) * blur + davg);
+			}
+		}
+		for (int j=ndimy-iwidth; j<ndimy; j++) {
+			for (int i=iwidth; i<ndimx-iwidth; i++) {
+				int idist2 = (ndimy-iwidth - j + 1) * (ndimy-iwidth - j + 1);
+				const double blur = exp(-3. * idist2 / (iwidth * iwidth));//smooth the truncation down to its 5%
+				cPixel[i+j*ndimx].re = (TCmpElmnt)((cPixel[i+j*ndimx].re - davg) * blur + davg);
 			}
 		}
 
 		CFft fft2;
 		//fft2.Init2(ndimxp, 0, ndimyp, 0);
-		fft2.Init2(ndimxp, -1, ndimyp, -1);
+		fft2.Init2(ndimp, -1, ndimp, -1);
 		//150528 fft2.FFT2Rev(cPixel);
 		fft2.FFT2(cPixel);
 
-		if ((bColor)&&(dClrMax == 0)) {
+		if (dClrMax == 0) {
+			if (!bColor) dClrMin = SHRT_MAX;
 			for (int i=0; i<ndimx; i++) {
 				for (int j=0; j<ndimy; j++) {
-					double dpix = log(cPixel[i+j*ndimx].Modulus2());
+					double dpix = cPixel[i+j*ndimx].Modulus();
+					if (iOutputLog) dpix = (dpix <= 0) ? 0 : log(dpix);
 					dClrMax = (dpix > dClrMax) ? dpix : dClrMax;
 					dClrMin = (dpix < dClrMin) ? dpix : dClrMin;
 				}
 			}
 			if (dClrMax == dClrMin) dClrMin--;
+			if (!bColor) {
+				pcd->pixBase = (float)dClrMin;
+				pcd->pixDiv = (float)(iFullScale / (dClrMax - dClrMin));
+			}
 		}
 		for (int i=0; i<ndimx; i++) {
 			for (int j=0; j<ndimy; j++) {
-				double dpix = log(cPixel[i+j*ndimx].Modulus2());
+				double dpix = cPixel[i+j*ndimx].Modulus();
+				if (iOutputLog) dpix = (dpix <= 0) ? 0 : log(dpix);
 				if (bColor) {
 					dpix = (dpix - dClrMin) / (dClrMax - dClrMin) * 255;
 					int ipix = (dpix > 255) ? 255 : ((dpix < 0) ? 0 : (int)(dpix));
 					pcd->pPixel[i+j*ndimx] |= (ipix << (k*8));
 				} else {
-					pcd->pPixel[i+j*ndimx] = (int)(dpix * 100);
+					unsigned __int64 uiPix = (unsigned __int64)((dpix - pcd->pixBase) * pcd->pixDiv);
+					pcd->pPixel[i+j*ndimx] = (int)((uiPix < INT_MAX) ? uiPix : INT_MAX);
 				}
 				//150207 pcd->pPixel[i+j*ndimx] = (int)( cPixel[i+j*ndimx].re );
 			}
@@ -5158,30 +5295,34 @@ void CGazoDoc::OnTomoFourier()
 	}
 	pcd->UpdateView(/*bInit=*/true);
 	CString title;
-	//fn.Format("%09d", iy);
-	//fn = fsuffix + fn.Right((int)(log10((double)iLenSinogr)) + 1);
-	title.Format("log(FT modulus) of %s", GetTitle());
+	if (iOutputLog) title.Format("log(FT modulus) of %s", GetTitle());
+	else title.Format("FT modulus of %s", GetTitle());
 	pcd->SetTitle(title);
 	pcd->dataPath = dataPath;
 	pcd->dataPrefix = dataPrefix;
 	//
 	if (cPixel) delete [] cPixel;
+	if (pf) pf->m_wndStatusBar.SetPaneText(0, "Finished");
 	return;
 }
 
 void CGazoDoc::OnTomographyGaussianconvolution()
 {
 	CDlgGeneral dlg;
-	dlg.m_sTitle = "Gaussian convolution";
-	dlg.m_sCaption1 = "Gaussian sigma";
-	dlg.m_sInput1 = "2.0";
+	dlg.m_sTitle = "PSF convolution";
+	dlg.m_sCaption1 = "Sigma or radius";
+	dlg.m_sInput1 = "1.699";
 	dlg.m_sCaption2 = "Cutoff limit";
-	dlg.m_sInput2 = "0.1";
+	dlg.m_sInput2 = "0.01";
+	dlg.m_sCaption3 = "Gauss0/Circ1/Sqr2";
+	dlg.m_sInput3 = "0";
 	if (dlg.DoModal() == IDCANCEL) return;
 	double sig = atof(dlg.m_sInput1);
 	if (sig <= 0) {AfxMessageBox("Invalid sigma"); return;}
 	double limit = atof(dlg.m_sInput2);
-	if (limit <= 0.01) {AfxMessageBox("Invalid cutoff"); return;}
+	if (limit <= 0.001) {AfxMessageBox("Too small cutoff"); return;}
+	const int ifunc = atoi(dlg.m_sInput3);
+	if ((ifunc < 0)||(ifunc > 2)) {AfxMessageBox("Invalid func selection"); return;}
 
 	const double sig2 = sig * sig;
 	int* iPixel1;
@@ -5189,43 +5330,86 @@ void CGazoDoc::OnTomographyGaussianconvolution()
 	try {iPixel1 = new int[ixydim];}
 	catch (CException* e) {e->Delete(); return;}
 
-	const double r2limit = -2.0 * sig2 * log(limit);
-	const int irad = (int)(sqrt(r2limit));
-	for (int i=0; i<ixdim; i++) {
-		for (int j=0; j<iydim; j++) {
-			double dIntens = 0, dIntens1 = 0, dIntens2 = 0;
-			double bsum = 0;
-			for (int m=-irad; m<=irad; m++) {
-				for (int n=-irad; n<=irad; n++) {
-					int im = i + m; int jn = j + n;
-					if ((im < 0)||(im >= ixdim)||(jn < 0)||(jn >= iydim)) continue;
-					const double blur = exp(-0.5 * (m * m + n * n) / sig2);
-					if (blur < limit) continue;
-					if (bColor) {
-						int ip = pPixel[im + jn * ixdim];
-						dIntens += blur * (ip & 0xff);
-						dIntens1 += blur * ((ip >> 8) & 0xff);
-						dIntens2 += blur * ((ip >> 16) & 0xff);
-					} else {
-						dIntens += blur * pPixel[im + jn * ixdim];
+	CMainFrame* pf = (CMainFrame*) AfxGetMainWnd();
+	if (pf) pf->m_wndStatusBar.SetPaneText(0, "Calculating..");
+
+	if (ifunc == 0) {//gaussian
+		const double r2limit = -2.0 * sig2 * log(limit);
+		const int irad = (int)(sqrt(r2limit));
+		for (int i=0; i<ixdim; i++) {
+			for (int j=0; j<iydim; j++) {
+				double dIntens = 0, dIntens1 = 0, dIntens2 = 0;
+				double bsum = 0;
+				for (int m=-irad; m<=irad; m++) {
+					for (int n=-irad; n<=irad; n++) {
+						int im = i + m; int jn = j + n;
+						if ((im < 0)||(im >= ixdim)||(jn < 0)||(jn >= iydim)) continue;
+						const double blur = exp(-0.5 * (m * m + n * n) / sig2);
+						if (blur < limit) continue;
+						if (bColor) {
+							int ip = pPixel[im + jn * ixdim];
+							dIntens += blur * (ip & 0xff);
+							dIntens1 += blur * ((ip >> 8) & 0xff);
+							dIntens2 += blur * ((ip >> 16) & 0xff);
+						} else {
+							dIntens += blur * pPixel[im + jn * ixdim];
+						}
+						bsum += blur;
+						//pPixel[im + jn * ixdim] += (int)(ipeak * blur);
 					}
-					bsum += blur;
-					//pPixel[im + jn * ixdim] += (int)(ipeak * blur);
 				}
-			}
-			const int idx = i+j*ixdim;
-			if (bsum > 0) {
-				if (bColor) {
-					iPixel1[idx] = (int)(dIntens / bsum) | ((int)(dIntens1 / bsum) << 8) |
-									((int)(dIntens2 /bsum) << 16);
-				} else {
-					iPixel1[idx] = (int)(dIntens / bsum);
+				const int idx = i+j*ixdim;
+				if (bsum > 0) {
+					if (bColor) {
+						iPixel1[idx] = (int)(dIntens / bsum) | ((int)(dIntens1 / bsum) << 8) |
+										((int)(dIntens2 /bsum) << 16);
+					} else {
+						iPixel1[idx] = (int)(dIntens / bsum);
+					}
 				}
 			}
 		}
-	}
+	} else if ((ifunc == 1)||(ifunc == 2)) {//circle or square aperture
+		const int irad = (int)ceil(sig);
+		const double sig2 = sig * sig;
+		for (int i=0; i<ixdim; i++) {
+			for (int j=0; j<iydim; j++) {
+				double dIntens = 0, dIntens1 = 0, dIntens2 = 0;
+				int isum = 0;
+				for (int m=-irad; m<=irad; m++) {
+					for (int n=-irad; n<=irad; n++) {
+						if (ifunc == 1) {
+							if (m * m + n * n > sig2) continue;
+						}
+						int im = i + m; int jn = j + n;
+						if ((im < 0)||(im >= ixdim)||(jn < 0)||(jn >= iydim)) continue;
+						if (bColor) {
+							int ip = pPixel[im + jn * ixdim];
+							dIntens += (ip & 0xff);
+							dIntens1 += ((ip >> 8) & 0xff);
+							dIntens2 += ((ip >> 16) & 0xff);
+						} else {
+							dIntens += pPixel[im + jn * ixdim];
+						}
+						isum++;
+						//pPixel[im + jn * ixdim] += (int)(ipeak * blur);
+					}
+				}
+				const int idx = i+j*ixdim;
+				if (isum > 0) {
+					if (bColor) {
+						iPixel1[idx] = (int)(dIntens / isum) | ((int)(dIntens1 / isum) << 8) |
+										((int)(dIntens2 / isum) << 16);
+					} else {
+						iPixel1[idx] = (int)(dIntens / isum);
+					}
+				}
+			}
+		}
+	}//if (ifunc == ...)
 	for (int i=0; i<ixydim; i++) {pPixel[i] = iPixel1[i];}
 	if (iPixel1) delete [] iPixel1;
+	if (pf) pf->m_wndStatusBar.SetPaneText(0, "Finished");
 	UpdateView();
 }
 
@@ -5275,6 +5459,163 @@ void CGazoDoc::OnAnalysisAddnoise()
 void CGazoDoc::OnUpdateAnalysisAddnoise(CCmdUI *pCmdUI)
 {
 	// TODO: ここにコマンド更新 UI ハンドラ コードを追加します。
+}
+
+void CGazoDoc::OnAnalysisEnlarge()
+{
+	CDlgGeneral dlg;
+	dlg.m_sTitle = "Enlarge/reduce image";
+	dlg.m_sCaption1 = "Scale";
+	dlg.m_sInput1 = "2.0";
+	if (dlg.DoModal() == IDCANCEL) return;
+	const double dscale = atof(dlg.m_sInput1);
+	if (dscale <= 0.01) {AfxMessageBox("Invalid scale"); return;}
+	const int imgx = this->ixdim;//refq->iXdim;
+	const int imgy = this->iydim;//refq->iYdim;
+	const int ndimx = (int)(imgx * dscale);
+	const int ndimy = (int)(imgy * dscale);
+
+	CGazoView* pcv = (CGazoView*)( ((CGazoApp*)AfxGetApp())->RequestNew() );
+	CGazoDoc* pcd = pcv->GetDocument();
+	try {
+		pcd->pPixel = new int[ndimx * ndimy];
+	}
+	catch (CException* e) {
+		if (pcd->pPixel) {delete [] pcd->pPixel; pcd->pPixel = NULL;}
+		e->Delete();
+		return;
+	}
+	pcd->maxPixel = ndimx * ndimy;
+	pcd->ixdim = ndimx;
+	pcd->iydim = ndimy;
+	pcd->parentDoc = this;
+	pcd->SetModifiedFlag(TRUE);
+	pcd->pixBase = pixBase;
+	pcd->pixDiv = pixDiv;
+	pcd->fCenter = fCenter;
+	pcd->SetTitle("Calculating..");
+	pcd->bColor = bColor;
+
+	const double pxd = (pixDiv > 0) ? pixDiv : 1;
+	const int kmax = bColor ? 3 : 1;
+	double dClrMax = 0, dClrMin = 255;
+	for (int k=0; k<kmax; k++) {
+		if (dscale >= 1) {
+			for (int i=0; i<ndimx; i++) {
+				for (int j=0; j<ndimy; j++) {
+					const int iorg = (int)(i / dscale);
+					const int jorg = (int)(j / dscale);
+					const int idx = iorg + jorg * imgx;
+					if (bColor) {
+						int ipix = (pPixel[idx] >> (k*8)) & 0xff;
+						pcd->pPixel[i+j*ndimx] |= (ipix << (k*8));
+					} else {
+						pcd->pPixel[i+j*ndimx] = pPixel[idx];
+					}
+				}
+			}
+		} else {
+			for (int i=0; i<ndimx; i++) {
+				for (int j=0; j<ndimy; j++) {
+					const int iorg = (int)(i / dscale);
+					const int jorg = (int)(j / dscale);
+					int iend = (int)ceil((i+1) / dscale);
+					int jend = (int)ceil((j+1) / dscale);
+					iend = (iend > imgx) ? imgx : iend;
+					jend = (jend > imgy) ? imgy : jend;
+					//CString line; line.Format("%d %d %d %d", iorg, iend, jorg, jend); AfxMessageBox(line);
+					int icount = 0;
+					__int64 llsum = 0;
+					for (int ix=iorg; ix<iend; ix++) {
+						for (int iy=jorg; iy<jend; iy++) {
+							const int idx = ix + iy * imgx;
+							if (bColor) {
+								llsum += (pPixel[idx] >> (k*8)) & 0xff;
+							} else {
+								llsum += pPixel[idx];
+							}
+							icount++;
+						}
+					}
+					if (icount) llsum /= icount;
+					if (bColor) pcd->pPixel[i+j*ndimx] |= ((llsum & 0xff) << (k*8));
+					else pcd->pPixel[i+j*ndimx] = (int)llsum;
+				}
+			}
+		}
+	}
+	pcd->UpdateView(/*bInit=*/true);
+	CString title;
+	title.Format("Scale-by-%.2f of %s", dscale, GetTitle());
+	pcd->SetTitle(title);
+	pcd->dataPath = dataPath;
+	pcd->dataPrefix = dataPrefix;
+	//
+	return;
+}
+
+void CGazoDoc::OnAnalysisRadialprofile()
+{
+	const int imgx = this->ixdim;//refq->iXdim;
+	const int imgy = this->iydim;//refq->iYdim;
+	CString line;
+
+	CDlgGeneral dlg;
+	dlg.m_sTitle = "Radial profile";
+	dlg.m_sCaption1 = "center X";
+	dlg.m_sInput1.Format("%d", imgx / 2);
+	dlg.m_sCaption2 = "center Y";
+	dlg.m_sInput2.Format("%d", imgy / 2);
+	dlg.m_sCaption3 = "Max radius";
+	dlg.m_sInput3.Format("%d", (imgx < imgy) ? (imgx / 2) : (imgy / 2));
+	dlg.m_sCaption4 = "Binning";
+	dlg.m_sInput4 = "4";
+	if (dlg.DoModal() == IDCANCEL) return;
+	const int icenterx = atoi(dlg.m_sInput1);
+	const int icentery = atoi(dlg.m_sInput2);
+	const double dradmax = atof(dlg.m_sInput3);
+	const int ibin = atoi(dlg.m_sInput4);
+	if (ibin < 1) {AfxMessageBox("Invalid binning"); return;}
+	if (dradmax < 0) {AfxMessageBox("Invalid maximum radius"); return;}
+
+
+	static char BASED_CODE szFilter[] = "All Files (*.*)|*.*||";
+	static char BASED_CODE defaultExt[] = "txt";
+	CString sFileName;
+	CFileDialog fileDlg(TRUE, defaultExt, sFileName, OFN_OVERWRITEPROMPT | OFN_HIDEREADONLY, szFilter, NULL);
+	if (fileDlg.DoModal() == IDCANCEL) {
+		AfxMessageBox("No file speciifed");
+		return;
+	}
+	sFileName = fileDlg.GetPathName();
+	FILE* fdata = NULL;
+	errno_t errn = fopen_s(&fdata, sFileName, "wt");
+	if (fdata == NULL) return;
+	CStdioFile stdioData(fdata);
+	for (int ix=0; ix<imgx; ix+=ibin) {
+		for (int iy=0; iy<imgy; iy+=ibin) {
+			double drx = ix + ibin * 0.5 - icenterx;
+			double dry = iy + ibin * 0.5 - icentery;
+			double drad = sqrt(drx * drx + dry * dry);
+			if (drad > dradmax) continue;
+			double dsum = 0;
+			int icount = 0;
+			for (int jx=0; jx<ibin; jx++) {
+				if (ix + jx >= imgx) continue;
+				for (int jy=0; jy<ibin; jy++) {
+					if (iy + jy >= imgy) continue;
+					int idx = (ix + jx) + (iy + jy) * imgx;
+					dsum += pPixel[idx];
+					icount++;
+				}
+			}
+			if (icount == 0) continue;
+			dsum /= icount;
+			line.Format("%f %f %f\r\n", drad, dsum, (dsum / pixDiv + pixBase));
+			stdioData.WriteString(line);
+		}
+	}
+	fclose(fdata);
 }
 
 void CGazoDoc::OnMenuOverlay()
@@ -5412,3 +5753,4 @@ void CGazoDoc::OnUpdateMenuOverlay(CCmdUI *pCmdUI)
 	if (bColor) pCmdUI->Enable(false);
 	else pCmdUI->Enable(true);
 }
+

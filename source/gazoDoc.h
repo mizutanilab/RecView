@@ -265,6 +265,8 @@ public:
 	afx_msg void OnUpdateAnalysisAddnoise(CCmdUI *pCmdUI);
 	afx_msg void OnMenuOverlay();
 	afx_msg void OnUpdateMenuOverlay(CCmdUI *pCmdUI);
+	afx_msg void OnAnalysisEnlarge();
+	afx_msg void OnAnalysisRadialprofile();
 };
 
 /////////////////////////////////////////////////////////////////////////////

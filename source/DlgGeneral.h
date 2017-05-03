@@ -25,6 +25,8 @@ public:
 	CString m_sInput2;
 	CString m_sCaption3;
 	CString m_sInput3;
+	CString m_sCaption4;
+	CString m_sInput4;
 	virtual BOOL OnInitDialog();
 	CString m_sTitle;
 };

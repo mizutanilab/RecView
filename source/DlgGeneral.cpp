@@ -18,6 +18,8 @@ CDlgGeneral::CDlgGeneral(CWnd* pParent /*=NULL*/)
 	, m_sInput2(_T(""))
 	, m_sCaption3(_T(""))
 	, m_sInput3(_T(""))
+	, m_sCaption4(_T(""))
+	, m_sInput4(_T(""))
 {
 	m_sTitle = _T("");
 }
@@ -35,6 +37,8 @@ void CDlgGeneral::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_INPUT2, m_sInput2);
 	DDX_Text(pDX, IDC_CAPTION3, m_sCaption3);
 	DDX_Text(pDX, IDC_INPUT3, m_sInput3);
+	DDX_Text(pDX, IDC_CAPTION4, m_sCaption4);
+	DDX_Text(pDX, IDC_INPUT4, m_sInput4);
 }
 
 
@@ -51,6 +55,7 @@ BOOL CDlgGeneral::OnInitDialog()
 	// TODO:  ‚±‚±‚É‰Šú‰»‚ð’Ç‰Á‚µ‚Ä‚­‚¾‚³‚¢
 	if (!m_sTitle.IsEmpty()) SetWindowText(m_sTitle);
 	if (m_sCaption3.IsEmpty()) GetDlgItem(IDC_INPUT3)->EnableWindow(FALSE);
+	if (m_sCaption4.IsEmpty()) GetDlgItem(IDC_INPUT4)->EnableWindow(FALSE);
 
 
 	return TRUE;  // return TRUE unless you set the focus to a control
