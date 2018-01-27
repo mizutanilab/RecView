@@ -129,7 +129,7 @@ frame#      time(msec)     angle(deg) 0=flatfield/1=sample
       </LI>
     </UL><br>
   <LI><b>RecView retuns an error when processing offset-CT data taken at SPring-8.</b></LI>
-    If the 'stop angle' of the sample rotation is not 360 degree in your offset-CT experiment, the conv.bat files seem to have incorrect contents. We have to edit it manually or by using a spreadsheet software.  
+    If the 'stop angle' of the sample rotation was not 360 degree in the offset-CT experiment, your conv.bat files seem to have incorrect contents. You have to edit it manually or by using a spreadsheet software. <br> 
   <LI><b>How to try the test dataset?</b></LI>
     <UL>
       <LI>Extract all files in the archived test dataset.</LI>
