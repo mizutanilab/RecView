@@ -4939,6 +4939,7 @@ void CGazoDoc::OnTomographyResolutionReport()
 	const int ndimy = (int) pow((double)2, ndimp);
 	const int ixoffset = (ndimx - imgx) / 2;
 	const int iyoffset = (ndimy - imgy) / 2;
+	const double dSmoothing = 2;
 
 	const int istep = 5;
 	const int iAxisOmit = 1;
@@ -5027,7 +5028,7 @@ void CGazoDoc::OnTomographyResolutionReport()
 			}
 		}
 		//smooth each end using gaussian to minimize the truncation error
-		const int iwidth = ndimx / 20;
+		const int iwidth = (int)(ndimx * 0.01 * dSmoothing);
 		for (int i=0; i<iwidth; i++) {
 			for (int j=0; j<ndimy; j++) {
 				int idist2 = (iwidth - i) * (iwidth - i);
@@ -5152,10 +5153,14 @@ void CGazoDoc::OnTomoFourier()
 	dlg.m_sInput1 = "1";
 	dlg.m_sCaption2 = "Full scale";
 	dlg.m_sInput2.Format("%d", 1024 * 1024 * 8 - 1);
+	dlg.m_sCaption3 = "Edge smoothing(%)";
+	dlg.m_sInput3 = "2";
 	if (dlg.DoModal() == IDCANCEL) return;
 	const int iOutputLog = atoi(dlg.m_sInput1);
 	if ((iOutputLog != 0)&&(iOutputLog != 1)) {AfxMessageBox("Invalid option"); return;}
 	const int iFullScale = atoi(dlg.m_sInput2);
+	const double dSmoothing = atof(dlg.m_sInput3);
+	if ((dSmoothing < 0)&&(dSmoothing > 50)) {AfxMessageBox("Invalid smoothing width"); return;}
 
 	const int imgx = this->ixdim;//refq->iXdim;
 	const int imgy = this->iydim;//refq->iYdim;
@@ -5221,39 +5226,41 @@ void CGazoDoc::OnTomoFourier()
 			}
 		}
 		//smooth each end using gaussian to minimize the truncation error
-		const int iwidth = ndimx / 20;
-		for (int i=0; i<iwidth; i++) {
-			for (int j=0; j<ndimy; j++) {
-				int idist2 = (iwidth - i) * (iwidth - i);
-				if (j < iwidth) idist2 += (iwidth - j) * (iwidth - j);
-				else if (j >= ndimy-iwidth) idist2 += (ndimy-iwidth - j + 1) * (ndimy-iwidth - j + 1);
-				const double blur = exp(-3. * idist2 / (iwidth * iwidth));//smooth the truncation down to its 5%
-				cPixel[i+j*ndimx].re = (TCmpElmnt)((cPixel[i+j*ndimx].re - davg) * blur + davg);
+		const int iwidth = (int)(ndimx * 0.01 * dSmoothing);
+		if (iwidth > 0) {
+			for (int i=0; i<iwidth; i++) {
+				for (int j=0; j<ndimy; j++) {
+					int idist2 = (iwidth - i) * (iwidth - i);
+					if (j < iwidth) idist2 += (iwidth - j) * (iwidth - j);
+					else if (j >= ndimy-iwidth) idist2 += (ndimy-iwidth - j + 1) * (ndimy-iwidth - j + 1);
+					const double blur = exp(-3. * idist2 / (iwidth * iwidth));//smooth the truncation down to its 5%
+					cPixel[i+j*ndimx].re = (TCmpElmnt)((cPixel[i+j*ndimx].re - davg) * blur + davg);
+				}
 			}
-		}
-		for (int i=ndimx-iwidth; i<ndimx; i++) {
-			for (int j=0; j<ndimy; j++) {
-				int idist2 = (ndimx-iwidth - i + 1) * (ndimx-iwidth - i + 1);
-				if (j < iwidth) idist2 += (iwidth - j) * (iwidth - j);
-				else if (j >= ndimy-iwidth) idist2 += (ndimy-iwidth - j + 1) * (ndimy-iwidth - j + 1);
-				const double blur = exp(-3. * idist2 / (iwidth * iwidth));//smooth the truncation down to its 5%
-				cPixel[i+j*ndimx].re = (TCmpElmnt)((cPixel[i+j*ndimx].re - davg) * blur + davg);
+			for (int i=ndimx-iwidth; i<ndimx; i++) {
+				for (int j=0; j<ndimy; j++) {
+					int idist2 = (ndimx-iwidth - i + 1) * (ndimx-iwidth - i + 1);
+					if (j < iwidth) idist2 += (iwidth - j) * (iwidth - j);
+					else if (j >= ndimy-iwidth) idist2 += (ndimy-iwidth - j + 1) * (ndimy-iwidth - j + 1);
+					const double blur = exp(-3. * idist2 / (iwidth * iwidth));//smooth the truncation down to its 5%
+					cPixel[i+j*ndimx].re = (TCmpElmnt)((cPixel[i+j*ndimx].re - davg) * blur + davg);
+				}
 			}
-		}
-		for (int j=0; j<iwidth; j++) {
-			for (int i=iwidth; i<ndimx-iwidth; i++) {
-				int idist2 = (iwidth - j) * (iwidth - j);
-				const double blur = exp(-3. * idist2 / (iwidth * iwidth));//smooth the truncation down to its 5%
-				cPixel[i+j*ndimx].re = (TCmpElmnt)((cPixel[i+j*ndimx].re - davg) * blur + davg);
+			for (int j=0; j<iwidth; j++) {
+				for (int i=iwidth; i<ndimx-iwidth; i++) {
+					int idist2 = (iwidth - j) * (iwidth - j);
+					const double blur = exp(-3. * idist2 / (iwidth * iwidth));//smooth the truncation down to its 5%
+					cPixel[i+j*ndimx].re = (TCmpElmnt)((cPixel[i+j*ndimx].re - davg) * blur + davg);
+				}
 			}
-		}
-		for (int j=ndimy-iwidth; j<ndimy; j++) {
-			for (int i=iwidth; i<ndimx-iwidth; i++) {
-				int idist2 = (ndimy-iwidth - j + 1) * (ndimy-iwidth - j + 1);
-				const double blur = exp(-3. * idist2 / (iwidth * iwidth));//smooth the truncation down to its 5%
-				cPixel[i+j*ndimx].re = (TCmpElmnt)((cPixel[i+j*ndimx].re - davg) * blur + davg);
+			for (int j=ndimy-iwidth; j<ndimy; j++) {
+				for (int i=iwidth; i<ndimx-iwidth; i++) {
+					int idist2 = (ndimy-iwidth - j + 1) * (ndimy-iwidth - j + 1);
+					const double blur = exp(-3. * idist2 / (iwidth * iwidth));//smooth the truncation down to its 5%
+					cPixel[i+j*ndimx].re = (TCmpElmnt)((cPixel[i+j*ndimx].re - davg) * blur + davg);
+				}
 			}
-		}
+		}//(iwidth > 0)
 
 		CFft fft2;
 		//fft2.Init2(ndimxp, 0, ndimyp, 0);

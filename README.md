@@ -1,4 +1,4 @@
-## RecView
+﻿## RecView
 RecView is a program for tomographic reconstruction and image processing. It consists of approx 22,000 lines of custom source codes in C++, CUDA C, OpenCL, and x86/x64 assembly language. RecView is designed for processing data obtained at the BL20B2, BL20XU, BL37XU, and BL47XU beamlines of the synchrotron radiation facility SPring-8 and also those taken at the 32-ID beamline of Advanced Photon Source (APS), Argonne National Laboratory.
 
 <IMG width=100 height=140 alt=testPattern src="pics/testPattern.png" align=left>
@@ -39,11 +39,12 @@ RecView is provided under the BSD 2-Clause License.
 ## Release notes
 The binary folder contains several executables. Please use 'RecView.exe' appropriate for your PC platform. The executables were generated using Visual Studio 2008 C++ compiler, MASM for x64, CUDA toolkit 5.5, and ATI Stream SDK 2.1. If your PC has NVIDIA Tesla, GeForce or Quadro GPU processors, you can use the CUDA version. The dynamic link libraries (64 bit: 'cudart64_55.dll' and 'cufft64_55.dll'; 32 bit: 'cudart32_55.dll' and 'cufft32_55.dll') should be placed in the folder where the RecView CUDA executable is extracted. These library files are also available from the <a href="http://www.nvidia.com/object/cuda_home.html">official NVIDIA site</a> as part of the CUDA toolkit. ATI stream processors Radeon, FireStream, and FirePro are also supported. To run the executable with ATI processors, you should install the [ATI Catalyst driver suite](http://www.amd.com/en-gb/innovations/software-technologies/catalyst) to add the OpenCL library 'OpenCL.dll' to the Windows folder. 
 
-A test dataset in TIFF format is also provided in the binary folder.
+A test dataset in TIFF format is also provided in the binary folder. 
 
 <UL>
-  <LI>v5.4.0 (3 May 2017). Image analysis routines were updated. The offset CT routine is now under revision.  
-<LI>v5.3.0 (6 Jan 2017). Routines for <a href="https://github.com/mizutanilab/BluetoothDials">our dial input device</a> were implemented.
+  <LI>v5.4.1 (26 Jan 2018). Edge smoothing was implemented in the image analysis function. No revision were made in the offset CT kernel, but we need a 'conv.bat' file appropriate for the offset CT setup. See below. 
+  <LI>v5.4.0 (3 May 2017). Image analysis routines were updated. The offset CT routine is now under revision. 
+  <LI>v5.3.0 (6 Jan 2017). Routines for <a href="https://github.com/mizutanilab/BluetoothDials">our dial input device</a> were implemented.
   <LI>v5.2.0 (13 Nov 2016). Frame selection dialog was implemented. Routines for the sinogram generation were revised.
   <LI>v5.1.1 (released 18 Sep 2016). Reconstruction kernels for x86/x64 processors were updated using assembly code. The kernels are accelerated with vectorized instructions (compiler option /arch:SSE2 didn't work well with our c++ code). Performances are:
     <UL>
@@ -127,6 +128,8 @@ frame#      time(msec)     angle(deg) 0=flatfield/1=sample
           Spreadsheet softwares work well for manually generating this 'output.log' file. The 'time' fields are used for interpolating the trend of flatfield pixel intensities. <BR>The output.log files of some SPring-8 sessions list angle in pulses instead of angle in degrees. RecView can recognize each format.
       </LI>
     </UL><br>
+  <LI><b>RecView retuns an error message when using offset-CT data.</b></LI>
+    If the stop angle of the sample rotation is not 360 degree in your offset-CT experiment, the conv.bat files seem to have file names in an unintended fashion. We have to use manually edited ones of conv.bat files instead. 
   <LI><b>How to try the test dataset?</b></LI>
     <UL>
       <LI>Extract all files in the archived test dataset.</LI>
@@ -137,7 +140,7 @@ frame#      time(msec)     angle(deg) 0=flatfield/1=sample
       <LI>Click 'Show image' below. In seconds, a cross section of an aluminum wire with a square-wave pattern carved on its surface will be shown.</LI>
     </UL><br>
   <LI><b>Does RecView make network connections?</b></LI>
-      Never. However, remote folders such as workgroup PCs are searched when you open files. It's probably one of default functions of Windows OS depending on your environment.
+      No, never. However, remote folders such as workgroup PCs are searched when you open files. It's probably one of default functions of Windows OS depending on your environment.
 </OL>
 
 ## Contact
