@@ -129,7 +129,7 @@ frame#      time(msec)     angle(deg) 0=flatfield/1=sample
       </LI>
     </UL><br>
   <LI><b>RecView retuns an error message when using offset-CT data.</b></LI>
-    If the stop angle of the sample rotation is not 360 degree in your offset-CT experiment, the conv.bat files seem to have file names in an unintended fashion. We have to use manually edited ones of conv.bat files instead. 
+    If the stop angle of the sample rotation is not 360 degree in your offset-CT experiment, the conv.bat files seem to have incorrect file names. We have to edit it manually.  
   <LI><b>How to try the test dataset?</b></LI>
     <UL>
       <LI>Extract all files in the archived test dataset.</LI>
