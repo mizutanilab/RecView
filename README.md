@@ -42,7 +42,7 @@ The binary folder contains several executables. Please use 'RecView.exe' appropr
 A test dataset in TIFF format is also provided in the binary folder. 
 
 <UL>
-  <LI>v5.4.1 (27 Jan 2018). Image analysis routines were updated. No revision were made in the offset CT kernel. Errors observed for some offset-CT data taken at SPring-8 beamlines were due to the 'conv.bat' file. Its workaround is described in the FAQ section below. Executable is available only for x64 platforms because this is a minor revision. 
+  <LI>v5.4.1 (27 Jan 2018). Image analysis routines were updated. No revision were made in the offset CT kernel. Errors observed for some offset-CT data taken at SPring-8 were due to the 'conv.bat' files. Its workaround is described in the FAQ section below. Executable is available only for x64 platforms because this is a very minor revision. 
   <LI>v5.4.0 (3 May 2017). Image analysis routines were updated. The offset CT routine is now under revision. 
   <LI>v5.3.0 (6 Jan 2017). Routines for <a href="https://github.com/mizutanilab/BluetoothDials">our dial input device</a> were implemented.
   <LI>v5.2.0 (13 Nov 2016). Frame selection dialog was implemented. Routines for the sinogram generation were revised.
@@ -128,8 +128,8 @@ frame#      time(msec)     angle(deg) 0=flatfield/1=sample
           Spreadsheet softwares work well for manually generating this 'output.log' file. The 'time' fields are used for interpolating the trend of flatfield pixel intensities. <BR>The output.log files of some SPring-8 sessions list angle in pulses instead of angle in degrees. RecView can recognize each format.
       </LI>
     </UL><br>
-  <LI><b>RecView retuns an error when processing offset-CT data taken at SPring-8.</b></LI>
-    If the 'stop angle' of the sample rotation was not 360 degree in the offset-CT experiment, your conv.bat files seem to have incorrect contents. You have to edit it manually or by using a spreadsheet software. <br><br>
+  <LI><b>RecView returns an error when processing offset-CT data taken at SPring-8.</b></LI>
+    If the 'stop angle' of the sample rotation was not 360 degree in your offset-CT experiment, 'conv.bat' file seems to have incorrect contents. You have to edit it manually or by using a spreadsheet software. <br><br>
   <LI><b>How to try the test dataset?</b></LI>
     <UL>
       <LI>Extract all files in the archived test dataset.</LI>
