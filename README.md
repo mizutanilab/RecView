@@ -42,7 +42,7 @@ The binary folder contains several executables. Please use 'RecView.exe' appropr
 A test dataset in TIFF format is also provided in the binary folder. 
 
 <UL>
-  <LI>v5.4.1 (26 Jan 2018). Edge smoothing was implemented in the image analysis function. No revision were made in the offset CT kernel, but we need a 'conv.bat' file appropriate for the offset CT setup. See below. 
+  <LI>v5.4.1 (26 Jan 2018). Edge smoothing was implemented in the image analysis function. No revision were made in the offset CT kernel, but errors were found in the 'conv.bat' file taken for the offset CT. See below. 
   <LI>v5.4.0 (3 May 2017). Image analysis routines were updated. The offset CT routine is now under revision. 
   <LI>v5.3.0 (6 Jan 2017). Routines for <a href="https://github.com/mizutanilab/BluetoothDials">our dial input device</a> were implemented.
   <LI>v5.2.0 (13 Nov 2016). Frame selection dialog was implemented. Routines for the sinogram generation were revised.
