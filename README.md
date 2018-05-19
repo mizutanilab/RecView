@@ -42,6 +42,7 @@ The binary folder contains several executables. Please use 'RecView.exe' appropr
 A test dataset in TIFF format is also provided in the binary folder. 
 
 <UL>
+  <LI>Build-180505. Reslicing routine was revised to minimize memory usage and to allow users to specify the reslicing direction with a vector. Polygon lasso function was implemented for defining ROI of statistical analysis.  
   <LI>v5.4.1 (27 Jan 2018). Image analysis routines were updated. No revision were made in the offset CT kernel. Errors observed for some offset-CT data taken at SPring-8 were due to the 'conv.bat' files. Its workaround is described in the FAQ section below. Executable of this release is available only for x64 platforms because this is a very minor revision. 
   <LI>v5.4.0 (3 May 2017). Image analysis routines were updated. The offset CT routine is now under revision. 
   <LI>v5.3.0 (6 Jan 2017). Routines for <a href="https://github.com/mizutanilab/BluetoothDials">our dial input device</a> were implemented.
