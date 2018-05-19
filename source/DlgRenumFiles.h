@@ -28,7 +28,10 @@ public:
 	int m_StartIndex;
 	CString m_OutPath;
 	afx_msg void OnBnClickedRenumSetpath();
-	double m_ResliceRotZ;
-	double m_ResliceRotY;
-	double m_ResliceRotX;
+	int m_ResliceOrgZ;
+	int m_ResliceOrgY;
+	int m_ResliceOrgX;
+	int m_ResliceEndX;
+	int m_ResliceEndY;
+	int m_ResliceEndZ;
 };

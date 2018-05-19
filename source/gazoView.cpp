@@ -44,6 +44,8 @@ BEGIN_MESSAGE_MAP(CGazoView, CView)
 	ON_COMMAND(IDM_VIEW_BOXAXISLABEL, &CGazoView::OnViewBoxaxislabel)
 	//then manually removed
 	//ON_UPDATE_COMMAND_UI(IDM_VIEW_BOXAXISLABEL, &CGazoView::OnUpdateViewBoxaxislabel)
+	ON_COMMAND(ID_ANALYSIS_POLYGONLASSO, &CGazoView::OnAnalysisPolygonlasso)
+	ON_UPDATE_COMMAND_UI(ID_ANALYSIS_POLYGONLASSO, &CGazoView::OnUpdateAnalysisPolygonlasso)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -78,6 +80,10 @@ CGazoView::CGazoView()
 	bRedLine = false;
 	bDragScrollEnabled = false;
 	iScrollH = 0; iScrollV = 0;
+	bPolygonEnabled = false;
+	bPolygonMove = false;
+	iPickedPolygonPnt = -1;
+	InitPolygon(200, 200, 100, 100);
 }
 
 CGazoView::~CGazoView()
@@ -420,6 +426,17 @@ void CGazoView::OnDraw(CDC* pDC)
 			labelfont.DeleteObject();
 		}//if bShowBoxAxis
 	}
+	if (bPolygonEnabled) {//180424
+		for (int i=0; i<CGAZOVIEW_NPOLYGON; i++) {
+			pntPolygon[i].x = (int)(iPolygonX[i] * rMagnify + ix0img);
+			pntPolygon[i].y = (int)(iPolygonY[i] * rMagnify + iy0img);
+		}
+		pntPolygon[CGAZOVIEW_NPOLYGON] = pntPolygon[0];
+		CPen mPen1( PS_SOLID, 1, RGB(255,255,0) );
+		CPen* pOldPen = pDC->SelectObject(&mPen1);
+		pDC->Polyline(pntPolygon, CGAZOVIEW_NPOLYGON+1);
+		pDC->SelectObject(pOldPen);
+	}
 	if (bRedLine) {
 		CPen mPen1( PS_SOLID, 1, RGB(255,0,0) );
 		CPen* pOldPen = pDC->SelectObject(&mPen1);
@@ -574,51 +591,80 @@ void CGazoView::OnMouseMove(UINT nFlags, CPoint point)
 			//else ::SetCursor(hCursor);
 		}
 	}
-	if (bBoxEnabled && bBoxMove && (iBoxSizeX >= 0) &&(iBoxSizeY >= 0)) {
-		iBoxCentX = pntLButton.x + point.x;
-		iBoxCentY = pntLButton.y + point.y;
-		text.Format("Center (%d %d) Size (%d %d) Tilt %d", iBoxCentX, iBoxCentY, iBoxSizeX, iBoxSizeY, iBoxAngle);
-		pf->m_wndStatusBar.SetPaneText(2,text);
-		pd->dlgHist.UpdateParam();
-		InvalidateRect(NULL, FALSE);
-	} else if (bBoxEnabled && bLButtonDown) {
+	if (bPolygonEnabled) {
+		TReal rMagnify = iMagnify;
+		if (rMagnify < 1) rMagnify = 1.0 / (2 - rMagnify);
 		CRect rect;
 		GetClientRect(&rect);
 		CPoint pCenter = rect.CenterPoint();
-		TReal rMagnify = iMagnify;
-		if (rMagnify < 1) rMagnify = 1.0 / (2 - rMagnify);
 		int ixpos = GetScrollPos(SB_HORZ);
 		int iypos = GetScrollPos(SB_VERT);
 		int ixWidthImg = (int)(ixdim * rMagnify);
 		int iyWidthImg = (int)(iydim * rMagnify);
 		int ix0img = pCenter.x - (int)(ixWidthImg * ixpos / 100);
 		int iy0img = pCenter.y - (int)(iyWidthImg * iypos / 100);
-		int iBoxDirX = 1; int iBoxDirY = 1;
-		switch (iPickedBoxPnt) {
-			case 0: {iBoxDirX = -1; iBoxDirY = -1; break;}
-			case 1: {iBoxDirY = -1; break;}
-			case 2: {break;}
-			case 3: {iBoxDirX = -1; break;}
-			default: {break;}
+		if (bPolygonMove) {
+			int ipx0 = (int)( (pntLButton.x + point.x - ix0img) / rMagnify) - iPolygonX[0];
+			int ipy0 = (int)( (pntLButton.y + point.y - iy0img) / rMagnify) - iPolygonY[0];
+			for (int i=0; i<CGAZOVIEW_NPOLYGON; i++) {
+				iPolygonX[i] += ipx0;
+				iPolygonY[i] += ipy0;
+			}
+			InvalidateRect(NULL, FALSE);
+		} else if (bLButtonDown) {
+			if (iPickedPolygonPnt >= 0) {
+				iPolygonX[iPickedPolygonPnt] = (int)((point.x - ix0img) / rMagnify);
+				iPolygonY[iPickedPolygonPnt] = (int)((point.y - iy0img) / rMagnify);
+			}
+			InvalidateRect(NULL, FALSE);
 		}
-		iBoxCentX = (int)( ((pntLButton.x + point.x) * 0.5 - ix0img) / rMagnify );
-		iBoxCentY = (int)( ((pntLButton.y + point.y) * 0.5 - iy0img) / rMagnify );
-		//CString msg; msg.Format("%d %d", point.x - pntLButton.x, point.y - pntLButton.y);
-		//pf->m_wndStatusBar.SetPaneText(1, msg);
-		const CPoint pntDif = point - pntLButton;
-		const double boxDiag = sqrt((double)(pntDif.x * pntDif.x + pntDif.y * pntDif.y));
-		if (boxDiag > 0) {
-			double alpha = 0;
-			if (pntDif.y >= 0) alpha = acos(pntDif.x / boxDiag) - iBoxAngle * DEG_TO_RAD;
-			else alpha = acos(pntDif.x / boxDiag) + iBoxAngle * DEG_TO_RAD;
-			iBoxSizeX = abs( (int)(boxDiag * cos(alpha) / rMagnify) );
-			iBoxSizeY = abs( (int)(boxDiag * sin(alpha) / rMagnify) );
+	} else if (bBoxEnabled) {
+		TReal rMagnify = iMagnify;
+		if (rMagnify < 1) rMagnify = 1.0 / (2 - rMagnify);
+		CRect rect;
+		GetClientRect(&rect);
+		CPoint pCenter = rect.CenterPoint();
+		int ixpos = GetScrollPos(SB_HORZ);
+		int iypos = GetScrollPos(SB_VERT);
+		int ixWidthImg = (int)(ixdim * rMagnify);
+		int iyWidthImg = (int)(iydim * rMagnify);
+		int ix0img = pCenter.x - (int)(ixWidthImg * ixpos / 100);
+		int iy0img = pCenter.y - (int)(iyWidthImg * iypos / 100);
+		if (bBoxMove && (iBoxSizeX >= 0) &&(iBoxSizeY >= 0)) {
+			iBoxCentX = (int)( (pntLButton.x + point.x - ix0img) / rMagnify);
+			iBoxCentY = (int)( (pntLButton.y + point.y - iy0img) / rMagnify);
+			text.Format("Center (%d %d) Size (%d %d) Tilt %d", iBoxCentX, iBoxCentY, iBoxSizeX, iBoxSizeY, iBoxAngle);
+			pf->m_wndStatusBar.SetPaneText(2,text);
+			pd->dlgHist.UpdateParam();
+			InvalidateRect(NULL, FALSE);
+		} else if (bLButtonDown) {
+			int iBoxDirX = 1; int iBoxDirY = 1;
+			switch (iPickedBoxPnt) {
+				case 0: {iBoxDirX = -1; iBoxDirY = -1; break;}
+				case 1: {iBoxDirY = -1; break;}
+				case 2: {break;}
+				case 3: {iBoxDirX = -1; break;}
+				default: {break;}
+			}
+			iBoxCentX = (int)( ((pntLButton.x + point.x) * 0.5 - ix0img) / rMagnify );
+			iBoxCentY = (int)( ((pntLButton.y + point.y) * 0.5 - iy0img) / rMagnify );
+			//CString msg; msg.Format("%d %d", point.x - pntLButton.x, point.y - pntLButton.y);
+			//pf->m_wndStatusBar.SetPaneText(1, msg);
+			const CPoint pntDif = point - pntLButton;
+			const double boxDiag = sqrt((double)(pntDif.x * pntDif.x + pntDif.y * pntDif.y));
+			if (boxDiag > 0) {
+				double alpha = 0;
+				if (pntDif.y >= 0) alpha = acos(pntDif.x / boxDiag) - iBoxAngle * DEG_TO_RAD;
+				else alpha = acos(pntDif.x / boxDiag) + iBoxAngle * DEG_TO_RAD;
+				iBoxSizeX = abs( (int)(boxDiag * cos(alpha) / rMagnify) );
+				iBoxSizeY = abs( (int)(boxDiag * sin(alpha) / rMagnify) );
+			}
+			text.Format("Center (%d %d) Size (%d %d) Tilt %d", 
+				iBoxCentX, iBoxCentY, iBoxSizeX, iBoxSizeY, iBoxAngle);
+			pf->m_wndStatusBar.SetPaneText(2,text);
+			pd->dlgHist.UpdateParam();
+			InvalidateRect(NULL, FALSE);
 		}
-		text.Format("Center (%d %d) Size (%d %d) Tilt %d", 
-			iBoxCentX, iBoxCentY, iBoxSizeX, iBoxSizeY, iBoxAngle);
-		pf->m_wndStatusBar.SetPaneText(2,text);
-		pd->dlgHist.UpdateParam();
-		InvalidateRect(NULL, FALSE);
 	} else if (bDragScrollEnabled && bLButtonDown) {//150102
 		TReal rMagnify = iMagnify;
 		if (rMagnify < 1) rMagnify = 1.0 / (2 - rMagnify);
@@ -631,7 +677,9 @@ void CGazoView::OnMouseMove(UINT nFlags, CPoint point)
 			SetScrollPos(SB_VERT, iypos);
 			InvalidateRect(NULL, FALSE);
 		}
-	} else {
+	}
+	
+	{//180424 } else {
 		CPoint pnt = point;
 		GetCoord(&pnt);
 		int ix = (int)pnt.x;
@@ -730,21 +778,66 @@ void CGazoView::OnLButtonDown(UINT nFlags, CPoint point)
 	//CString msg; msg.Format("%d %d", this->GetFocus(), pf->GetFocus()); AfxMessageBox(msg);
 	//if (this->GetActiveWindow()) AfxMessageBox("is selected");
 	//CPoint prevPnt = pntLButton;
-	if (bBoxEnabled) {
+	if (bPolygonEnabled) {
+		iPickedPolygonPnt = -1;
+		for (int i=0; i<CGAZOVIEW_NPOLYGON; i++) {
+			int ix = point.x - pntPolygon[i].x;
+			int iy = point.y - pntPolygon[i].y;
+			if (ix * ix + iy * iy < 25) {
+				iPickedPolygonPnt = i; break;
+			}
+		}
+		bPolygonMove = false;
+		if (iPickedPolygonPnt < 0) {
+			TReal rMagnify = iMagnify;
+			if (rMagnify < 1) rMagnify = 1.0 / (2 - rMagnify);
+			CRect rect;
+			GetClientRect(&rect);
+			CPoint pCenter = rect.CenterPoint();
+			int ixpos = GetScrollPos(SB_HORZ);
+			int iypos = GetScrollPos(SB_VERT);
+			int ixWidthImg = (int)(ixdim * rMagnify);
+			int iyWidthImg = (int)(iydim * rMagnify);
+			int ix0img = pCenter.x - (int)(ixWidthImg * ixpos / 100);
+			int iy0img = pCenter.y - (int)(iyWidthImg * iypos / 100);
+			CPoint pnt;
+			pnt.x = (int)((point.x - ix0img) / rMagnify);
+			pnt.y = (int)((point.y - iy0img) / rMagnify);
+			if (PointInPolygon(pnt)) {
+				bPolygonMove = true;
+				pntLButton = CPoint((int)(iPolygonX[0] * rMagnify + ix0img), 
+									(int)(iPolygonY[0] * rMagnify + iy0img)) - point;
+				::SetCursor(AfxGetApp()->LoadStandardCursor(IDC_SIZEALL));
+			}
+		}
+		SetCapture();
+	} else if (bBoxEnabled) {
 		//compare pntBox
 		iPickedBoxPnt = -1;
 		for (int i=0; i<4; i++) {
 			int ix = point.x - pntBox[i].x;
 			int iy = point.y - pntBox[i].y;
-			if (ix * ix + iy + iy < 25) {
+			if (ix * ix + iy * iy < 25) {
 				iPickedBoxPnt = i; break;
 			}
 		}
 		bBoxMove = false;
 		if (iPickedBoxPnt < 0) {
 			if (PointInBox(point)) {
+				TReal rMagnify = iMagnify;
+				if (rMagnify < 1) rMagnify = 1.0 / (2 - rMagnify);
+				CRect rect;
+				GetClientRect(&rect);
+				CPoint pCenter = rect.CenterPoint();
+				int ixpos = GetScrollPos(SB_HORZ);
+				int iypos = GetScrollPos(SB_VERT);
+				int ixWidthImg = (int)(ixdim * rMagnify);
+				int iyWidthImg = (int)(iydim * rMagnify);
+				int ix0img = pCenter.x - (int)(ixWidthImg * ixpos / 100);
+				int iy0img = pCenter.y - (int)(iyWidthImg * iypos / 100);
 				bBoxMove = true;
-				pntLButton = CPoint(iBoxCentX, iBoxCentY) - point;
+				pntLButton = CPoint((int)(iBoxCentX * rMagnify + ix0img), 
+									(int)(iBoxCentY * rMagnify + iy0img)) - point;
 				::SetCursor(AfxGetApp()->LoadStandardCursor(IDC_SIZEALL));
 				//hCursor = ::SetCursor(AfxGetApp()->LoadStandardCursor(IDC_SIZEALL));
 			} else {
@@ -806,6 +899,7 @@ void CGazoView::OnLButtonUp(UINT nFlags, CPoint point)
 {
 	bLButtonDown = false;
 	bBoxMove = false;
+	bPolygonMove = false;
 	bDragScrollEnabled = false;
 	ReleaseCapture();
 	SetCursor(hCursor);
@@ -887,3 +981,57 @@ void CGazoView::OnViewBoxaxislabel()
 //{
 //	// TODO: ここにコマンド更新 UI ハンドラ コードを追加します。
 //}
+
+void CGazoView::OnAnalysisPolygonlasso()//180425
+{
+	if (bPolygonEnabled)  bPolygonEnabled = false;
+	else {
+		bPolygonEnabled = true;
+		if (bBoxEnabled) {
+			InitPolygon(iBoxCentX, iBoxCentY, iBoxSizeX, iBoxSizeY);
+			bBoxEnabled = false;
+		}
+	}
+	InvalidateRect(NULL, FALSE);
+}
+
+void CGazoView::OnUpdateAnalysisPolygonlasso(CCmdUI *pCmdUI)
+{
+	pCmdUI->SetCheck(bPolygonEnabled);
+	//if (bBoxEnabled) {pCmdUI->Enable(false); return;}
+	//CGazoDoc* pd = GetDocument();
+	//if (pd->dlgHist.IsWindowVisible()) {pCmdUI->Enable(false); return;}
+	//else pCmdUI->Enable(true);
+}
+
+void CGazoView::InitPolygon(int xcent, int ycent, int xsize, int ysize) {
+	xsize /= 2; ysize /= 2;
+	for(int i=0; i<CGAZOVIEW_NPOLYGON; i++){
+		int ix = (int)(cos(i * 2 * __PI / CGAZOVIEW_NPOLYGON) * xsize);
+		int iy = (int)(sin(i * 2 * __PI / CGAZOVIEW_NPOLYGON) * ysize);
+		iPolygonX[i] = xcent + ix;
+		iPolygonY[i] = ycent + iy;
+	}
+//	iPolygonX[0] = xcent + xsize; iPolygonY[0] = ycent;
+//	iPolygonX[1] = (int)(xcent + xsize * 0.7); iPolygonY[1] = (int)(ycent + ysize * 0.7);
+//	iPolygonX[2] = xcent; iPolygonY[2] = ycent + ysize;
+//	iPolygonX[3] = (int)(xcent - xsize * 0.7); iPolygonY[3] = (int)(ycent + ysize * 0.7);
+//	iPolygonX[4] = xcent - xsize; iPolygonY[4] = ycent;
+//	iPolygonX[5] = (int)(xcent - xsize * 0.7); iPolygonY[5] = (int)(ycent - ysize * 0.7);
+//	iPolygonX[6] = xcent; iPolygonY[6] = ycent - ysize;
+//	iPolygonX[7] = (int)(xcent + xsize * 0.7); iPolygonY[7] = (int)(ycent - ysize * 0.7);
+}
+
+bool CGazoView::PointInPolygon(CPoint point) {//image coords
+	if (!bPolygonEnabled) return false;
+	int icount = 0;
+	for(int i=0; i<CGAZOVIEW_NPOLYGON; i++){
+		int i1 = (i == CGAZOVIEW_NPOLYGON-1) ? 0 : i+1;
+		if ( ((iPolygonY[i] <= point.y) && (iPolygonY[i1] > point.y))
+				|| ((iPolygonY[i] > point.y) && (iPolygonY[i1] <= point.y)) ){
+			double dt = (point.y -iPolygonY[i]) / (double)(iPolygonY[i1] - iPolygonY[i]);
+			if (point.x < (iPolygonX[i] + (dt * (iPolygonX[i1] - iPolygonX[i])))) icount++;
+		}
+	}
+	return (icount & 0x01);
+}

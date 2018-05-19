@@ -188,8 +188,12 @@
 #define IDC_RENUM_ROTX                  1085
 #define IDC_RECONST_FRAMEODD2           1085
 #define IDC_RECONST_FRAMEEVEN           1085
+#define IDC_RENUM_ENDX                  1086
 #define IDC_RECONST_FRAMEALL            1087
+#define IDC_RENUM_ENDY                  1087
 #define IDC_INPUT1                      1088
+#define IDC_RENUM_ROTX2                 1088
+#define IDC_RENUM_ENDZ                  1088
 #define IDC_CAPTION1                    1089
 #define IDC_CAPTION2                    1090
 #define IDC_INPUT2                      1091
@@ -336,6 +340,7 @@
 #define ID_ACCKEY_G                     32838
 #define ID_ANALYSIS_ENLARGE             32839
 #define ID_ANALYSIS_RADIALPROFILE       32840
+#define ID_ANALYSIS_POLYGONLASSO        32841
 #define ID_POPUPQUEUE_DEL               32860
 
 // Next default values for new objects
@@ -344,7 +349,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_3D_CONTROLS                     1
 #define _APS_NEXT_RESOURCE_VALUE        149
-#define _APS_NEXT_COMMAND_VALUE         32841
+#define _APS_NEXT_COMMAND_VALUE         32842
 #define _APS_NEXT_CONTROL_VALUE         1125
 #define _APS_NEXT_SYMED_VALUE           102
 #endif

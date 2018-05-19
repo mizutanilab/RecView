@@ -76,14 +76,15 @@ CGazoApp::CGazoApp()
 	// TODO: この位置に構築用コードを追加してください。
 	// ここに InitInstance 中の重要な初期化処理をすべて記述してください。
 	iStatus = 0;
-	sProgVersion = "RecView ver5.4.0";
+	sProgVersion = "RecView ";
+	//sProgVersion = "RecView v5.4.0";
 #ifdef _WIN64
-	sProgVersion += "-x64\r\n";
+	sProgVersion += "x64\r\n";
 #endif
 #ifndef _WIN64
-	sProgVersion += "-x86\r\n";
+	sProgVersion += "x86\r\n";
 #endif
-	sProgVersion += "build-";
+	sProgVersion += "Build: ";
 	sProgVersion += __DATE__;
 	sProgVersion += " / ";
 	sProgVersion += __TIME__;

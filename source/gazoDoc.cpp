@@ -326,6 +326,7 @@ void CGazoDoc::UpdateView(bool bInit) {
 			pv->SetScrollPos(SB_VERT, 50);
 			pv->SetScrollPos(SB_HORZ, 50);
 			pv->SetBoxParams(ixdim/2, iydim/2, ixdim/2, iydim/2, 0);
+			pv->InitPolygon(ixdim/2, iydim/2, ixdim/2, iydim/2);//180424
 			CGazoApp* pApp = (CGazoApp*) AfxGetApp();
 			if (pApp->prevDlgHistogram.m_FileMsg == "saved") {
 				dlgHist.ParamCopyFrom(pApp->prevDlgHistogram);
@@ -4376,29 +4377,56 @@ void CGazoDoc::OnUpdateTomoAxis(CCmdUI* pCmdUI)
 void CGazoDoc::OnTomoStat() 
 {
 	POSITION pos = GetFirstViewPosition();
+	CGazoView* pv = (CGazoView*) GetNextView( pos );
+	if (!pv) return;
 	int ibcx, ibcy, ibsx, ibsy, iba = 0;
-	bool bFlg = false;
-	while (pos != NULL) {
-		CGazoView* pv = (CGazoView*) GetNextView( pos );
-		if (pv) {
-			pv->GetBoxParams(&ibcx, &ibcy, &ibsx, &ibsy, &iba, &bFlg);
+	int ibx0 = 0, iby0 = 0, ibx1 = ixdim-1, iby1 = iydim-1; 
+	bool bBoxFlg = false;
+	pv->GetBoxParams(&ibcx, &ibcy, &ibsx, &ibsy, &iba, &bBoxFlg);
+	if (pv->bPolygonEnabled) {
+		ibx0 = pv->iPolygonX[0]; iby0 = pv->iPolygonY[0]; 
+		ibx1 = pv->iPolygonX[0]; iby1 = pv->iPolygonY[0]; 
+		for (int i=1; i<CGAZOVIEW_NPOLYGON; i++) {
+			ibx0 = (pv->iPolygonX[i] < ibx0) ? pv->iPolygonX[i] : ibx0;
+			iby0 = (pv->iPolygonY[i] < iby0) ? pv->iPolygonY[i] : iby0;
+			ibx1 = (pv->iPolygonX[i] > ibx1) ? pv->iPolygonX[i] : ibx1;
+			iby1 = (pv->iPolygonY[i] > iby1) ? pv->iPolygonY[i] : iby1;
 		}
+	} else if (bBoxFlg) {
+		ibx0 = ibcx - ibsx / 2;
+		if (ibx0 < 0) ibx0 = 0; else if (ibx0 >= ixdim) ibx0 = ixdim - 1;
+		ibx1 = ibx0 + ibsx - 1;
+		if (ibx1 < 0) ibx1 = 0; else if (ibx1 >= ixdim) ibx1 = ixdim - 1;
+		iby0 = ibcy - ibsy / 2;
+		if (iby0 < 0) iby0 = 0; else if (iby0 >= iydim) iby0 = iydim - 1;
+		iby1 = iby0 + ibsy - 1;
+		if (iby1 < 0) iby1 = 0; else if (iby1 >= iydim) iby1 = iydim - 1;
+		if (iba != 0) {AfxMessageBox("Reset box angle."); return;}
+	} else {
+		ibcx = ixdim/2; ibcy = iydim/2; ibsx = ixdim; ibsy = iydim;
 	}
-	int ibx0 = ibcx - ibsx / 2;
-	if (ibx0 < 0) ibx0 = 0; else if (ibx0 >= ixdim) ibx0 = ixdim - 1;
-	int ibx1 = ibx0 + ibsx - 1;
-	if (ibx1 < 0) ibx1 = 0; else if (ibx1 >= ixdim) ibx1 = ixdim - 1;
-	int iby0 = ibcy - ibsy / 2;
-	if (iby0 < 0) iby0 = 0; else if (iby0 >= iydim) iby0 = iydim - 1;
-	int iby1 = iby0 + ibsy - 1;
-	if (iby1 < 0) iby1 = 0; else if (iby1 >= iydim) iby1 = iydim - 1;
+//	while (pos != NULL) {
+//		CGazoView* pv = (CGazoView*) GetNextView( pos );
+//		if (pv) {
+//			pv->GetBoxParams(&ibcx, &ibcy, &ibsx, &ibsy, &iba, &bFlg);
+//		}
+//	}
 	double sum = 0, sum2 = 0;
 	int nsum = 0;
+	int ipmin = -1, ipmax = -1;
 	for (int i=ibx0; i<=ibx1; i++) {
 		for (int j=iby0; j<=iby1; j++) {
-//			double pix = pPixel[i + j * ixdim];
+			if (pv->bPolygonEnabled) {
+				CPoint pnt(i, j);
+				if (!pv->PointInPolygon(pnt)) continue;
+			}
 			int ip = pPixel[i + j * ixdim];
 			if (bColor) {ip = ((ip & 0xff) + ((ip >> 8) & 0xff) + ((ip >> 16) & 0xff)) / 3;}
+			if (ipmin < 0) {ipmin = ip; ipmax = ip;}
+			else {
+				ipmin = (ip < ipmin) ? ip : ipmin;
+				ipmax = (ip > ipmax) ? ip : ipmax;
+			}
 			double pix = ip;
 			sum += pix;
 			sum2 += pix * pix;
@@ -4408,20 +4436,73 @@ void CGazoDoc::OnTomoStat()
 	sum /= nsum;
 	sum2 /= nsum;
 	double sigma = sqrt(sum2 - sum * sum);
-	CString line = "", scr;
-	scr.Format("Average_intensity\t%.1f\r\nStd_deviation\t%.1f\r\nNumber_of_pixels\t%d\r\nAverage_of_intesity^2\t%.1f", 
-				sum, sigma, nsum, sum2); 
+	CString line, scr;
+	line = this->GetPathName() + "\r\n";
+	scr.Format("Pixel intensity\r\n Npixel\tE(x)\tE(x2)\tStdDev\tMax\tMin\r\n %d\t%.1f\t%.1f\t%.1f\t%d\t%d\r\n", 
+				nsum, sum, sum2, sigma, ipmax, ipmin); 
 	line += scr;
 	if (pixDiv > 0) {
 		sum = sum / pixDiv + pixBase;
 		sigma = sigma / pixDiv;
-		scr.Format("\r\n\r\nAverage LAC %.3f / std deviation %.3f", sum, sigma); line += scr;
+		scr.Format("LAC\r\n Mean\tStdDev\r\n %.3f\t%.3f\r\n", sum, sigma); line += scr;
 	}
-	line += "\r\n\r\nIntesity matrix:\r\n";
-	scr.Format("%d\t%d\r\n", ibx0, iby0);
+	int iHisto[255];
+	for (int i=0; i<=255; i++) {iHisto[i] = 0;}
+	double dscale = (ipmax > 255) ? (ipmax / 255.) : 1.;
+	ipmin - -1, ipmax = -1;
+	for (int i=ibx0; i<=ibx1; i++) {
+		for (int j=iby0; j<=iby1; j++) {
+			if (pv->bPolygonEnabled) {
+				CPoint pnt(i, j);
+				if (!pv->PointInPolygon(pnt)) continue;
+			}
+			int ip = (int)(pPixel[i + j * ixdim] / dscale);
+			ip = (ip > 0) ? ip : 0;
+			ip = (ip <= 255) ? ip : 255;
+			iHisto[ip]++;
+			if (ipmin < 0) {ipmin = ip; ipmax = ip;}
+			else {
+				ipmin = (ip < ipmin) ? ip : ipmin;
+				ipmax = (ip > ipmax) ? ip : ipmax;
+			}
+		}
+	}
+	line += "Histogram\r\n Intensity\tLAC\tRelative freq\tN\r\n";
+	for (int i=ipmin; i<=ipmax; i++) {
+		scr.Format(" %d\t%.3f\t%.3f\t%d\r\n", (int)(i * dscale), i * dscale / pixDiv + pixBase, (double)iHisto[i] / nsum, iHisto[i]);
+		line += scr;
+	}
+	if (pv->bPolygonEnabled) {
+		line += "Polygon vertex (x y)\r\n";
+		for (int i=0; i<CGAZOVIEW_NPOLYGON; i++) {
+			scr.Format(" %d\t%d\r\n", pv->iPolygonX[i], pv->iPolygonY[i]);
+			line += scr;
+		}
+	} else if (bBoxFlg) {
+		line += "Box diagonal (x y)\r\n";
+		scr.Format(" %d\t%d\r\n", ibx0, iby0);
+		line += scr;
+		scr.Format(" %d\t%d\r\n", ibx1, iby1);
+		line += scr;
+	} else {
+		line += "Image size\r\n";
+		scr.Format(" %d\t%d\r\n", ixdim, iydim);
+		line += scr;
+	}
+	line += "\r\nIntesity matrix:\r\n";
+	scr.Format(" origin:\t%d\t%d\r\n", ibx0, iby0);
 	line += scr;
 	for (int i=iby0; i<=iby1; i++) {
 		for (int j=ibx0; j<=ibx1; j++) {
+			if (pv->bPolygonEnabled) {
+				CPoint pnt(i, j);
+				if (!pv->PointInPolygon(pnt)) {
+					if (bColor) scr = "x x x"; else scr = "x";
+					if (j != ibx1) scr += "\t";
+					line += scr;
+					continue;
+				}
+			}
 			int ip = pPixel[j + i * ixdim];
 			if (bColor) {
 				scr.Format("%3d %3d %3d", ip & 0xff, (ip >> 8) & 0xff, (ip >> 16) & 0xff);
@@ -4436,10 +4517,19 @@ void CGazoDoc::OnTomoStat()
 	}
 	if (pixDiv > 0) {//if reconstructed image
 		line += "\r\nLAC matrix:\r\n";
-		scr.Format("%d\t%d\r\n", ibx0, iby0);
+		scr.Format(" origin:\t%d\t%d\r\n", ibx0, iby0);
 		line += scr;
 		for (int i=iby0; i<=iby1; i++) {
 			for (int j=ibx0; j<=ibx1; j++) {
+				if (pv->bPolygonEnabled) {
+					CPoint pnt(i, j);
+					if (!pv->PointInPolygon(pnt)) {
+						scr = "x";
+						if (j != ibx1) scr += "\t";
+						line += scr;
+						continue;
+					}
+				}
 				scr.Format("%.3f", (float)(pPixel[j + i * ixdim] / pixDiv + pixBase));
 				if (j != ibx1) scr += "\t";
 				line += scr;
@@ -4457,13 +4547,14 @@ void CGazoDoc::OnUpdateTomoStat(CCmdUI* pCmdUI)
 	POSITION pos = GetFirstViewPosition();
 	int ibcx, ibcy, ibsx, ibsy, iba = 0;
 	bool bFlg = false;
-	while (pos != NULL) {
-		CGazoView* pv = (CGazoView*) GetNextView( pos );
-		if (pv) {
-			pv->GetBoxParams(&ibcx, &ibcy, &ibsx, &ibsy, &iba, &bFlg);
-		}
+	CGazoView* pv = (CGazoView*) GetNextView( pos );
+	if (pv) {
+		pv->GetBoxParams(&ibcx, &ibcy, &ibsx, &ibsy, &iba, &bFlg);
 	}
-	if (bFlg && !iba) pCmdUI->Enable(true);
+	if (bFlg && (iba == 0)) pCmdUI->Enable(true);
+	else if (pv) {
+		if (pv->bPolygonEnabled) pCmdUI->Enable(true);
+	}
 	else pCmdUI->Enable(false);
 }
 

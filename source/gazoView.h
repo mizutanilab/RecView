@@ -11,6 +11,8 @@
 
 //#include "StdAfx.h"
 
+#define CGAZOVIEW_NPOLYGON 12
+
 class CGazoView : public CView
 {
 friend class CMainFrame;
@@ -48,6 +50,11 @@ public:
 	void EnableBox(bool bEnable);
 	bool GetLineParams(int* xstart = NULL, int* ystart = NULL, int* xend = NULL, int* yend = NULL);
 	double pdOverlayCoeff[8];
+	void InitPolygon(int xcent, int ycent, int xsize, int ysize);
+	bool PointInPolygon(CPoint point);
+	bool bPolygonEnabled;
+	int iPolygonX[CGAZOVIEW_NPOLYGON];
+	int iPolygonY[CGAZOVIEW_NPOLYGON];
 
 #ifdef _DEBUG
 	virtual void AssertValid() const;
@@ -75,6 +82,9 @@ protected:
 	CPoint pntRedFrom, pntRedTo;
 	bool bDragScrollEnabled;
 	int iScrollH, iScrollV;
+	bool bPolygonMove;
+	CPoint pntPolygon[CGAZOVIEW_NPOLYGON+1];
+	int iPickedPolygonPnt;
 private:
 	int ixdim, iydim;
 	HCURSOR hCursor;
@@ -99,6 +109,8 @@ public:
 	afx_msg void OnViewBoxaxislabel();
 	//manually removed
 	//afx_msg void OnUpdateViewBoxaxislabel(CCmdUI *pCmdUI);
+	afx_msg void OnAnalysisPolygonlasso();
+	afx_msg void OnUpdateAnalysisPolygonlasso(CCmdUI *pCmdUI);
 };
 
 #ifndef _DEBUG  // gazoView.cpp ファイルがデバッグ環境の時使用されます。

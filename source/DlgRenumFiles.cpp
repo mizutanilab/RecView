@@ -3,7 +3,9 @@
 
 #include "stdafx.h"
 #include "gazo.h"
+#include "cxyz.h"
 #include "DlgRenumFiles.h"
+#include "MainFrm.h"
 #include <sys\timeb.h> //_timeb, _ftime
 #include <float.h> //FLT_MAX
 
@@ -19,9 +21,12 @@ CDlgRenumFiles::CDlgRenumFiles(CWnd* pParent /*=NULL*/)
 	, m_Prefix(_T("p"))
 	, m_StartIndex(1)
 	, m_OutPath(_T(""))
-	, m_ResliceRotZ(0)
-	, m_ResliceRotY(0)
-	, m_ResliceRotX(0)
+	, m_ResliceOrgZ(0)
+	, m_ResliceOrgY(0)
+	, m_ResliceOrgX(0)
+	, m_ResliceEndX(0)
+	, m_ResliceEndY(0)
+	, m_ResliceEndZ(0)
 {
 	nFiles = 0;
 	m_FileListMsg.Format("Number of image: %d", nFiles);
@@ -40,12 +45,15 @@ void CDlgRenumFiles::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_RENUM_STARTINDEX, m_StartIndex);
 	DDV_MinMaxInt(pDX, m_StartIndex, 0, 1000000);
 	DDX_Text(pDX, IDC_RENUM_OUTPATH, m_OutPath);
-	DDX_Text(pDX, IDC_RENUM_ROTZ, m_ResliceRotZ);
-	DDV_MinMaxDouble(pDX, m_ResliceRotZ, -360, 360);
-	DDX_Text(pDX, IDC_RENUM_ROTY, m_ResliceRotY);
-	DDV_MinMaxDouble(pDX, m_ResliceRotY, -360, 360);
-	DDX_Text(pDX, IDC_RENUM_ROTX, m_ResliceRotX);
-	DDV_MinMaxDouble(pDX, m_ResliceRotX, -360, 360);
+	DDX_Text(pDX, IDC_RENUM_ROTZ, m_ResliceOrgZ);
+	//DDV_MinMaxDouble(pDX, m_ResliceRotZ, -360, 360);
+	DDX_Text(pDX, IDC_RENUM_ROTY, m_ResliceOrgY);
+	//DDV_MinMaxDouble(pDX, m_ResliceRotY, -360, 360);
+	DDX_Text(pDX, IDC_RENUM_ROTX, m_ResliceOrgX);
+	//DDV_MinMaxDouble(pDX, m_ResliceRotX, -360, 360);
+	DDX_Text(pDX, IDC_RENUM_ENDX, m_ResliceEndX);
+	DDX_Text(pDX, IDC_RENUM_ENDY, m_ResliceEndY);
+	DDX_Text(pDX, IDC_RENUM_ENDZ, m_ResliceEndZ);
 }
 
 
@@ -142,8 +150,10 @@ void CDlgRenumFiles::OnOK()
 		flog.WriteString(line);
 		line.Format(" Number of files: %d\r\n", nFiles);
 		flog.WriteString(line);
-		if ((m_ResliceRotZ != 0)||(m_ResliceRotY != 0)||(m_ResliceRotX != 0)) {
-			line.Format(" Reslicing angles: Z=%f Y=%f X=%f\r\n", m_ResliceRotZ, m_ResliceRotY, m_ResliceRotX);
+		if ((m_ResliceEndZ-m_ResliceOrgZ != 0)||(m_ResliceEndY-m_ResliceOrgY != 0)||(m_ResliceEndX-m_ResliceOrgX != 0)) {
+			line.Format(" Reslicing vector origin: (%d %d %d)\r\n", m_ResliceOrgX, m_ResliceOrgY, m_ResliceOrgZ);
+			flog.WriteString(line);
+			line.Format(" Reslicing vector end: (%d %d %d)\r\n", m_ResliceEndX, m_ResliceEndY, m_ResliceEndZ);
 			flog.WriteString(line);
 		}
 		flog.WriteString("---------------------------------------------------\r\n");
@@ -155,8 +165,11 @@ void CDlgRenumFiles::OnOK()
 	HRESULT hr = ::CoCreateInstance(CLSID_ProgressDialog, NULL, CLSCTX_INPROC_SERVER,
 										IID_IProgressDialog, (void**)&pDlg);
 
-	if ((m_ResliceRotZ != 0)||(m_ResliceRotY != 0)||(m_ResliceRotX != 0)) {
-		if (AfxMessageBox("Reslice angels are not zero.\r\n Proceed?", MB_OKCANCEL) == IDCANCEL) {
+	CMainFrame* pf = NULL;
+	pf = (CMainFrame*) AfxGetMainWnd();
+	if ((m_ResliceEndZ-m_ResliceOrgZ != 0)||(m_ResliceEndY-m_ResliceOrgY != 0)||(m_ResliceEndX-m_ResliceOrgX != 0)) {
+		//constant pixDiv and pixBase are assumed. Entirely revised: 180505
+		if (AfxMessageBox("Resliced images will be saved in 8bit format.\r\n Proceed?", MB_OKCANCEL) == IDCANCEL) {
 			CDialog::OnOK();
 			return;
 		}
@@ -165,21 +178,29 @@ void CDlgRenumFiles::OnOK()
 		CString fn = str.Tokenize(_T("\r\n"), iPos);
 		//XY size
 		TCHAR path_buffer[_MAX_PATH];
-		TCHAR drive[_MAX_DRIVE]; TCHAR dir[_MAX_DIR];// TCHAR fnm[_MAX_FNAME];
+		TCHAR drive[_MAX_DRIVE]; TCHAR dir[_MAX_DIR]; TCHAR fnm[_MAX_FNAME];
 		TCHAR ext[_MAX_EXT];
 		_stprintf_s(path_buffer, _MAX_PATH, fn);
-		_tsplitpath_s( path_buffer, drive, _MAX_DRIVE, dir, _MAX_DIR, NULL, 0, ext, _MAX_EXT);
+		_tsplitpath_s( path_buffer, drive, _MAX_DRIVE, dir, _MAX_DIR, fnm, _MAX_FNAME, ext, _MAX_EXT);
 		_tmakepath_s(path_buffer, _MAX_PATH, drive, dir, NULL, NULL);
-		//const CString sPath = path_buffer;
+		CString sfnm = fnm;
+		sfnm.TrimRight("0123456789.");
+		if (sfnm == m_Prefix) {
+			CString msg; msg.Format("Duplicated file name: %s ==> %s", sfnm, m_Prefix); AfxMessageBox(msg);
+			return;
+		}
 		TErr err = 21001;
 		CFile fp;
-		//int* ibuf = NULL;
-		//if (pf) pf->m_wndStatusBar.SetPaneText(1, "Lsqfit: reading reference set");
 		int ixref = 0, iyref = 0;
 		int nbuf = 0;
+		int* ibuf = NULL;
+		float pixDiv = 1, pixBase = 0, fCenter = 0, pw = 1;
+		int iFilter = 0, nSino = 0;
 		if ((_tcscmp(ext, ".tif") == 0)||(_tcscmp(ext, ".TIF") == 0)) {
 			if (fp.Open(fn, CFile::modeRead | CFile::shareDenyWrite)) {
-				err = ReadTif(&fp, NULL, &nbuf, &iyref, &ixref, NULL, NULL, NULL, NULL, NULL);
+				err = ReadTif(&fp, &ibuf, &nbuf, &iyref, &ixref, &pixDiv, &pixBase, &fCenter, &iFilter, &pw, &nSino);
+				if (pixDiv == 0) pixDiv = 1;
+//				err = ReadTif(&fp, NULL, &nbuf, &iyref, &ixref, NULL, NULL, NULL, NULL, NULL);
 				fp.Close();
 			}
 		}
@@ -188,106 +209,29 @@ void CDlgRenumFiles::OnOK()
 			CDialog::OnOK();
 			return;
 		}
-		//alloc memory
-		MEMORYSTATUSEX memory;
-		memory.dwLength = sizeof(memory);
-		GlobalMemoryStatusEx(&memory);
-		unsigned int imem = (unsigned int)(memory.ullTotalPhys / 1024);//memory in kbytes
-		#ifndef _WIN64
-		if (imem > (1<<21)) imem = (1<<21);//2 GB max for x86 platform
-		#endif
-		if (ixref * iyref * nFiles * sizeof(unsigned short) / 1024 >= imem) {
-			CString msg;
-			msg.Format("Out of memory\r\n %d kbytes data / %d kbytes memory", ixref * iyref * nFiles * sizeof(unsigned short) / 1024, imem);
-			AfxMessageBox(msg);
-			CDialog::OnOK();
-			return;
-		}
-		float** ppOrgPixel = NULL;
-		//float* pfPixDiv = NULL;
-		//float* pfPixBase = NULL;
-		const int nxny = nbuf;
-		try {
-			ppOrgPixel = new float*[nFiles];
-			//pfPixDiv = new float[nFiles];
-			//pfPixBase = new float[nFiles];
-			for (int i=0; i<nFiles; i++) {
-				ppOrgPixel[i] = new float[nxny];
-			}
-		}
-		catch(CException* e) {
-			e->Delete();
-			if (ppOrgPixel) {
-				for (int i=0; i<nFiles; i++) {
-					if (ppOrgPixel[i]) delete [] ppOrgPixel[i];
-				}
-				delete [] ppOrgPixel;
-			}
-			CString msg;
-			msg.Format("Out of memory\r\n %d x %d x %d voxels", ixref, iyref, nFiles);
-			AfxMessageBox(msg);
-			CDialog::OnOK();
-			return;
-		}
-		for (int i=0; i<nFiles; i++) {memset(ppOrgPixel[i], 0, sizeof(float) * nxny);}
-		//read files
-		if (pDlg) {
-			pDlg->SetTitle(L"Reslicing files");
-			pDlg->SetLine(1, L"Reading files...", FALSE, NULL);
-			pDlg->StartProgressDialog(NULL, NULL, PROGDLG_NORMAL | PROGDLG_NOMINIMIZE | PROGDLG_NOPROGRESSBAR, NULL);
-		}
-		bool bError = false;
-		int* ibuf = NULL;
-		float pixDiv = 1, pixBase = 0, fCenter = 0, pw = 1;
-		int iFilter = 0, nSino = 0;
-		TReal densHigh = -1E8, densLow = 1E8;
-		for (int i=0; i<nFiles; i++) {
-			pixDiv = 1; pixBase = 0;
-			_stprintf_s(path_buffer, _MAX_PATH, fn);
-			_tsplitpath_s( path_buffer, drive, _MAX_DRIVE, dir, _MAX_DIR, NULL, 0, ext, _MAX_EXT);
-			_tmakepath_s(path_buffer, _MAX_PATH, drive, dir, NULL, NULL);
-			if ((_tcscmp(ext, ".tif") != 0)&&(_tcscmp(ext, ".TIF") != 0)) continue;
-			if (pDlg) pDlg->SetLine(2, (CStringW)(fn), FALSE, NULL);
-			if (fp.Open(fn, CFile::modeRead | CFile::shareDenyWrite)) {
-				if (ReadTif(&fp, &ibuf, &nbuf, &iyref, &ixref, &pixDiv, &pixBase, 
-											&fCenter, &iFilter, &pw, &nSino) == 0) {
-					if (pixDiv == 0) pixDiv = 1;
-					for (int j=0; j<nxny; j++) {
-						if (ibuf[j]) {
-							float dens = (float)(ibuf[j] / pixDiv + pixBase);
-							densHigh = (dens > densHigh) ? dens : densHigh;
-							densLow = (dens < densLow) ? dens : densLow;
-							(ppOrgPixel[i])[j] = dens;
-						} else {
-							(ppOrgPixel[i])[j] = -FLT_MAX;
-						}
-					}
-				}
-				fp.Close();
-			}
-			fn = str.Tokenize(_T("\r\n"), iPos);
-		}
-		//CString msg;
-		//msg.Format("%s\r\n x=%d y=%d nbuf=%d", fn, ixref, iyref, nbuf);
-		//AfxMessageBox(msg); CDialog::OnOK(); return;
 		//resliced min-max
 		const int ixcent = ixref / 2;
 		const int iycent = iyref / 2;
 		const int izcent = nFiles / 2;
-		int ixmin = 0, iymin = 0, izmin = 0, ixmax = 0, iymax = 0, izmax = 0;
+		int ixmin = INT_MAX, iymin = INT_MAX, izmin = INT_MAX;
+		int ixmax = INT_MIN, iymax = INT_MIN, izmax = INT_MIN;
 		TReal b[9];
 		//(x')   (b[0] b[3] b[6])   (x)        (x)   (b[0] b[1] b[2])   (x')
 		//(y') = (b[1] b[4] b[7]) * (y)   ,    (y) = (b[3] b[4] b[5]) * (y')
 		//(z')   (b[2] b[5] b[8])   (z)        (z)   (b[6] b[7] b[8])   (z')
-		TReal cZ = cos(m_ResliceRotZ * DEG_TO_RAD);
-		TReal sZ = sin(m_ResliceRotZ * DEG_TO_RAD);
-		TReal cY = cos(m_ResliceRotY * DEG_TO_RAD);
-		TReal sY = sin(m_ResliceRotY * DEG_TO_RAD);
-		TReal cX = cos(m_ResliceRotX * DEG_TO_RAD);
-		TReal sX = sin(m_ResliceRotX * DEG_TO_RAD);
-		b[0] = cZ * cY; b[1] = sZ * cX - cZ * sY * sX; b[2] = sZ * sX + cZ * sY * cX;
-		b[3] = -sZ * cY; b[4] = cZ * cX + sZ * sY * sX; b[5] = cZ * sX - sZ * sY * cX;
-		b[6] = -sY; b[7] = -cY * sX; b[8] = cY * cX;
+		CXyz e1(1,0,0), e2(0,1,0), e3(0,0,1);
+		CXyz e3p = CXyz(m_ResliceEndX-m_ResliceOrgX, m_ResliceEndY-m_ResliceOrgY, m_ResliceEndZ-m_ResliceOrgZ);
+		e3p.UnitLength();
+		CXyz e1p = e2 * e3p;
+		CXyz e2p = e3p * e1p;
+		if (e3p.Length2() < 1E-6) {
+			e2p = e3p * e1;
+			e1p = e2p * e3p;
+		}
+		b[0] = e1p.X(e1); b[3] = e1p.X(e2); b[6] = e1p.X(e3);
+		b[1] = e2p.X(e1); b[4] = e2p.X(e2); b[7] = e2p.X(e3);
+		b[2] = e3p.X(e1); b[5] = e3p.X(e2); b[8] = e3p.X(e3);
+
 		TReal x1 = b[0] * (-ixcent) + b[3] * (-iycent) + b[6] * (-izcent);
 		TReal y1 = b[1] * (-ixcent) + b[4] * (-iycent) + b[7] * (-izcent);
 		TReal z1 = b[2] * (-ixcent) + b[5] * (-iycent) + b[8] * (-izcent);
@@ -352,14 +296,89 @@ void CDlgRenumFiles::OnOK()
 		const unsigned int iysize = iymax - iymin + 1;
 		const unsigned int izsize = izmax - izmin + 1;
 		const unsigned int nOut = ixsize * iysize;
-		pixDiv = (float)((densHigh - densLow > 0) ? (32767 / (densHigh - densLow)) : 1);
-		pixBase = (float)densLow;
-		int* piOut = NULL;
-		try {piOut = new int[nOut];}
+		int nCache = 0;
+		for (int i=izmin; i<=izmax; i++) {
+			int iz1min = INT_MAX, iz1max = INT_MIN;
+			int iz1 = (int)(b[6] * ixmin + b[7] * iymin + b[8] * i + izcent);
+			iz1min = (iz1 < iz1min)? iz1 : iz1min;
+			iz1max = (iz1 > iz1max)? iz1 : iz1max;
+			iz1 = (int)(b[6] * ixmin + b[7] * iymax + b[8] * i + izcent);
+			iz1min = (iz1 < iz1min)? iz1 : iz1min;
+			iz1max = (iz1 > iz1max)? iz1 : iz1max;
+			iz1 = (int)(b[6] * ixmax + b[7] * iymin + b[8] * i + izcent);
+			iz1min = (iz1 < iz1min)? iz1 : iz1min;
+			iz1max = (iz1 > iz1max)? iz1 : iz1max;
+			iz1 = (int)(b[6] * ixmax + b[7] * iymax + b[8] * i + izcent);
+			iz1min = (iz1 < iz1min)? iz1 : iz1min;
+			iz1max = (iz1 > iz1max)? iz1 : iz1max;
+			iz1max = (iz1max+1 > nFiles-1) ? nFiles-1 : iz1max+1;
+			iz1min = (iz1min < 0) ? 0 : iz1min;
+			nCache = (iz1max-iz1min+1 > nCache) ? iz1max-iz1min+1 : nCache;
+		}
+		//alloc memory
+		MEMORYSTATUSEX memory;
+		memory.dwLength = sizeof(memory);
+		GlobalMemoryStatusEx(&memory);
+		unsigned __int64 imem = (memory.ullTotalPhys / 1024);//memory in kbytes
+		#ifndef _WIN64
+		if (imem > (1<<21)) imem = (1<<21);//2 GB max for x86 platform
+		#endif
+		unsigned __int64 ullSize = (unsigned __int64)ixref * (unsigned __int64)iyref * (unsigned __int64)nCache * sizeof(unsigned short) / 1024u;
+		if (ullSize >= imem) {
+			CString msg;
+			msg.Format("Out of memory\r\n %lld kbytes data / %lld kbytes memory", ullSize, imem);
+			AfxMessageBox(msg);
+			CDialog::OnOK();
+			return;
+		}
+		float** ppOrgPixel = NULL;
+		int* piCache = NULL;
+		CString* psPath = NULL;
+		const int nxny = nbuf;
+		try {
+			ppOrgPixel = new float*[nCache];
+			for (int i=0; i<nCache; i++) {
+				ppOrgPixel[i] = new float[nxny];
+			}
+			piCache = new int[nCache];
+			psPath = new CString[nFiles];
+		}
 		catch(CException* e) {
 			e->Delete();
 			if (ppOrgPixel) {
-				for (int i=0; i<nFiles; i++) {
+				for (int i=0; i<nCache; i++) {
+					if (ppOrgPixel[i]) delete [] ppOrgPixel[i];
+				}
+				delete [] ppOrgPixel;
+			}
+			if (piCache) delete [] piCache;
+			if (psPath) delete [] psPath;
+			CString msg;
+			msg.Format("Out of memory\r\n %d x %d x %d voxels", ixref, iyref, nCache);
+			AfxMessageBox(msg);
+			CDialog::OnOK();
+			return;
+		}
+		for (int i=0; i<nCache; i++) {
+			memset(ppOrgPixel[i], 0, sizeof(float) * nxny);
+			piCache[i] = -1;
+		}
+		str = m_FileList;
+		iPos = 0;
+		for (int i=0; i<nFiles; i++) {psPath[i] = str.Tokenize(_T("\r\n"), iPos);}
+		//read files
+		if (pDlg) {
+			pDlg->SetTitle(L"Reslicing files");
+			pDlg->SetLine(1, L"Reading files...", FALSE, NULL);
+			pDlg->StartProgressDialog(NULL, NULL, PROGDLG_NORMAL | PROGDLG_NOMINIMIZE | PROGDLG_NOPROGRESSBAR, NULL);
+		}
+		bool bError = false;
+		unsigned char* pucOut = NULL;
+		try {pucOut = new unsigned char[nOut];}
+		catch(CException* e) {
+			e->Delete();
+			if (ppOrgPixel) {
+				for (int i=0; i<nCache; i++) {
 					if (ppOrgPixel[i]) delete [] ppOrgPixel[i];
 				}
 				delete [] ppOrgPixel;
@@ -368,14 +387,48 @@ void CDlgRenumFiles::OnOK()
 			CDialog::OnOK();
 			return;
 		}
-		if (pDlg) pDlg->SetLine(1, L"Output files...", FALSE, NULL);
+		if (pDlg) pDlg->SetLine(1, L"Reslice files...", FALSE, NULL);
 		const int idigit = (int)log10((double)izsize) + 1;
 		CString fmt;
 		fmt.Format("%s%%0%dd.tif", m_Prefix, idigit);
 		int fidx = m_StartIndex;
-		TReal z1min = 100, z1max = 100;
 		for (int i=izmin; i<=izmax; i++) {
-			//i=0;/////131110
+			::ProcessMessage();
+			CString msg; msg.Format("Reslicing file: " + m_OutPath + fmt, fidx);
+			if (pf) pf->m_wndStatusBar.SetPaneText(1, msg);
+			//limits
+			int iz1min = INT_MAX, iz1max = INT_MIN;
+			int iz1 = (int)(b[6] * ixmin + b[7] * iymin + b[8] * i + izcent);
+			iz1min = (iz1 < iz1min)? iz1 : iz1min;
+			iz1max = (iz1 > iz1max)? iz1 : iz1max;
+			iz1 = (int)(b[6] * ixmin + b[7] * iymax + b[8] * i + izcent);
+			iz1min = (iz1 < iz1min)? iz1 : iz1min;
+			iz1max = (iz1 > iz1max)? iz1 : iz1max;
+			iz1 = (int)(b[6] * ixmax + b[7] * iymin + b[8] * i + izcent);
+			iz1min = (iz1 < iz1min)? iz1 : iz1min;
+			iz1max = (iz1 > iz1max)? iz1 : iz1max;
+			iz1 = (int)(b[6] * ixmax + b[7] * iymax + b[8] * i + izcent);
+			iz1min = (iz1 < iz1min)? iz1 : iz1min;
+			iz1max = (iz1 > iz1max)? iz1 : iz1max;
+			iz1max = (iz1max+1 > nFiles-1) ? nFiles-1 : iz1max+1;
+			iz1min = (iz1min < 0) ? 0 : iz1min;
+			if (pDlg) pDlg->SetLine(2, (CStringW)("Read:"), FALSE, NULL);
+			for (int m=iz1min; m<=iz1max; m++) {
+				int iMod = m % nCache;
+				if (piCache[iMod] == m) continue;
+				//read slice m
+				_stprintf_s(path_buffer, _MAX_PATH, psPath[m]);
+				_tsplitpath_s( path_buffer, drive, _MAX_DRIVE, dir, _MAX_DIR, NULL, 0, ext, _MAX_EXT);
+				if ((_tcscmp(ext, ".tif") != 0)&&(_tcscmp(ext, ".TIF") != 0)) continue;
+				if (pDlg) pDlg->SetLine(2, (CStringW)("Read: " + psPath[m]), FALSE, NULL);
+				if (fp.Open(psPath[m], CFile::modeRead | CFile::shareDenyWrite)) {
+					if (ReadTif(&fp, &ibuf, &nbuf, &iyref, &ixref) == 0) {
+						for (int j=0; j<nxny; j++) {(ppOrgPixel[iMod])[j] = (float)ibuf[j];}
+					}
+					fp.Close();
+				}
+				piCache[iMod] = m;
+			}
 			int iz = i - izmin;
 			for (int j=iymin; j<=iymax; j++) {
 				int iy = j - iymin;
@@ -385,18 +438,16 @@ void CDlgRenumFiles::OnOK()
 					x1 = b[0] * k + b[1] * j + b[2] * i + ixcent;
 					y1 = b[3] * k + b[4] * j + b[5] * i + iycent;
 					z1 = b[6] * k + b[7] * j + b[8] * i + izcent;
-					z1min = (z1 < z1min)? z1 : z1min;
-					z1max = (z1 > z1max)? z1 : z1max;
-					if ( (x1 < 0)||(x1 > ixref-1)||(y1 < 0)||(y1 > iyref-1)||
-							(z1 < 0)||(z1 > nFiles-1) ) {piOut[idx] = 0;}
+					if ( (x1 < 0)||(x1 > ixref-1)||(y1 < 0)||(y1 > iyref-1)|| (z1 < 0)||(z1 > nFiles-1) ) {pucOut[idx] = 0;}
 					else {
 						//interpolation
 						const int ix1 = (int)x1;
 						const int iy1 = (int)y1;
-						const int iz1 = (int)z1;
+						const int iz1 = ((int)z1) % nCache;
+						const int iz11 = ((int)z1 + 1) % nCache;
 						TReal dx = x1 - ix1;
 						TReal dy = y1 - iy1;
-						TReal dz = z1 - iz1;
+						TReal dz = z1 - (int)(z1);
 						int idx1 = iy1 * ixref + ix1;
 						float p0 = (ppOrgPixel[iz1])[idx1];
 						float p1 = (x1 < ixref-1) ? (ppOrgPixel[iz1])[idx1+1] : p0;
@@ -404,18 +455,14 @@ void CDlgRenumFiles::OnOK()
 						float p3 = ((x1 < ixref-1)&&(y1 < iyref-1)) ? (ppOrgPixel[iz1])[idx1+1+ixref] : p0;
 						float p4 = p0, p5 = p1, p6 = p2, p7 = p3;
 						if (z1 < nFiles-1) {
-							p4 = (ppOrgPixel[iz1+1])[idx1];
-							p5 = (x1 < ixref-1) ? (ppOrgPixel[iz1+1])[idx1+1] : p0;
-							p6 = (y1 < iyref-1) ? (ppOrgPixel[iz1+1])[idx1+ixref] : p0;
-							p7 = ((x1 < ixref-1)&&(y1 < iyref-1)) ? (ppOrgPixel[iz1+1])[idx1+1+ixref] : p0;
+							p4 = (ppOrgPixel[iz11])[idx1];
+							p5 = (x1 < ixref-1) ? (ppOrgPixel[iz11])[idx1+1] : p0;
+							p6 = (y1 < iyref-1) ? (ppOrgPixel[iz11])[idx1+ixref] : p0;
+							p7 = ((x1 < ixref-1)&&(y1 < iyref-1)) ? (ppOrgPixel[iz11])[idx1+1+ixref] : p0;
 						}
-						if ((p0 == -FLT_MAX)||(p1 == -FLT_MAX)||(p2 == -FLT_MAX)||(p3 == -FLT_MAX)||
-							(p4 == -FLT_MAX)||(p5 == -FLT_MAX)||(p6 == -FLT_MAX)||(p7 == -FLT_MAX)) piOut[idx] = 0;
-						else {
-							TReal pixIntp = ( ((1-dx)*p0+dx*p1)*(1-dy) + ((1-dx)*p2+dx*p3)*dy )*(1-dz) +
+						TReal pixIntp = ( ((1-dx)*p0+dx*p1)*(1-dy) + ((1-dx)*p2+dx*p3)*dy )*(1-dz) +
 									( ((1-dx)*p4+dx*p5)*(1-dy) + ((1-dx)*p6+dx*p7)*dy )*dz;
-							piOut[idx] = (int)((pixIntp - pixBase) * pixDiv);
-						}
+						pucOut[idx] = (pixIntp > 255) ? 255 : ( (pixIntp < 0) ? 0 : (unsigned char)(pixIntp) );
 					}
 				}
 			}
@@ -427,10 +474,10 @@ void CDlgRenumFiles::OnOK()
 //1800	1.000000	595.040478	-5.550398	-312.000000	1	55.111697	0.461227 
 			CString dstfn;
 			dstfn.Format(m_OutPath + fmt, fidx++);
-			if (pDlg) pDlg->SetLine(2, (CStringW)(dstfn), FALSE, NULL);
+			if (pDlg) pDlg->SetLine(3, (CStringW)("Save: " + dstfn), FALSE, NULL);
 			CFile ofile;
 			if (ofile.Open(dstfn, CFile::modeCreate | CFile::modeWrite | CFile::shareDenyWrite)) {
-				if (err = WriteTifMonochrome16(&ofile, piOut, iysize, ixsize, imageDesc)) break;
+				if (err = WriteTifMonochrome(&ofile, pucOut, iysize, ixsize, imageDesc)) break;//8bit output
 				ofile.Close();
 			}
 			//CString msg; msg.Format("z1min=%f z1max=%f", z1min, z1max); AfxMessageBox(msg);
@@ -439,12 +486,15 @@ void CDlgRenumFiles::OnOK()
 		if (pDlg) pDlg->SetLine(2, (CStringW)"Finished.", FALSE, NULL);
 		if (ibuf) delete [] ibuf;
 		if (ppOrgPixel) {
-			for (int i=0; i<nFiles; i++) {
+//			for (int i=0; i<nFiles; i++) {
+			for (int i=0; i<nCache; i++) {
 				if (ppOrgPixel[i]) delete [] ppOrgPixel[i];
 			}
 			delete [] ppOrgPixel;
 		}
-		if (piOut) delete [] piOut;
+		if (piCache) delete [] piCache;
+		if (psPath) delete [] psPath;
+		if (pucOut) delete [] pucOut;
 		if (pDlg) pDlg->StopProgressDialog();
 	} else {//((m_ResliceRotZ != 0)||(m_ResliceRotY != 0)||(m_ResliceRotX != 0))
 		//	AfxMessageBox("131110");
@@ -470,6 +520,8 @@ void CDlgRenumFiles::OnOK()
 			dstfn.Format(m_OutPath + fmt, idx++);
 			pDlg->SetLine(2, (CStringW)(fn + " ===> "), FALSE, NULL);
 			pDlg->SetLine(3, (CStringW)(dstfn), FALSE, NULL);
+			CString msg; msg.Format("Reformatting files: %s", dstfn);
+			if (pf) pf->m_wndStatusBar.SetPaneText(1, msg);
 
 			BOOL bErr = ::MoveFile(fn, dstfn);
 			if (bErr == 0) {
@@ -485,6 +537,7 @@ void CDlgRenumFiles::OnOK()
 		if (pDlg) pDlg->StopProgressDialog();
 	}
 
+	if (pf) pf->m_wndStatusBar.SetPaneText(1, "Finished");
 	::CoUninitialize();//unload COM
 	//AfxMessageBox("OK");
 	CDialog::OnOK();
