@@ -187,6 +187,8 @@ protected:
 	afx_msg void OnQueueFinal();
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
+public:
+	afx_msg void OnBnClickedQueuePause();
 };
 
 //{{AFX_INSERT_LOCATION}}

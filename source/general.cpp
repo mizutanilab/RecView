@@ -2530,7 +2530,7 @@ unsigned __stdcall RefracCorrThread(void* pArg) {
 			}
 			if (pd->dlgRefraction.iStatus == CDLGREFRAC_STOP) {
 				if (pd->dlgRefraction.m_hWnd)	{
-					pd->dlgRefraction.GetDlgItem(IDC_REFR_STATUS)->SetWindowText("Abort");
+					pd->dlgRefraction.GetDlgItem(IDC_REFR_STATUS)->SetWindowText("Aborted");
 				}
 				ri->iStatus = RECONST_INFO_ERROR; 
 				break;

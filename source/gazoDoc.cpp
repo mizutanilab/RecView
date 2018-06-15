@@ -1461,7 +1461,7 @@ TErr CGazoDoc::BatchReconst(RECONST_QUEUE* rq) {
 		if ( err = GenerateSinogram(rq, i, fc, deltaCent, iMultiplex) ) {error.Log(err); return err;}
 		//if (dlgReconst.m_hWnd) dlgReconst.m_Progress.SetPos(iProgressEnd/2);
 		if (dlgReconst.iStatus == CDLGRECONST_STOP) {
-			if (pf) {pf->m_wndStatusBar.SetPaneText(1, "Abort");}
+			if (pf) {pf->m_wndStatusBar.SetPaneText(1, "Aborted");}
 			return 0;
 		}
 		//layer
@@ -1498,7 +1498,7 @@ TErr CGazoDoc::BatchReconst(RECONST_QUEUE* rq) {
 	bCmdLine = btmp;
 	if (dlgReconst.m_hWnd) dlgReconst.m_Progress.SetPos(iProgressEnd);
 	if (dlgReconst.iStatus == CDLGRECONST_STOP) {
-		pf->m_wndStatusBar.SetPaneText(1, "Abort");
+		pf->m_wndStatusBar.SetPaneText(1, "Aborted");
 	} else {
 		pf->m_wndStatusBar.SetPaneText(1, "Finished");
 	}
@@ -2478,7 +2478,7 @@ TErr CGazoDoc::GenerateSinogram(RECONST_QUEUE* rq, int iLayer, double center, do
 		::ProcessMessage();
 		if ((i % iProgStep == 0)&&(dlgReconst.m_hWnd)) dlgReconst.m_Progress.StepIt();
 		if (dlgReconst.iStatus == CDLGRECONST_STOP) {
-			if (pf) pf->m_wndStatusBar.SetPaneText(0, "Abort");
+			if (pf) pf->m_wndStatusBar.SetPaneText(0, "Aborted");
 			return 0;
 		}
 		if (i == isino - 1) fn = "dark" + rq->itexFileSuffix;//".img";
@@ -2879,7 +2879,7 @@ if (bDebug) AfxMessageBox(msg + fmts);
 	if (pDriftList) delete [] pDriftList;//120501
 	if (pf) {
 		if (dlgReconst.iStatus == CDLGRECONST_STOP) {
-			pf->m_wndStatusBar.SetPaneText(0, "Abort");
+			pf->m_wndStatusBar.SetPaneText(0, "Aborted");
 			return 0;
 		}
 	}
@@ -3365,7 +3365,7 @@ TErr CGazoDoc::DeconvBackProj(RECONST_QUEUE* rq, double center, int iMultiplex, 
 	//
 	if (pf) {
 		if (dlgReconst.iStatus == CDLGRECONST_STOP) {
-			pf->m_wndStatusBar.SetPaneText(0, "Abort");
+			pf->m_wndStatusBar.SetPaneText(0, "Aborted");
 			return 0;
 		}
 	}

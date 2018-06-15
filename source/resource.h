@@ -87,6 +87,8 @@
 #define IDC_HISTG_16BIT                 1038
 #define IDC_QUEUE_FINAL                 1039
 #define IDC_MSG_TEXT                    1040
+#define IDC_QUEUE_RESUME                1040
+#define IDC_QUEUE_PAUSE                 1040
 #define IDC_PROP_CPU                    1042
 #define IDC_PROP_NCPU                   1042
 #define IDC_PROP_CPU2                   1043

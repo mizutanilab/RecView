@@ -189,12 +189,15 @@ void CDlgQueue::EnableCtrl() {
 	GetDlgItem(IDCANCEL)->EnableWindow(FALSE);
 	GetDlgItem(IDC_QUEUE_STOP)->EnableWindow(TRUE);
 	GetDlgItem(IDC_QUEUE_FINAL)->EnableWindow(TRUE);
-	//if (iStatus & CDLGQUEUE_FINAL)
-	//	GetDlgItem(IDC_QUEUE_FINAL)->SetWindowText("Exec all processes");
-	//else GetDlgItem(IDC_QUEUE_FINAL)->SetWindowText("End at current proc");
-	if (iStatus & CDLGQUEUE_PAUSE) GetDlgItem(IDOK)->SetWindowText("Resume");
-	else GetDlgItem(IDOK)->SetWindowText("Pause");
-	if (iStatus & CDLGQUEUE_BUSY) return;
+	GetDlgItem(IDC_QUEUE_PAUSE)->EnableWindow(TRUE);
+	//180614 if (iStatus & CDLGQUEUE_PAUSE) GetDlgItem(IDOK)->SetWindowText("Resume");
+	//else GetDlgItem(IDOK)->SetWindowText("Pause");
+	if (iStatus & CDLGQUEUE_BUSY) {
+		//GetDlgItem(IDOK)->SetWindowText("Pause");
+		GetDlgItem(IDOK)->SetWindowText("Resume");
+		return;
+	}
+	GetDlgItem(IDC_QUEUE_PAUSE)->EnableWindow(FALSE);
 	//
 	GetDlgItem(IDOK)->SetWindowText("Start");
 	GetDlgItem(IDC_QUEUE_STOP)->EnableWindow(FALSE);
@@ -231,6 +234,7 @@ BEGIN_MESSAGE_MAP(CDlgQueue, CDialog)
 	ON_BN_CLICKED(IDC_QUEUE_STOP, OnQueueStop)
 	ON_BN_CLICKED(IDC_QUEUE_FINAL, OnQueueFinal)
 	//}}AFX_MSG_MAP
+	ON_BN_CLICKED(IDC_QUEUE_PAUSE, &CDlgQueue::OnBnClickedQueuePause)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -261,26 +265,51 @@ void CDlgQueue::OnCancel()
 	//CDialog::OnCancel();
 }
 
+void CDlgQueue::OnBnClickedQueuePause()
+{
+	int iQueue = -1;
+	CString sQueueStatus = "Processing";
+	while ( (iQueue = m_QueueList.GetNextItem(iQueue, LVNI_ALL)) >= 0) {
+		sQueueStatus = m_QueueList.GetItemText(iQueue, 1);
+		if (sQueueStatus == "Processing") break;
+	}
+	if (iQueue >= 0) m_QueueList.SetItemText(iQueue, 1, "Pause");
+	GetDlgItem(IDC_QUEUE_PAUSE)->EnableWindow(FALSE);
+	GetDlgItem(IDOK)->EnableWindow(TRUE);
+	iStatus |= CDLGQUEUE_PAUSE;
+	while (iStatus & CDLGQUEUE_BUSY) {
+		::ProcessMessage();
+		if (!(iStatus & CDLGQUEUE_PAUSE)) {
+			GetDlgItem(IDC_QUEUE_PAUSE)->EnableWindow(TRUE);
+			GetDlgItem(IDOK)->EnableWindow(FALSE);
+			break;
+		}
+	}
+	if (iQueue >= 0) m_QueueList.SetItemText(iQueue, 1, "Processing");
+	return;
+}
+
 void CDlgQueue::OnOK() 
 {
 	if (iStatus & CDLGQUEUE_PAUSE) {
 		iStatus &= ~CDLGQUEUE_PAUSE;
 		return;
 	}
-	if (iStatus & CDLGQUEUE_BUSY) {
-		GetDlgItem(IDOK)->SetWindowText("Resume");
-		//GetDlgItem(IDC_QUEUE_FINAL)->EnableWindow(FALSE);
-		iStatus |= CDLGQUEUE_PAUSE;
-		while (iStatus & CDLGQUEUE_BUSY) {
-			::ProcessMessage();
-			if (!(iStatus & CDLGQUEUE_PAUSE)) {
-				GetDlgItem(IDOK)->SetWindowText("Pause");
-				break;
-			}
-		}
-		//GetDlgItem(IDC_QUEUE_FINAL)->EnableWindow(TRUE);
-		return;
-	}
+	//180614
+	//if (iStatus & CDLGQUEUE_BUSY) {
+	//	GetDlgItem(IDC_QUEUE_RESUME)->EnableWindow(TRUE);
+	//	GetDlgItem(IDOK)->EnableWindow(FALSE);
+	//	iStatus |= CDLGQUEUE_PAUSE;
+	//	while (iStatus & CDLGQUEUE_BUSY) {
+	//		::ProcessMessage();
+	//		if (!(iStatus & CDLGQUEUE_PAUSE)) {
+	//			GetDlgItem(IDC_QUEUE_RESUME)->EnableWindow(FALSE);
+	//			GetDlgItem(IDOK)->EnableWindow(TRUE);
+	//			break;
+	//		}
+	//	}
+	//	return;
+	//}
 	//131019===>
 	int i = -1;
 	CString sFirstQueueStatus = "Hold";
@@ -321,7 +350,7 @@ void CDlgQueue::OnOK()
 		if (this->iStatus == CDLGQUEUE_STOP) break;
 		slock.Lock(100);
 	}
-	GetDlgItem(IDOK)->EnableWindow(TRUE);
+//	GetDlgItem(IDOK)->EnableWindow(TRUE);
 	m_QueueList.SetItemText(iFirstQueue, 1, sFirstQueueStatus);
 	i = -1;
 	//===>131019
@@ -427,6 +456,7 @@ void CDlgQueue::OnOK()
 
 void CDlgQueue::OnQueueStop() 
 {
+	if (AfxMessageBox("Abort current process?", MB_OKCANCEL) == IDCANCEL) return;
 	if (pd) pd->dlgReconst.iStatus = CDLGRECONST_STOP;
 	iStatus = CDLGQUEUE_STOP;
 }
