@@ -407,7 +407,11 @@ void CDlgQueue::OnOK()
 			//120723 CGazoDoc doc;
 			pd = &doc;
 			CString rtn = "";
-			doc.OutputImageInBox(fq, NULL, &rtn);
+			if (err = doc.OutputImageInBox(fq, NULL, &rtn)) {
+				msg.Format("Err%d", err);
+				m_QueueList.SetItemText(i, 1, msg);
+				error.Log(err);
+			}
 			//120726 doc.DeleteAll();
 			pd = NULL;
 			if (!rtn.IsEmpty()) {
@@ -768,7 +772,10 @@ TErr CDlgQueue::SaveQueue(CStdioFile* fp) {
 			//if (fq->) fp->WriteString(" TRUE\r\n"); else fp->WriteString(" FALSE\r\n");
 			line.Format("nFiles %d\r\n", fq->nFiles); fp->WriteString(line);
 			LPTSTR lpFile = fq->lpFileList;
-			line.Format("lpFileList %s", lpFile);
+			//180622 line.Format("lpFileList %s", lpFile);
+			line.Format("%s", lpFile);
+			if (line.Find(' ') >= 0) line = "lpFileList \"" + line + "\"";
+			else line = "lpFileList " + line;
 			bool bNull = false;
 			if (fq->nFiles > 1) {//multiple selection
 				bNull = false;
@@ -786,7 +793,9 @@ TErr CDlgQueue::SaveQueue(CStdioFile* fp) {
 			}
 			//AfxMessageBox(line);
 			fp->WriteString(line + "\r\n");
-			if (fq->b16bit) fp->WriteString("b16bit TRUE\r\n"); else fp->WriteString("b16bit FALSE\r\n");
+			if (fq->uiFlags & FQFLAGS_16BIT) fp->WriteString("b16bit TRUE\r\n"); else fp->WriteString("b16bit FALSE\r\n");
+			if (fq->uiFlags & FQFLAGS_OUTPUT_HISTG) fp->WriteString("bOutHistg TRUE\r\n"); else fp->WriteString("bOutHistg FALSE\r\n");
+			//if (fq->b16bit) fp->WriteString("b16bit TRUE\r\n"); else fp->WriteString("b16bit FALSE\r\n");
 			if (fq->bBoxEnabled) fp->WriteString("bBoxEnabled TRUE\r\n"); else fp->WriteString("bBoxEnabled FALSE\r\n");
 			line.Format("dHigh %lf\r\n", fq->dHigh); fp->WriteString(line);
 			line.Format("dLow %lf\r\n", fq->dLow); fp->WriteString(line);
@@ -801,6 +810,14 @@ TErr CDlgQueue::SaveQueue(CStdioFile* fp) {
 			line.Format("iXdim %d\r\n", fq->iXdim); fp->WriteString(line);
 			line.Format("iYdim %d\r\n", fq->iYdim); fp->WriteString(line);
 			line.Format("outFilePrefix %s\r\n", fq->outFilePrefix); fp->WriteString(line);
+			int ipos = 0;
+			if (!fq->sPolygonList.IsEmpty()) {
+				for (;;) {
+					const CString sEntry = fq->sPolygonList.Tokenize(_T("\r\n"), ipos);
+					if (sEntry.IsEmpty()) break;
+					line.Format("sPolygonList %s\r\n", sEntry); fp->WriteString(line);
+				}
+			}
 		} else if (mode == "Lsqfit") {
 			LSQFIT_QUEUE* lq = &(lsqfitQueue[idx]);
 			//lq->bActive; this must be set TRUE when loading
@@ -882,8 +899,11 @@ TErr CDlgQueue::LoadQueue(CStdioFile* fp) {
 		} else if (mode == "OutputImage") {
 			//FORMAT_QUEUE* fq = &(fmtQueue[idx]);
 			FORMAT_QUEUE fq;
+			fq.uiFlags = 0;
 			fq.lpFileList = new TCHAR[MAX_FILE_DIALOG_LIST];
-			_tcscpy_s(fq.lpFileList, MAX_FILE_DIALOG_LIST, "");
+			//180622 _tcscpy_s(fq.lpFileList, MAX_FILE_DIALOG_LIST, "");
+			memset(fq.lpFileList, 0, MAX_FILE_DIALOG_LIST);
+			fq.sPolygonList.Empty();
 			while (fp->ReadString(line)) {
 				CString cmd = line.SpanExcluding(" \t\r\n");
 				CString param = line.Mid(cmd.GetLength());
@@ -892,7 +912,9 @@ TErr CDlgQueue::LoadQueue(CStdioFile* fp) {
 				//AfxMessageBox(cmd + "/" + param + "/");
 				if (cmd == "End") {break;
 				} else if (cmd == "nFiles") {if (sscanf_s(param, "%d", &(fq.nFiles)) < 1) msg += line;
-				} else if (cmd == "b16bit") {if (param == "TRUE") fq.b16bit = TRUE; else if (param == "FALSE") fq.b16bit = FALSE; else msg += line;
+				//} else if (cmd == "b16bit") {if (param == "TRUE") fq.b16bit = TRUE; else if (param == "FALSE") fq.b16bit = FALSE; else msg += line;
+				} else if (cmd == "b16bit") {if (param == "TRUE") fq.uiFlags |= FQFLAGS_16BIT; else if (param != "FALSE") msg += line;
+				} else if (cmd == "bOutHistg") {if (param == "TRUE") fq.uiFlags |= FQFLAGS_OUTPUT_HISTG; else if (param != "FALSE") msg += line;
 				} else if (cmd == "bBoxEnabled") {if (param == "TRUE") fq.bBoxEnabled = TRUE; else if (param == "FALSE") fq.bBoxEnabled = FALSE; else msg += line;
 				} else if (cmd == "dHigh") {if (sscanf_s(param, "%lf", &(fq.dHigh)) < 1) msg += line;
 				} else if (cmd == "dLow") {if (sscanf_s(param, "%lf", &(fq.dLow)) < 1) msg += line;
@@ -907,8 +929,15 @@ TErr CDlgQueue::LoadQueue(CStdioFile* fp) {
 				} else if (cmd == "iXdim") {if (sscanf_s(param, "%d", &(fq.iXdim)) < 1) msg += line;
 				} else if (cmd == "iYdim") {if (sscanf_s(param, "%d", &(fq.iYdim)) < 1) msg += line;
 				} else if (cmd == "outFilePrefix") {fq.outFilePrefix = param;
+				} else if (cmd == "sPolygonList") {fq.sPolygonList += param + "\r\n";
 				} else if (cmd == "lpFileList") {
-					CString fname = param.SpanExcluding(" \t");
+					//180622
+					CString fname;
+					if ((param.GetAt(0) == '"')&&(param.GetLength() > 1)) {
+						fname = "\"" + param.Mid(1).SpanExcluding("\"") + "\"";
+					} else {
+						fname = param.SpanExcluding(" \t");
+					}
 					if (fname.IsEmpty()) {msg += line; continue;} else iFileCount = 1;
 					int idx = fname.GetLength();
 					_tcscpy_s(fq.lpFileList, idx+1, fname);
@@ -935,7 +964,7 @@ TErr CDlgQueue::LoadQueue(CStdioFile* fp) {
 				for (int j=0; j<MAX_FILE_DIALOG_LIST; j++) {
 					if (lpFile[j] == NULL) {
 						if (bNull) break;
-						bNull = true; idx++; CString sfname = (char*)(&(lpFile[j + 1])); line += " " + sfname;
+						bNull = true; idx++; CString sfname = (char*)(&(lpFile[j + 1])); line += "," + sfname;
 						//AfxMessageBox(fname);
 						if (idx >= fq.nFiles) break;
 					} else {

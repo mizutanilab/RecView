@@ -84,6 +84,7 @@ CGazoView::CGazoView()
 	bPolygonMove = false;
 	iPickedPolygonPnt = -1;
 	InitPolygon(200, 200, 100, 100);
+	dlgPolygon.SetView(this);
 }
 
 CGazoView::~CGazoView()
@@ -92,6 +93,7 @@ CGazoView::~CGazoView()
 //	if (pPix) delete [] pPix;
 	if (pbOverlay) delete [] pbOverlay;
 	if (hBitmap) DeleteObject(hBitmap);
+	if (dlgPolygon.m_hWnd) dlgPolygon.DestroyWindow();
 	//lpBmPixel is automatically deleted by DeleteObject
 }
 
@@ -610,12 +612,14 @@ void CGazoView::OnMouseMove(UINT nFlags, CPoint point)
 				iPolygonX[i] += ipx0;
 				iPolygonY[i] += ipy0;
 			}
+			dlgPolygon.UpdateCurrentPolygon();
 			InvalidateRect(NULL, FALSE);
 		} else if (bLButtonDown) {
 			if (iPickedPolygonPnt >= 0) {
 				iPolygonX[iPickedPolygonPnt] = (int)((point.x - ix0img) / rMagnify);
 				iPolygonY[iPickedPolygonPnt] = (int)((point.y - iy0img) / rMagnify);
 			}
+			dlgPolygon.UpdateCurrentPolygon();
 			InvalidateRect(NULL, FALSE);
 		}
 	} else if (bBoxEnabled) {
@@ -984,13 +988,26 @@ void CGazoView::OnViewBoxaxislabel()
 
 void CGazoView::OnAnalysisPolygonlasso()//180425
 {
-	if (bPolygonEnabled)  bPolygonEnabled = false;
-	else {
+	if (bPolygonEnabled) {
+		if (dlgPolygon.IsWindowVisible()) {
+			bPolygonEnabled = false;
+			dlgPolygon.ShowWindow(SW_HIDE);
+			dlgPolygon.MakePolygonList();
+		} else {
+			if (!dlgPolygon.m_hWnd) dlgPolygon.Create(IDD_POLYGON);
+			dlgPolygon.ShowWindow(SW_SHOW); //AfxMessageBox("ShowWindow");
+			dlgPolygon.UpdateCurrentPolygon();
+		}
+	} else {
 		bPolygonEnabled = true;
 		if (bBoxEnabled) {
 			InitPolygon(iBoxCentX, iBoxCentY, iBoxSizeX, iBoxSizeY);
 			bBoxEnabled = false;
 		}
+		if (!dlgPolygon.m_hWnd) dlgPolygon.Create(IDD_POLYGON);
+		if (dlgPolygon.IsWindowVisible()) dlgPolygon.SetForegroundWindow();
+		else dlgPolygon.ShowWindow(SW_SHOW);
+		dlgPolygon.UpdateCurrentPolygon();
 	}
 	InvalidateRect(NULL, FALSE);
 }
@@ -1012,6 +1029,7 @@ void CGazoView::InitPolygon(int xcent, int ycent, int xsize, int ysize) {
 		iPolygonX[i] = xcent + ix;
 		iPolygonY[i] = ycent + iy;
 	}
+	dlgPolygon.UpdateCurrentPolygon();
 //	iPolygonX[0] = xcent + xsize; iPolygonY[0] = ycent;
 //	iPolygonX[1] = (int)(xcent + xsize * 0.7); iPolygonY[1] = (int)(ycent + ysize * 0.7);
 //	iPolygonX[2] = xcent; iPolygonY[2] = ycent + ysize;
@@ -1024,14 +1042,17 @@ void CGazoView::InitPolygon(int xcent, int ycent, int xsize, int ysize) {
 
 bool CGazoView::PointInPolygon(CPoint point) {//image coords
 	if (!bPolygonEnabled) return false;
-	int icount = 0;
-	for(int i=0; i<CGAZOVIEW_NPOLYGON; i++){
-		int i1 = (i == CGAZOVIEW_NPOLYGON-1) ? 0 : i+1;
-		if ( ((iPolygonY[i] <= point.y) && (iPolygonY[i1] > point.y))
-				|| ((iPolygonY[i] > point.y) && (iPolygonY[i1] <= point.y)) ){
-			double dt = (point.y -iPolygonY[i]) / (double)(iPolygonY[i1] - iPolygonY[i]);
-			if (point.x < (iPolygonX[i] + (dt * (iPolygonX[i1] - iPolygonX[i])))) icount++;
-		}
-	}
-	return (icount & 0x01);
+	CGazoDoc* pd = GetDocument();
+	if (!pd) return false;
+	return pd->PointInPolygon(point.x, point.y, iPolygonX, iPolygonY);
+//	int icount = 0;
+//	for(int i=0; i<CGAZOVIEW_NPOLYGON; i++){
+//		int i1 = (i == CGAZOVIEW_NPOLYGON-1) ? 0 : i+1;
+//		if ( ((iPolygonY[i] <= point.y) && (iPolygonY[i1] > point.y))
+//				|| ((iPolygonY[i] > point.y) && (iPolygonY[i1] <= point.y)) ){
+//			double dt = (point.y -iPolygonY[i]) / (double)(iPolygonY[i1] - iPolygonY[i]);
+//			if (point.x < (iPolygonX[i] + (dt * (iPolygonX[i1] - iPolygonX[i])))) icount++;
+//		}
+//	}
+//	return (icount & 0x01);
 }

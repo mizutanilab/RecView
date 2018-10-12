@@ -10,6 +10,7 @@
 #endif // _MSC_VER > 1000
 
 //#include "StdAfx.h"
+#include "DlgPolygon.h"
 
 #define CGAZOVIEW_NPOLYGON 12
 
@@ -55,6 +56,7 @@ public:
 	bool bPolygonEnabled;
 	int iPolygonX[CGAZOVIEW_NPOLYGON];
 	int iPolygonY[CGAZOVIEW_NPOLYGON];
+	CDlgPolygon dlgPolygon;
 
 #ifdef _DEBUG
 	virtual void AssertValid() const;

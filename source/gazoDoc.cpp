@@ -378,6 +378,100 @@ void CGazoDoc::EnableSystemMenu(bool bEnable) {
 	}
 }
 
+bool CGazoDoc::PointInPolygon(int ix, int iy, int* piPolygonX, int* piPolygonY) {//image coords
+	int icount = 0;
+	for(int i=0; i<CGAZOVIEW_NPOLYGON; i++){
+		int i1 = (i == CGAZOVIEW_NPOLYGON-1) ? 0 : i+1;
+		if ( ((piPolygonY[i] <= iy) && (piPolygonY[i1] > iy))
+				|| ((piPolygonY[i] > iy) && (piPolygonY[i1] <= iy)) ){
+			double dt = (iy - piPolygonY[i]) / (double)(piPolygonY[i1] - piPolygonY[i]);
+			if (ix < (piPolygonX[i] + (dt * (piPolygonX[i1] - piPolygonX[i])))) icount++;
+		}
+	}
+	return (icount & 0x01);
+}
+
+TErr CGazoDoc::GetPolygon(CString sSliceNumber, CString sPolygonList, int* piPolygonX, int* piPolygonY) {
+//AfxMessageBox(sSliceNumber + "\r\n" + sPolygonList);
+	if (sPolygonList.IsEmpty()) {
+		POSITION pos = GetFirstViewPosition();
+		CGazoView* pv = (CGazoView*) GetNextView( pos );
+		if (pv == NULL) return 18062001;
+		for (int i=0; i<CGAZOVIEW_NPOLYGON; i++) {
+			piPolygonX[i] = pv->iPolygonX[i];
+			piPolygonY[i] = pv->iPolygonY[i];
+		}
+		return 0;
+	}
+	int ipg1x[CGAZOVIEW_NPOLYGON], ipg1y[CGAZOVIEW_NPOLYGON];
+	int ipg2x[CGAZOVIEW_NPOLYGON], ipg2y[CGAZOVIEW_NPOLYGON];
+	CString spg1 = "", spg2 = "";
+	int ipos = 0;
+	for (;;) {
+		const CString sEntry = sPolygonList.Tokenize(_T("\r\n"), ipos);
+		if (sEntry.IsEmpty()) break;
+		const CString sFrmNum = sEntry.SpanExcluding(" ");
+		if (sFrmNum.IsEmpty()) break;
+		const CString sCoords = sEntry.Mid(sFrmNum.GetLength()).TrimLeft();
+		if (sFrmNum == sSliceNumber) {
+			int jpos = 0;
+//CString msg = "180620-01\r\n", line;
+			for (int j=0; j<CGAZOVIEW_NPOLYGON; j++) {
+				CString sPoint = sCoords.Tokenize(_T(")"), jpos);
+				if (sPoint.IsEmpty()) return 18062002;
+				piPolygonX[j] = atoi(sPoint.Mid(1).SpanExcluding(" "));
+				piPolygonY[j] = atoi(sPoint.Mid(sPoint.SpanExcluding(" ").GetLength()));
+//line.Format("(%d %d)", piPolygonX[j], piPolygonY[j]); msg += line;
+			}
+//AfxMessageBox(msg);
+			return 0;
+		} else if (atoi(sFrmNum) > atoi(sSliceNumber)) {
+			int jpos = 0;
+			bool bComplete = true;
+			for (int j=0; j<CGAZOVIEW_NPOLYGON; j++) {
+				CString sPoint = sCoords.Tokenize(_T(")"), jpos);
+				if (sPoint.IsEmpty()) {bComplete = false; break;}
+				ipg2x[j] = atoi(sPoint.Mid(1).SpanExcluding(" "));
+				ipg2y[j] = atoi(sPoint.Mid(sPoint.SpanExcluding(" ").GetLength()));
+			}
+			if (bComplete) {
+				spg2 = sEntry.SpanExcluding(" ");
+				break;
+			}
+		} else {
+			int jpos = 0;
+			bool bComplete = true;
+			for (int j=0; j<CGAZOVIEW_NPOLYGON; j++) {
+				CString sPoint = sCoords.Tokenize(_T(")"), jpos);
+				if (sPoint.IsEmpty()) {bComplete = false; break;}
+				ipg1x[j] = atoi(sPoint.Mid(1).SpanExcluding(" "));
+				ipg1y[j] = atoi(sPoint.Mid(sPoint.SpanExcluding(" ").GetLength()));
+			}
+			if (bComplete) spg1 = sEntry.SpanExcluding(" ");
+		}
+	}
+	const int ipg1 = atoi(spg1), ipg2 = atoi(spg2);
+	if (spg1.IsEmpty()) {
+		if (spg2.IsEmpty()) return 18062003;
+		for (int j=0; j<CGAZOVIEW_NPOLYGON; j++) {
+			piPolygonX[j] = ipg2x[j]; piPolygonY[j] = ipg2y[j];
+		}
+	} else {
+		if ((spg2.IsEmpty())||(ipg1 == ipg2)) {
+			for (int j=0; j<CGAZOVIEW_NPOLYGON; j++) {
+				piPolygonX[j] = ipg1x[j]; piPolygonY[j] = ipg1y[j];
+			}
+		} else {
+			const double dr = (atof(sSliceNumber) - ipg1) / (ipg2 - ipg1);
+			for (int j=0; j<CGAZOVIEW_NPOLYGON; j++) {
+				piPolygonX[j] = (int)(ipg1x[j] + dr * (ipg2x[j] - ipg1x[j]));
+				piPolygonY[j] = (int)(ipg1y[j] + dr * (ipg2y[j] - ipg1y[j]));
+			}
+		}
+	}
+	return 0;
+}
+
 TErr CGazoDoc::OutputImageInBox(FORMAT_QUEUE* fq, CProgressCtrl* progress, CString* psMsg) {
 	TErr err = 0;
 	if (!fq) return 21031;
@@ -403,12 +497,17 @@ TErr CGazoDoc::OutputImageInBox(FORMAT_QUEUE* fq, CProgressCtrl* progress, CStri
 	const bool bEnb = (fq->bBoxEnabled) ? true : false;
 	if (!bEnb) {ixsize = kxdim; iysize = kydim;}
 	const int ixy = ixsize * iysize;
+	const CString sPolygonList = fq->sPolygonList;
+	const bool bHistLog = (fq->uiFlags & FQFLAGS_OUTPUT_HISTG) ? true : false;
+	__int64 pllHistLog[256];
+	unsigned __int64 ullHistLogCount = 0; 
+	for (int i=0; i<256; i++) {pllHistLog[i] = 0;}
 	unsigned char* pixOut = NULL;
 	int* pixOut16 = NULL;
 	int* pixbuf = NULL;
 	int maxIntensity = 255;
 	try {
-		if (fq->b16bit) {
+		if (fq->uiFlags & FQFLAGS_16BIT) {
 			maxIntensity = 65535;
 			pixOut16 = new int[ixy];
 		} else {
@@ -460,8 +559,9 @@ TErr CGazoDoc::OutputImageInBox(FORMAT_QUEUE* fq, CProgressCtrl* progress, CStri
 		qsort( (void *)flist, (size_t)nFiles, sizeof(char*), StringCompare );
 	}
 	//120501 log output
-	CString sfinput = lpFile;
-	if (nFiles > 1) {sfinput += "\\"; sfinput += flist[0];}
+	CString sfpath = lpFile;
+	sfpath.TrimLeft('"'); sfpath.TrimRight('"');
+	const CString sfinput = (nFiles > 1) ? (sfpath + "\\" + flist[0]) : sfpath;
 	TCHAR path_buffer[_MAX_PATH];
 	_stprintf_s(path_buffer, _MAX_PATH, sfinput);
 	TCHAR drive[_MAX_DRIVE]; TCHAR dir[_MAX_DIR]; TCHAR fnm[_MAX_FNAME]; TCHAR ext[_MAX_EXT];
@@ -477,6 +577,7 @@ TErr CGazoDoc::OutputImageInBox(FORMAT_QUEUE* fq, CProgressCtrl* progress, CStri
 	}
 	CGazoApp* pApp = (CGazoApp*) AfxGetApp();
 	bool bflogOpen = false;
+	//AfxMessageBox(sdataPath + sLogFileName);
 	if (flog.Open(sdataPath + sLogFileName, CFile::modeReadWrite | CFile::modeCreate | CFile::modeNoTruncate | CFile::shareDenyWrite | CFile::typeText)) {
 		bflogOpen = true;
 		flog.SeekToEnd();
@@ -512,12 +613,16 @@ TErr CGazoDoc::OutputImageInBox(FORMAT_QUEUE* fq, CProgressCtrl* progress, CStri
 			line.Format(" Averaging: %d pixel\r\n", fq->iAverage);
 			flog.WriteString(line);
 		}
-		if (fq->b16bit) flog.WriteString(" Output 16 bit TIFF files\r\n"); else flog.WriteString(" Output 8 bit TIFF files\r\n");
+		if (fq->uiFlags & FQFLAGS_16BIT) flog.WriteString(" Output 16 bit TIFF files\r\n"); else flog.WriteString(" Output 8 bit TIFF files\r\n");
 		flog.WriteString(" Output file prefix: " + fq->outFilePrefix + "\r\n");
 		if (fq->iOspDepth) {
 			line.Format(" Carving depth: %d pixels\r\n", fq->iOspDepth);
 			flog.WriteString(line);
 			line.Format("  LAC threshold: %.2f\r\n", fq->dOspThreshold);
+			flog.WriteString(line);
+		}
+		if (!sPolygonList.IsEmpty()) {
+			line.Format(" Polygon list:\r\n%s", sPolygonList);
 			flog.WriteString(line);
 		}
 		//120803 flog.WriteString("---------------------------------------------------\r\n");
@@ -526,8 +631,8 @@ TErr CGazoDoc::OutputImageInBox(FORMAT_QUEUE* fq, CProgressCtrl* progress, CStri
 	//
 	CMainFrame* pf = (CMainFrame*) AfxGetMainWnd();
 	if (!bflogOpen) {//141205
-		if (psMsg) {*psMsg = "**ErrorOnSavingLogs**";}//130210
-		else {AfxMessageBox("Error on saving logs.");}
+		if (psMsg) {*psMsg = "**ErrorOnOpenLogFile**";}//130210
+		else {AfxMessageBox("Error on opening a log file.");}
 		if (pf) pf->m_wndStatusBar.SetPaneText(1, "");
 		if (pixbuf) delete [] pixbuf;
 		if (pixOut) delete [] pixOut;
@@ -548,8 +653,9 @@ TErr CGazoDoc::OutputImageInBox(FORMAT_QUEUE* fq, CProgressCtrl* progress, CStri
 		if (dlgReconst.iStatus == CDLGRECONST_STOP) break;
 		//
 		if (!izavg) { for (int i=0; i<ixy; i++) {pixbuf[i] = 0;} }
-		CString finput = lpFile;
-		if (nFiles > 1) {finput += "\\"; finput += flist[n];}
+		//CString finput = lpFile;
+		//if (nFiles > 1) {finput += "\\"; finput += flist[n];}
+		const CString finput = (nFiles > 1) ? (sfpath + "\\" + flist[n]) : sfpath;
 		if (pf) pf->m_wndStatusBar.SetPaneText(1, "Reformatting " + finput);
 		//read file
 		if (!file.Open(finput, CFile::modeRead | CFile::shareDenyWrite)) {err = 21032; continue;}
@@ -567,13 +673,27 @@ TErr CGazoDoc::OutputImageInBox(FORMAT_QUEUE* fq, CProgressCtrl* progress, CStri
 				if (psMsg) {*psMsg = "**Truncated**";}//130210
 			}
 		}
+		//polygon lasso
+		int ipgx[CGAZOVIEW_NPOLYGON], ipgy[CGAZOVIEW_NPOLYGON];
+		bool bEnPolygon = false;
+		CString sFrm = finput;
+		sFrm.MakeReverse();
+		const int iExt = sFrm.Find('.');
+		if ((!sPolygonList.IsEmpty())&&(iExt >= 0)) {
+			sFrm = sFrm.Mid(iExt+1).SpanIncluding("01234567890").MakeReverse();
+			if (!sFrm.IsEmpty()) {
+				if (!GetPolygon(sFrm, sPolygonList, ipgx, ipgy)) bEnPolygon = true;
+			}
+		}
 		//trimming
 		int kDispHigh = (int)((dHigh - tpixBase) * tpixDiv);
 		int kDispLow = (int)((dLow - tpixBase) * tpixDiv);
 		if (!bEnb) {
-			int icount = 0;//////////////140618
 			for (int i=0; i<ixsize; i++) {
 				for (int j=0; j<iysize; j++) {
+					if (bEnPolygon) {
+						if (!PointInPolygon(i, j, ipgx, ipgy)) continue;
+					}
 					int ipix = (int)( ((double)pixIn[i + j * kxdim] - kDispLow) * maxIntensity / (kDispHigh - kDispLow) );
 					if (ipix > maxIntensity) ipix = maxIntensity; else if (ipix < 0) ipix = 0;
 					//pixbuf[i + j * ixsize] += (unsigned char)ipix;
@@ -597,6 +717,9 @@ TErr CGazoDoc::OutputImageInBox(FORMAT_QUEUE* fq, CProgressCtrl* progress, CStri
 					if ((gx >= 0)&&(gy >= 0)&&(gx <= kxdim-1)&&(gy <= kydim-1)) {
 						int igx = (int)gx;
 						int igy = (int)gy;
+						if (bEnPolygon) {
+							if (!PointInPolygon(igx, igy, ipgx, ipgy)) continue;
+						}
 						double dx = gx - igx;
 						double dy = gy - igy;
 						if ((fabs(dx) < 0.00001)&&(fabs(dy) < 0.00001)) {//090727
@@ -646,8 +769,13 @@ TErr CGazoDoc::OutputImageInBox(FORMAT_QUEUE* fq, CProgressCtrl* progress, CStri
 				}
 				ipix /= ipavg * izavg;
 				if (ipix > maxIntensity) ipix = maxIntensity; else if (ipix < 0) ipix = 0;
-				if (fq->b16bit) pixOut16[i / navg + j / navg * isx] = ipix;
-				else pixOut[i / navg + j / navg * isx] = (unsigned char)ipix;
+				if (fq->uiFlags & FQFLAGS_16BIT) {
+					pixOut16[i / navg + j / navg * isx] = ipix;
+					if (bHistLog) {pllHistLog[ipix >> 8]++; ullHistLogCount++;}
+				} else {
+					pixOut[i / navg + j / navg * isx] = (unsigned char)ipix;
+					if (bHistLog) {pllHistLog[ipix]++; ullHistLogCount++;}
+				}
 			}
 		}
 		//CString line; line.Format("%s %d", finput, izavg); AfxMessageBox(line);
@@ -668,11 +796,21 @@ TErr CGazoDoc::OutputImageInBox(FORMAT_QUEUE* fq, CProgressCtrl* progress, CStri
 		imageDesc.Format("%d\t%.6f\t%.6f\t%.6f\t%.6f\t%d\t%.6f\t%.6f ",
 			tiSino, tfPixelWidth, maxIntensity/(dHigh - dLow), dLow, tfCenter, tiFilter, 
 			55.111697, 0.461227);
-		if (fq->b16bit) err = WriteTifMonochrome16(&file, pixOut16, isy, isx, imageDesc);
+		if (fq->uiFlags & FQFLAGS_16BIT) err = WriteTifMonochrome16(&file, pixOut16, isy, isx, imageDesc);
 		else err = WriteTifMonochrome(&file, pixOut, isy, isx, imageDesc);
 		file.Close();
 	}
 	if (flog.GetStatus(fstatus)) {//120803
+		if (bHistLog) {
+			flog.WriteString(" Histogram\r\n pixel\tLAC\tn\tFreq\r\n");
+			for (int i=0; i<256; i++) {
+				CString line;
+				line.Format(" %d\t%.2f\t%lld\t%.6f\r\n", 
+					(fq->uiFlags & FQFLAGS_16BIT) ? i*256 : i, i * (dHigh - dLow) / maxIntensity + dLow,
+					pllHistLog[i], (double)pllHistLog[i] / ullHistLogCount);
+				flog.WriteString(line);
+			}
+		}
 		flog.WriteString("---------------------------------------------------\r\n");
 		flog.Close();
 	}
@@ -4074,6 +4212,7 @@ void CGazoDoc::OnTomoHistg()
 													&(dlgHist.m_TrmSizeX), &(dlgHist.m_TrmSizeY),
 													&(dlgHist.m_TrmAngle), &bFlg);
 				if (bFlg) dlgHist.m_EnableTrm = TRUE; else dlgHist.m_EnableTrm = FALSE;
+				if (pv->bPolygonEnabled) dlgHist.m_bEnablePolygon = TRUE; else dlgHist.m_bEnablePolygon = FALSE;
 			}
 		}
 		TCHAR path_buffer[_MAX_PATH];
@@ -4172,6 +4311,8 @@ void CGazoDoc::OnToolbarFnJumpR() {ProceedImage(CGAZODOC_FILE_JUMPREV);}
 void CGazoDoc::OnToolbarFnJumpF() {ProceedImage(CGAZODOC_FILE_JUMPFWD);}
 
 TErr CGazoDoc::ProceedImage(int nproc) {
+	POSITION pos = GetFirstViewPosition();
+	CGazoView* pv = (CGazoView*) GetNextView( pos );
 	const CString fpath = this->GetPathName();
 	TCHAR path_buffer[_MAX_PATH];
 	_stprintf_s(path_buffer, _MAX_PATH, fpath);
@@ -4224,8 +4365,8 @@ TErr CGazoDoc::ProceedImage(int nproc) {
 		}
 		TErr err = ReadFile(&file);
 		file.Close();
+		if (sfnext.IsEmpty()) sfnext = fnm;
 		if (err ==  WARN_READIMAGE_SIZECHANGE) {
-			if (sfnext.IsEmpty()) sfnext = fnm;
 			if (AfxMessageBox("Image size of " + sfnext + "\r\nis different from the current one.\r\nOpen in a new window?", MB_YESNO) == IDNO)
 				return err;//160805
 			if (!file.Open(path_buffer, CFile::modeRead | CFile::shareDenyWrite)) return 16080501;
@@ -4238,9 +4379,19 @@ TErr CGazoDoc::ProceedImage(int nproc) {
 			pcd->SetTitle(path_buffer);
 			return err;
 		}
-		UpdateView();
 		this->SetPathName(path_buffer, FALSE);
 		this->SetTitle(path_buffer);
+		if (pv) {
+			CString sFrm = sfnext.SpanExcluding(".").MakeReverse().SpanIncluding("0123456789").MakeReverse();
+			int ipgx[CGAZOVIEW_NPOLYGON], ipgy[CGAZOVIEW_NPOLYGON];
+			if (!GetPolygon(sFrm, pv->dlgPolygon.sPolygonList, ipgx, ipgy)) {
+				for (int i=0; i<CGAZOVIEW_NPOLYGON; i++) {
+					pv->iPolygonX[i] = ipgx[i]; pv->iPolygonY[i] = ipgy[i];
+				}
+			}
+			pv->dlgPolygon.UpdateCurrentPolygon();
+		}
+		UpdateView();
 /*	} else if ((strncmp(ext, ".tif", 4) == 0)||(strncmp(ext, ".TIF", 4) == 0)) {//111109
 		CString filename = fnm;
 		const CString fprefix = filename.SpanExcluding("0123456789.");
@@ -4297,6 +4448,7 @@ TErr CGazoDoc::ProceedImage(int nproc) {
 		else title.Format("[%d] %s", iframe, fpath);
 		this->SetTitle(title);
 		file.Close();
+		if (pv) pv->dlgPolygon.UpdateCurrentPolygon();
 	} else if (sExt == ".H5") {
 		CString docTitle = this->GetTitle();
 		int iframe = 0;//ientry = hdf5.m_iChildEntry;
@@ -4352,6 +4504,7 @@ TErr CGazoDoc::ProceedImage(int nproc) {
 		title.Format("[%d(%s)] %s", iframe, hdf5.m_sChildTitle, fpath);
 		this->SetTitle(title);
 		file.Close();
+		if (pv) pv->dlgPolygon.UpdateCurrentPolygon();
 	} else {
 		return 28001;
 	}
@@ -4975,8 +5128,10 @@ void CGazoDoc::BatchRefracCorr(REFRAC_QUEUE* refq) {
 
 void CGazoDoc::OnTomoComment()
 {
+	CString sInfo;
+	sInfo.Format("LAC = pixel / pixdiv + pixbase\r\n pixdiv = %f, pixbase = %f\r\nTIFF file comment:\r\n", pixDiv, pixBase);
 	CDlgMessage dlg;
-	dlg.m_Msg = fileComment;
+	dlg.m_Msg = sInfo + fileComment;
 	dlg.DoModal();
 //	AfxMessageBox(fileComment);
 }

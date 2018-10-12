@@ -124,6 +124,9 @@ protected:
 public:
 	afx_msg void OnBnClickedHistgOpt();
 	//CString m_StatMsg;
+	BOOL m_bEnablePolygon;
+	afx_msg void OnBnClickedHistgEnpolygon();
+	BOOL m_bHistLog;
 };
 
 //{{AFX_INSERT_LOCATION}}

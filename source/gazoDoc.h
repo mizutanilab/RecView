@@ -112,6 +112,8 @@ public:
 	void RefracCorr(REFRAC_QUEUE* refq, CFft* fft2, CCmplx* cPixel);
 	void AdjBrightness(int iAdj);
 	void AdjContrast(int iAdj);
+	bool PointInPolygon(int ix, int iy, int* piPolygonX, int* piPolygonY);
+	TErr GetPolygon(CString sSliceNumber, CString sPolygonList, int* piPolygonX, int* piPolygonY);
 	//
 	int* pPixel;
 	float pixDiv, pixBase;

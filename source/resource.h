@@ -29,6 +29,7 @@
 #define IDD_RESOLNPLOT                  146
 #define IDD_FRAMELIST                   147
 #define IDD_DIALBOX                     148
+#define IDD_POLYGON                     149
 #define IDC_RECONST_SLICE1              1000
 #define IDC_RECONST_CENT1               1001
 #define IDC_RECONST_SLICE2              1002
@@ -85,10 +86,12 @@
 #define IDC_HISTG_BOXMSG                1037
 #define IDC_QUEUE_STOP                  1038
 #define IDC_HISTG_16BIT                 1038
+#define IDC_HISTG_ENPOLYGON             1038
 #define IDC_QUEUE_FINAL                 1039
 #define IDC_MSG_TEXT                    1040
-#define IDC_QUEUE_RESUME                1040
 #define IDC_QUEUE_PAUSE                 1040
+#define IDC_HISTG_ENPOLYGON2            1041
+#define IDC_HISTG_OUTLOGHIST            1041
 #define IDC_PROP_CPU                    1042
 #define IDC_PROP_NCPU                   1042
 #define IDC_PROP_CPU2                   1043
@@ -129,6 +132,7 @@
 #define IDC_PROP_NATISTREAM             1052
 #define IDC_LSQFIT_REFSET               1052
 #define IDC_RESOLNPLOT_UPDATE           1052
+#define IDC_POLYGON_ADD                 1052
 #define IDC_REFR_ATOMZ                  1053
 #define IDC_PROP_CUDANBLOCK2            1053
 #define IDC_PROP_ATINWORK               1053
@@ -245,6 +249,9 @@
 #define IDC_OVLY_WDOWN                  1121
 #define IDC_TREE1                       1122
 #define IDC_FRAMELIST_TREE              1122
+#define IDC_POLYGONLIST                 1125
+#define IDC_POLYGON_CURRENT             1126
+#define IDC_POLYGON_DELETE              1127
 #define IDC_DIALBOX_COMPORT             1414
 #define IDC_DIALBOX_CONNECT             1415
 #define IDC_DIALBOX_DISCONNECT          1416
@@ -350,9 +357,9 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_3D_CONTROLS                     1
-#define _APS_NEXT_RESOURCE_VALUE        149
+#define _APS_NEXT_RESOURCE_VALUE        150
 #define _APS_NEXT_COMMAND_VALUE         32842
-#define _APS_NEXT_CONTROL_VALUE         1125
+#define _APS_NEXT_CONTROL_VALUE         1128
 #define _APS_NEXT_SYMED_VALUE           102
 #endif
 #endif

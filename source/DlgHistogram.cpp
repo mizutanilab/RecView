@@ -22,6 +22,8 @@ static char THIS_FILE[] = __FILE__;
 CDlgHistogram::CDlgHistogram(CWnd* pParent /*=NULL*/)
 	: CDialog(CDlgHistogram::IDD, pParent)
 	//, m_StatMsg(_T("Statistics..."))
+	, m_bEnablePolygon(FALSE)
+	, m_bHistLog(FALSE)
 {
 	//{{AFX_DATA_INIT(CDlgHistogram)
 	m_HstHigh = _T("");
@@ -111,6 +113,8 @@ void CDlgHistogram::ParamCopyFrom(const CDlgHistogram& a) {
 	m_TrmSizeY = a.m_TrmSizeY;
 	m_TrmAngle = a.m_TrmAngle;
 	m_EnableTrm = a.m_EnableTrm;
+	m_bEnablePolygon = a.m_bEnablePolygon;
+	m_bHistLog = a.m_bHistLog;
 
 	m_Prefix = a.m_Prefix;
 	m_TrmAvrg = a.m_TrmAvrg;
@@ -262,6 +266,7 @@ void CDlgHistogram::UpdateView() {
 		if (pv) {
 			pv->SetBoxParams(m_TrmCentX, m_TrmCentY, m_TrmSizeX, m_TrmSizeY, m_TrmAngle);
 			if (m_EnableTrm) pv->EnableBox(true); else pv->EnableBox(false); 
+			if (m_bEnablePolygon) pv->bPolygonEnabled = true; else pv->bPolygonEnabled = false;
 		}
 	}
 	if (pd->pixDiv > 0) {
@@ -284,6 +289,7 @@ void CDlgHistogram::UpdateParam() {
 			bool bFlg;
 			pv->GetBoxParams(&m_TrmCentX, &m_TrmCentY, &m_TrmSizeX, &m_TrmSizeY, &m_TrmAngle, &bFlg);
 			if (bFlg) m_EnableTrm = TRUE; else m_EnableTrm = FALSE;
+			if (pv->bPolygonEnabled) m_bEnablePolygon = TRUE; else m_bEnablePolygon = FALSE;
 			if (this->m_hWnd) EnableCtrl();
 			break;
 		}
@@ -367,6 +373,8 @@ void CDlgHistogram::DoDataExchange(CDataExchange* pDX)
 	//DDX_Check(pDX, IDC_HISTG_16BIT, m_16bit);
 	//}}AFX_DATA_MAP
 	//DDX_Text(pDX, IDC_HISTG_STAT, m_StatMsg);
+	DDX_Check(pDX, IDC_HISTG_ENPOLYGON, m_bEnablePolygon);
+	DDX_Check(pDX, IDC_HISTG_OUTLOGHIST, m_bHistLog);
 }
 
 
@@ -389,6 +397,7 @@ BEGIN_MESSAGE_MAP(CDlgHistogram, CDialog)
 	ON_BN_CLICKED(IDC_HISTG_QUEUE, OnHistgQueue)
 	//}}AFX_MSG_MAP
 	ON_BN_CLICKED(IDC_HISTG_OPT, &CDlgHistogram::OnBnClickedHistgOpt)
+	ON_BN_CLICKED(IDC_HISTG_ENPOLYGON, &CDlgHistogram::OnBnClickedHistgEnpolygon)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -620,10 +629,20 @@ void CDlgHistogram::OnOK()
 		fq.nFiles = nFiles;
 		fq.lpFileList = fileList;
 		fq.outFilePrefix = m_Prefix;
-		fq.b16bit = m_16bit;
+		//180621 fq.b16bit = m_16bit;
+		fq.uiFlags = (m_16bit) ? FQFLAGS_16BIT : 0;
+		fq.uiFlags |= (m_bHistLog) ? FQFLAGS_OUTPUT_HISTG : 0;
 		fq.dOspThreshold = m_RemoveLAC;
 		fq.iOspDepth = m_RemoveDepth;
 		pd->GetDimension(&(fq.iXdim), &(fq.iYdim));
+		fq.sPolygonList.Empty();
+		if (m_bEnablePolygon) {
+			POSITION pos = pd->GetFirstViewPosition();
+			while (pos != NULL) {
+				CGazoView* pv = (CGazoView*) pd->GetNextView( pos );
+				if (pv) fq.sPolygonList = pv->dlgPolygon.sPolygonList;
+			}
+		}
 		TErr err = pd->OutputImageInBox(&fq, &m_Progress);
 		EndWaitCursor();
 		if (err) {CString line; line.Format("Error %d", err); AfxMessageBox(line);}
@@ -741,10 +760,20 @@ void CDlgHistogram::OnHistgQueue()
 	fq.nFiles = nFiles;
 	fq.lpFileList = fileList;
 	fq.outFilePrefix = m_Prefix;
-	fq.b16bit = m_16bit;
+	//fq.b16bit = m_16bit;
+	fq.uiFlags = (m_16bit) ? FQFLAGS_16BIT : 0;
+	fq.uiFlags |= (m_bHistLog) ? FQFLAGS_OUTPUT_HISTG : 0;
 	fq.dOspThreshold = m_RemoveLAC;
 	fq.iOspDepth = m_RemoveDepth;
 	pd->GetDimension(&(fq.iXdim), &(fq.iYdim));
+	fq.sPolygonList.Empty();
+	if (m_bEnablePolygon) {
+		POSITION pos = pd->GetFirstViewPosition();
+		while (pos != NULL) {
+			CGazoView* pv = (CGazoView*) pd->GetNextView( pos );
+			if (pv) fq.sPolygonList = pv->dlgPolygon.sPolygonList;
+		}
+	}
 
 	//pd params
 	//rq.filePath = pd->GetPathName();
@@ -791,4 +820,20 @@ void CDlgHistogram::OnCancel()
 	DestroyWindow();
 	iStatus = CDLGHIST_IDLE;
 	//150102 CDialog::OnCancel();
+}
+
+void CDlgHistogram::OnBnClickedHistgEnpolygon()
+{
+	UpdateData();
+	EnableCtrl();
+	UpdateView();
+	if (m_bEnablePolygon) {
+		POSITION pos = pd->GetFirstViewPosition();
+		while (pos != NULL) {
+			CGazoView* pv = (CGazoView*) pd->GetNextView( pos );
+			if (pv) {
+				if (pv->dlgPolygon.sPolygonList.IsEmpty()) AfxMessageBox("No polygon data stored");
+			}
+		}
+	}
 }

@@ -64,6 +64,9 @@ struct RECONST_QUEUE {
 	int iSampleFrameEnd;
 };
 
+#define FQFLAGS_16BIT 1
+#define FQFLAGS_OUTPUT_HISTG 2
+
 struct FORMAT_QUEUE {
 	bool bActive;
 	double dLow;
@@ -80,9 +83,11 @@ struct FORMAT_QUEUE {
 	int nFiles;
 	LPTSTR lpFileList;
 	CString outFilePrefix;
-	BOOL b16bit;
+	//180621 BOOL b16bit;
+	unsigned int uiFlags;
 	double dOspThreshold;
 	int iOspDepth;
+	CString sPolygonList;
 };
 
 struct REFRAC_QUEUE {
