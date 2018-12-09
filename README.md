@@ -1,8 +1,8 @@
 ﻿## RecView <A href="https://scicrunch.org/scicrunch/Resources/record/nlx_144509-1/SCR_016531/resolver">RRID:SCR_016531</A>
-RecView is a program for tomographic reconstruction and image processing. It consists of approx 22,000 lines of custom source codes in C++, CUDA C, OpenCL, and x86/x64 assembly language. RecView is designed for processing data obtained at the BL20B2, BL20XU, BL37XU, and BL47XU beamlines of the synchrotron radiation facility SPring-8 and also those taken at the 32-ID beamline of Advanced Photon Source (APS), Argonne National Laboratory. 
+RecView is a program for tomographic reconstruction and image processing. It consists of approx 22,000 lines of custom source codes in C++, CUDA C, OpenCL, and x86/x64 assembly language. RecView is designed for processing data obtained at the BL20B2, BL20XU, BL37XU, and BL47XU beamlines of the SPring-8 synchrotron radiation facility and also those taken at the 32-ID beamline of Advanced Photon Source (APS) of Argonne National Laboratory. 
 
 <IMG width=100 height=140 alt=testPattern src="pics/testPattern.png" align=left>
-Three-dimensional structural analysis with microtomography (micro-CT) or nanotomography (nano-CT) is performed by recording two-dimensional x-ray images while rotating the sample. Then tomographic sections are calculated from x-ray images by the convolution back-projection method. This reconstruction calculation is repeated for each tomographic slice, giving the three-dimensional structure. RecView is a program for the tomographic reconstruction calculations with graphical user interfaces. Multiple datasets can be continuously processed by using its queueing function. Zooming reconstruction (an example is shown left), Gaussian convolution, and many other procedures for image processing are also implemented. The resolution of real sample images can be estimated with a logarithmic plot in the Fourier domain by using this program.
+Three-dimensional structural analysis with microtomography (micro-CT) or nanotomography (nano-CT) is performed by recording two-dimensional x-ray images while rotating the sample. Then tomographic sections are calculated from x-ray images by the convolution back-projection method. This reconstruction calculation is repeated for each tomographic slice, giving the three-dimensional structure. RecView is a program for the tomographic reconstruction calculations with graphical user interfaces. Multiple datasets can be continuously processed by using its queueing function. Zooming reconstruction (an example is shown left), Gaussian convolution, and many other procedures for image processing are also implemented. The resolution of real sample image can be estimated with a Fourier-domain plot by using this program.
 <BR clear=left>
 
 ## License
@@ -98,7 +98,7 @@ From the menu bar, select 'File'-'Open' and choose an image file.
 The GPU/CPU processors and memory usage can be specified in the 'Tomography'-'Resource usage' dialog.
 
 <B>Reconstruction</B>  
-Open 'Tomography'-'Reconstruction' dialog. Enter appropriate parameters for your reconstruction calculation. 'Get center' determines the position of the rotation axis automatically, if possible. Tomographic sections can be generated with 'Show image' buttons. 'Batch' executes the reconstruction calculations through 'from' to 'to' sections.
+Open 'Tomography'-'Reconstruction' dialog. Enter appropriate parameters for your reconstruction calculation. 'Get center' determines the position of the rotation axis automatically. Tomographic sections can be generated with 'Show image' buttons. 'Batch' executes the reconstruction calculations through 'from' to 'to' sections.
 
 <B>Trimming or reformatting images</B>  
 The 'Tomography'-'Histogram/Conversion' menu provides several tools for trimming, converting to 8-bit format, removing surrounding capillary pixels, and so on.
@@ -106,7 +106,7 @@ The 'Tomography'-'Histogram/Conversion' menu provides several tools for trimming
 ## Frequently asked questions
 <OL>
   <LI><b>System requirements</b></LI>
-    RecView can be executed on a Windows PC running XP, Vista, or Windows 7-10 with an x86 or x64 CPU and local storage. If you run RecView without GPU processor, we recommend CPUs released after approx 2005 (Pentium4 / Athlon64 or later), because SSE2 SIMD instructions are used in the x86/x64 reconstruction kernels. This is not the requirement, but the performance differs by a factor of 2-3 with or without SSE2.<br><br>
+    RecView can be executed on a Windows PC running XP, Vista, or Windows 7-10 with an x86 or x64 CPU and local storage. If you run RecView without GPU processor, we recommend to use CPUs released after approx 2005 (i.e., Pentium4 / Athlon64 or later), because SSE2 SIMD instructions are used in our x86/x64 reconstruction kernels. This is not a requirement, but the performance differs by a factor of 2-3 with or without SSE2.<br><br>
   <LI><b>Manuals</b></LI>
     A brief how-to-use guide has been published as the appendix of the following paper. A step-by-step manual in Japanese is provided in the docs folder.<BR><BR>
 R. Mizutani, A. Takeuchi, K. Uesugi, S. Takekoshi, R.Y. Osamura and Y. Suzuki (2009). Three-dimensional microstructural analysis of human brain tissue by using synchrotron radiation microtomographs. In <I>Handbook on White Matter</I>, eds. Westland, T.B. & Calton, R.N., New York, Nova Science Publishers, pp. 247-277.
@@ -127,11 +127,11 @@ frame#      time(msec)     angle(deg) 0=flatfield/1=sample
 ...
 01890       05298.43800    180.0000        1
 01891       05310.65700    180.0000        0</pre>
-          Spreadsheet softwares work well for manually generating this 'output.log' file. The 'time' fields are used for interpolating the trend of flatfield pixel intensities. <BR>The output.log files of some SPring-8 sessions list angle in pulses instead of angle in degrees. RecView can recognize each format.
+          Spreadsheet softwares work well for manually generating this 'output.log' file. The 'time' fields are used for interpolating the trend of flatfield pixel intensities. <BR>The output.log files of some SPring-8 sessions list angle in pulses instead of angle in degrees. RecView can recognize both formats.
       </LI>
     </UL><br>
   <LI><b>RecView returns an error when processing offset-CT data taken at SPring-8.</b></LI>
-    In the offset CT mode, the difference between the start and stop angles should be 360 degree, such as -180 to 180 deg or 0 to 360 deg. If the 'stop angle' of the sample rotation was not 360 degree in your offset-CT experiment, 'conv.bat' file seems to have incorrect contents. You have to edit it manually before CT reconstruction. Or you can find some examples of conv.bat and output.log files in the 'docs' folder. <br><br>
+    In the offset CT mode, the difference between start and stop angles of the sample rotation should be 360 degree, such as -180 to 180 deg or 0 to 360 deg. If the 'stop angle' was not 360 degree in your offset-CT experiment, 'conv.bat' file seems to have incorrect contents. You have to edit it manually before the reconstruction calculation. Or you can find some examples of conv.bat and output.log files in the 'docs' folder. <br><br>
   <LI><b>How to try the test dataset?</b></LI>
     <UL>
       <LI>Extract all files in the archived test dataset.</LI>
@@ -150,7 +150,7 @@ Ryuta Mizutani, Dr., Prof.
 Department of Applied Biochemistry  
 School of Engineering, Tokai University  
 Kitakaname 4-1-1, Hiratsuka, Kanagawa 259-1292, Japan  
-E-mail ryuta(at)tokai-u.jp  
+E-mail ryuta(at)tokai.ac.jp  
 https://mizutanilab.github.io/<br>
 <A href="http://www.linkedin.com/pub/ryuta-mizutani/79/832/115">Linkedin</A> - 
 <A href="http://www.facebook.com/people/Ryuta-Mizutani/100005433369640">Facebook</A> - 
