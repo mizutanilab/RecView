@@ -54,6 +54,7 @@ struct RECONST_QUEUE {
 	double drX;
 	double drY;
 	BOOL drOmit;
+	double dAxisInc;
 	int iDatasetSel;
 	//int iDatasetSize;
 	int iLossFrameSet;
@@ -118,6 +119,7 @@ struct LSQFIT_QUEUE {
 	int m_ZHigh;
 	CString m_RefList;
 	CString m_QryList;
+	BOOL m_bMaxDiameter;//181214
 };
 //===>120828
 

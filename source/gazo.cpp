@@ -14,6 +14,7 @@
 #include "cerror.h"
 #include "DlgLsqfit.h"
 #include "DlgQueue.h"
+#include "cxyz.h"//181213
 //#include <cutil_inline.h>
 
 #include "cudaReconst.h"
@@ -60,6 +61,8 @@ BEGIN_MESSAGE_MAP(CGazoApp, CWinApp)
 //	ON_COMMAND(ID_FILE_DIALBOX, &CGazoApp::OnFileDialbox)
 //	ON_MESSAGE(WM_DIALBOX, OnDialbox)//161210
 
+ON_COMMAND(IDM_VIEW_WHEELTOGO, &CGazoApp::OnViewWheeltogo)
+ON_UPDATE_COMMAND_UI(IDM_VIEW_WHEELTOGO, &CGazoApp::OnUpdateViewWheeltogo)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -127,6 +130,7 @@ CGazoApp::CGazoApp()
 	//prevPixelWidth = -1;
 	bShowBoxAxis = true;
 	bDragScroll = false;
+	bWheelToGo = false;
 
 }
 
@@ -1026,6 +1030,679 @@ CString CGazoApp::Lsqfit(LSQFIT_QUEUE* lq, CDlgLsqfit* dlg, CDlgQueue* dqueue) {
 	return rtn;
 }
 
+CString CGazoApp::LsqfitMin(LSQFIT_QUEUE* lq, CDlgLsqfit* dlg, CDlgQueue* dqueue) {
+	/*/
+	double a[] = {-1, 2, 3,  2, 3, 4,  1, 1, 2};
+	double b[] = {-1, 2, 3,  2, 3, 4,  1, 1, 2};
+	int ierr = InvMatrix(a, 3, 1E-6);
+	CString mmsg = "", mline;
+	if (ierr) {mmsg.Format("%d", ierr); AfxMessageBox(mmsg); return "a";}
+	mline.Format("%f %f %f\r\n%f %f %f\r\n%f %f %f\r\n---\r\n", a[0],a[1],a[2], a[3],a[4],a[5], a[6],a[7],a[8]);
+	mmsg += mline;
+	AfxMessageBox(mline); return "b";
+	/*/
+	CString rtn = "ND";//this return value indicates aborted process
+	const int nLsqList = (lq->m_XHigh - lq->m_XLow + 1) * (lq->m_YHigh - lq->m_YLow + 1) * (lq->m_ZHigh - lq->m_ZLow + 1);
+	short** ppRefPixel = NULL;
+	int* pMaxRefPixel = NULL;
+	short** ppQryPixel = NULL;
+	int* pMaxQryPixel = NULL;
+	try {
+		ppRefPixel = new short*[lq->nRefFiles];
+		pMaxRefPixel = new int[lq->nRefFiles];
+		ppQryPixel = new short*[lq->nQryFiles];
+		pMaxQryPixel = new int[lq->nQryFiles];
+	}
+	catch(CException* e) {
+		e->Delete();
+		if (ppRefPixel) delete [] ppRefPixel;
+		if (pMaxRefPixel) delete [] pMaxRefPixel;
+		if (ppQryPixel) delete [] ppQryPixel;
+		if (pMaxQryPixel) delete [] pMaxQryPixel;
+		rtn = "Out of memory";
+		return rtn;
+	}
+	for (int i=0; i<lq->nRefFiles; i++) {
+		ppRefPixel[i] = NULL;
+		pMaxRefPixel[i] = 0;
+	}
+	for (int i=0; i<lq->nQryFiles; i++) {
+		ppQryPixel[i] = NULL;
+		pMaxQryPixel[i] = 0;
+	}
+
+	CMainFrame* pf = (CMainFrame*) AfxGetMainWnd();
+	CFile fp;
+	int* ibuf = NULL;
+	bool bError = false;
+	if (dlg) dlg->bStarted = true;
+	if (dlg) dlg->EnableCtrl();
+	//Reading reference image set
+	CString str = lq->m_RefList;
+	int iPos = 0;
+	int ixref = -1, iyref = -1;
+	if (pf) pf->m_wndStatusBar.SetPaneText(1, "Lsqfit: reading reference set");
+	for (int i=0; i<lq->nRefFiles; i++) {
+		ProcessMessage();
+		if (dlg) {if (dlg->bStarted == false) break;}
+		if (dqueue) {if (dqueue->iStatus == CDLGQUEUE_STOP) break;}
+		CString fn= str.Tokenize(_T("\r\n"), iPos);
+		if (fn.IsEmpty()) continue;
+		if (!fp.Open(fn, CFile::modeRead | CFile::shareDenyWrite)) {
+			if (dlg) dlg->m_Result += "Not found: " + fn; 
+			bError = true;
+			break;
+		}
+		float pixDiv = 0, pixBase = 0, fCenter = 0;
+		float pw = 1;
+		int iydim = 0, ixdim = 0, iFilter = 0;
+		int nbuf = 0;
+		if (ReadTif(&fp, &ibuf, &nbuf, &iydim, &ixdim, &pixDiv, &pixBase, 
+								&fCenter, &iFilter, &pw)) {
+			if (dlg) dlg->m_Result += "Unknown format: " + fn;
+			fp.Close();
+			bError = true;
+			break;
+		}
+		if (ixref < 0) {ixref = ixdim; iyref = iydim;}
+		else if ((ixdim != ixref)||(iydim != iyref)) {
+			if (dlg) dlg->m_Result += "Image size not matched: " + fn;
+			fp.Close();
+			bError = true;
+			break;
+		}
+		if (pixDiv < 0) {pixDiv = 0; pixBase = 0;}
+		if (dlg) dlg->m_Result += " Ref: " + fn + "\r\n";
+		fp.Close();
+		try {ppRefPixel[i] = new short[nbuf];}
+		catch(CException* e) {
+			e->Delete();
+			bError = true;
+			rtn = "Out of memory";
+			break;
+		}
+		pMaxRefPixel[i] = nbuf;
+		for (int j=0; j<nbuf; j++) {
+			float absCoeff = (ibuf[j] / pixDiv + pixBase) * 10;
+			if (ibuf[j] == 0) (ppRefPixel[i])[j] = SHRT_MIN;
+			else if (absCoeff < SHRT_MIN+1) (ppRefPixel[i])[j] = SHRT_MIN+1;
+			else if (absCoeff > SHRT_MAX) (ppRefPixel[i])[j] = SHRT_MAX;
+			else (ppRefPixel[i])[j] = (short)(absCoeff);
+			//(ppRefPixel[i])[j] = (unsigned short)(ibuf[j]);
+		}
+		if (dlg) dlg->UpdateData(FALSE);
+		ProcessMessage();
+	}
+	if (bError) {
+		for (int i=0; i<lq->nRefFiles; i++) {if (ppRefPixel[i]) delete [] ppRefPixel[i];}
+		for (int i=0; i<lq->nQryFiles; i++) {if (ppQryPixel[i]) delete [] ppQryPixel[i];}
+		if (ppRefPixel) delete [] ppRefPixel;
+		if (pMaxRefPixel) delete [] pMaxRefPixel;
+		if (ppQryPixel) delete [] ppQryPixel;
+		if (pMaxQryPixel) delete [] pMaxQryPixel;
+		return rtn;
+	}
+	//Reading query image set
+	str = lq->m_QryList;
+	iPos = 0;
+	int ixqry = -1, iyqry = -1;
+	if (pf) pf->m_wndStatusBar.SetPaneText(1, "Lsqfit: reading query set");
+	for (int i=0; i<lq->nQryFiles; i++) {
+		ProcessMessage();
+		if (dlg) {if (dlg->bStarted == false) break;}
+		if (dqueue) {if (dqueue->iStatus == CDLGQUEUE_STOP) break;}
+		CString fn= str.Tokenize(_T("\r\n"), iPos);
+		if (fn.IsEmpty()) continue;
+		if (!fp.Open(fn, CFile::modeRead | CFile::shareDenyWrite)) {
+			if (dlg) {dlg->m_Result += "Not found: " + fn;} 
+			bError = true;
+			break;
+		}
+		float pixDiv = 0, pixBase = 0, fCenter = 0;
+		float pw = 1;
+		int iydim = 0, ixdim = 0, iFilter = 0;
+		int nbuf = 0;
+		if (ReadTif(&fp, &ibuf, &nbuf, &iydim, &ixdim, &pixDiv, &pixBase, 
+								&fCenter, &iFilter, &pw)) {
+			if (dlg) dlg->m_Result += "Unknown format: " + fn;
+			fp.Close();
+			bError = true;
+			break;
+		}
+		if (ixqry < 0) {ixqry = ixdim; iyqry = iydim;}
+		else if ((ixdim != ixqry)||(iydim != iyqry)) {
+			if (dlg) dlg->m_Result += "Image size not matched: " + fn;
+			fp.Close();
+			bError = true;
+			break;
+		}
+		if (pixDiv < 0) {pixDiv = 0; pixBase = 0;}
+		if (dlg) dlg->m_Result += " Qry: " + fn + "\r\n";
+		fp.Close();
+		try {ppQryPixel[i] = new short[nbuf];}
+		catch(CException* e) {
+			e->Delete();
+			bError = true;
+			rtn = "Out of memory";
+			break;
+		}
+		pMaxQryPixel[i] = nbuf;
+		for (int j=0; j<nbuf; j++) {
+			float absCoeff = (ibuf[j] / pixDiv + pixBase) * 10;
+			if (ibuf[j] == 0) (ppQryPixel[i])[j] = SHRT_MIN;
+			else if (absCoeff < SHRT_MIN+1) (ppQryPixel[i])[j] = SHRT_MIN+1;
+			else if (absCoeff > SHRT_MAX) (ppQryPixel[i])[j] = SHRT_MAX;
+			else (ppQryPixel[i])[j] = (short)(absCoeff);
+			//(ppQryPixel[i])[j] = (unsigned short)(ibuf[j]);
+		}
+		if (dlg) dlg->UpdateData(FALSE);
+		ProcessMessage();
+	}
+	if (ibuf) delete [] ibuf;//131110
+	if (bError) {
+		for (int i=0; i<lq->nRefFiles; i++) {if (ppRefPixel[i]) delete [] ppRefPixel[i];}
+		for (int i=0; i<lq->nQryFiles; i++) {if (ppQryPixel[i]) delete [] ppQryPixel[i];}
+		if (ppRefPixel) delete [] ppRefPixel;
+		if (pMaxRefPixel) delete [] pMaxRefPixel;
+		if (ppQryPixel) delete [] ppQryPixel;
+		if (pMaxQryPixel) delete [] pMaxQryPixel;
+		return rtn;
+	}
+	const int iMaxDaimeter = lq->m_XHigh;
+	const int iMaxBinning = 64;
+	struct _timeb tstruct;
+	_ftime_s( &tstruct );
+	//output logs
+	TCHAR path_buffer[_MAX_PATH];//_MAX_PATH = 260, typically
+	TCHAR drive[_MAX_DRIVE]; TCHAR dir[_MAX_DIR];// TCHAR fnm[_MAX_FNAME];
+	_stprintf_s(path_buffer, _MAX_PATH, lq->m_QryList.SpanExcluding(_T("\r\n")));
+	_tsplitpath_s(path_buffer, drive, _MAX_DRIVE, dir, _MAX_DIR, NULL, 0, NULL, 0 );
+	_tmakepath_s(path_buffer, _MAX_PATH, drive, dir, "recviewlog", ".txt");
+	CStdioFile flog;
+	if (!flog.Open(path_buffer, CFile::modeRead | CFile::shareDenyWrite | CFile::typeText)) {
+		_tmakepath_s(path_buffer, _MAX_PATH, drive, dir, "0recviewlog", ".txt");
+	} else {
+		flog.Close();
+	}
+	//AfxMessageBox(path_buffer); return rtn;//////////////
+	CString msgfn = "";
+	if (flog.Open(path_buffer, CFile::modeReadWrite | CFile::modeCreate | CFile::modeNoTruncate | CFile::shareDenyWrite | CFile::typeText)) {
+		flog.SeekToEnd();
+		TCHAR tctime[26];
+		_tctime_s(tctime, 26, &(tstruct.time));
+		const CString stime = tctime;
+		CString line;
+		line.Format("LSQ fit [%s] %s\r\n", stime.Left(24), this->sProgVersion);
+		flog.WriteString(line);
+		line.Format(" Ref set: %s [%d files]\r\n Qry set: %s [%d files]\r\n", lq->m_RefList.SpanExcluding(_T("\r\n")), lq->nRefFiles, 
+										lq->m_QryList.SpanExcluding(_T("\r\n")), lq->nQryFiles);
+		flog.WriteString(line);
+		msgfn = line;
+		line.Format(" Scan diameter: %d pixel\r\n Max binning: %d\r\n", iMaxDaimeter, iMaxBinning);
+		flog.WriteString(line);
+		//if (dlg) flog.WriteString(dlg->m_Result);
+	}
+	//lsq fitting
+	if (pf) pf->m_wndStatusBar.SetPaneText(1, "Lsqfit: search");
+	CXyz cDelta(0, 0, 0); short* psBinRefPixel = NULL; short* psBinQryPixel = NULL;
+	try {
+		psBinRefPixel = new short[ixref * iyref * lq->nRefFiles];
+		psBinQryPixel = new short[ixqry * iyqry * lq->nQryFiles];
+	}
+	catch(CException* e) {
+		e->Delete();
+		for (int i=0; i<lq->nRefFiles; i++) {if (ppRefPixel[i]) delete [] ppRefPixel[i];}
+		for (int i=0; i<lq->nQryFiles; i++) {if (ppQryPixel[i]) delete [] ppQryPixel[i];}
+		if (ppRefPixel) delete [] ppRefPixel;
+		if (pMaxRefPixel) delete [] pMaxRefPixel;
+		if (ppQryPixel) delete [] ppQryPixel;
+		if (pMaxQryPixel) delete [] pMaxQryPixel;
+		return rtn;
+	}
+	if (dlg) dlg->m_Result = msgfn;
+	const int imaxrad2 = iMaxDaimeter * iMaxDaimeter / 4;
+	double dsummin = 0;
+	CString msglog = " ";
+	for (int ibin=iMaxBinning; ibin>=1; ibin/=2) {
+		CString line; line.Format("Lsqfit: search binning%d", ibin);
+		if (pf) pf->m_wndStatusBar.SetPaneText(1, line);
+		ProcessMessage();
+		if (dlg) {if (dlg->bStarted == false) break;}
+		if (dqueue) {if (dqueue->iStatus == CDLGQUEUE_STOP) break;}
+		int ibxref = ixref / ibin + ((ixref % ibin) ? 1 : 0);
+		int ibyref = iyref / ibin + ((iyref % ibin) ? 1 : 0);
+		int ibzref = lq->nRefFiles / ibin + ((lq->nRefFiles % ibin) ? 1 : 0);
+		int ibxqry = ixqry / ibin + ((ixqry % ibin) ? 1 : 0);
+		int ibyqry = iyqry / ibin + ((iyqry % ibin) ? 1 : 0);
+		int ibzqry = lq->nQryFiles / ibin + ((lq->nQryFiles % ibin) ? 1 : 0);
+		//ref binning
+		if (ibin == 1) {
+			for (int iz=0; iz<lq->nRefFiles; iz++) {
+				ProcessMessage();
+				if (dlg) {if (dlg->bStarted == false) break;}
+				if (dqueue) {if (dqueue->iStatus == CDLGQUEUE_STOP) break;}
+				for (int ix=0; ix<ixref; ix++) {
+					for (int iy=0; iy<iyref; iy++) {
+						short spix = 0;
+						int iradx = ix - ixref/2;
+						int irady = iy - iyref/2;
+						if (iradx * iradx + irady * irady <= imaxrad2) {
+							spix = (ppRefPixel[iz])[iy * ixref + ix];
+							if (spix == SHRT_MIN) spix = 0;
+						}
+						psBinRefPixel[iz * ibxref * ibyref + iy * ibxref + ix] = spix;
+					}
+				}
+			}
+		} else {
+			for (int iz=0; iz<lq->nRefFiles; iz+=ibin) {
+				ProcessMessage();
+				if (dlg) {if (dlg->bStarted == false) break;}
+				if (dqueue) {if (dqueue->iStatus == CDLGQUEUE_STOP) break;}
+				for (int ix=0; ix<ixref; ix+=ibin) {
+					for (int iy=0; iy<iyref; iy+=ibin) {
+						int isum = 0, icount = 0;
+						for (int jx=0; jx<ibin; jx++) {
+							if (ix + jx >= ixref) continue;
+							for (int jy=0; jy<ibin; jy++) {
+								if (iy + jy >= iyref) continue;
+								int iradx = ix + jx - ixref/2;
+								int irady = iy + jy - iyref/2;
+								if (iradx * iradx + irady * irady > imaxrad2) continue;
+								for (int jz=0; jz<ibin; jz++) {
+									if (iz + jz >= lq->nRefFiles) continue;
+									short spix = (ppRefPixel[iz + jz])[(iy + jy) * ixref + ix + jx];
+									if (spix == SHRT_MIN) continue;
+									isum += spix;
+									icount++;
+								}
+							}
+						}
+						if (icount) isum /= icount;
+						psBinRefPixel[iz/ibin * ibxref * ibyref + iy/ibin * ibxref + ix/ibin] = isum;
+					}
+				}
+			}
+		}
+		//qry binning
+		if (ibin == 1) {
+			for (int iz=0; iz<lq->nQryFiles; iz++) {
+				ProcessMessage();
+				if (dlg) {if (dlg->bStarted == false) break;}
+				if (dqueue) {if (dqueue->iStatus == CDLGQUEUE_STOP) break;}
+				for (int ix=0; ix<ixqry; ix++) {
+					for (int iy=0; iy<iyqry; iy++) {
+						short spix = 0;
+						int iradx = ix - ixqry/2;
+						int irady = iy - iyqry/2;
+						if (iradx * iradx + irady * irady <= imaxrad2) {
+							spix = (ppQryPixel[iz])[iy * ixqry + ix];
+							if (spix == SHRT_MIN) spix = 0;
+						}
+						psBinQryPixel[iz * ibxqry * ibyqry + iy * ibxqry + ix] = spix;
+					}
+				}
+			}
+		} else {
+			for (int iz=0; iz<lq->nQryFiles; iz+=ibin) {
+				ProcessMessage();
+				if (dlg) {if (dlg->bStarted == false) break;}
+				if (dqueue) {if (dqueue->iStatus == CDLGQUEUE_STOP) break;}
+				for (int ix=0; ix<ixqry; ix+=ibin) {
+					for (int iy=0; iy<iyqry; iy+=ibin) {
+						int isum = 0, icount = 0;
+						for (int jx=0; jx<ibin; jx++) {
+							if (ix + jx >= ixqry) continue;
+							for (int jy=0; jy<ibin; jy++) {
+								if (iy + jy >= iyqry) continue;
+								int iradx = ix + jx - ixqry/2;
+								int irady = iy + jy - iyqry/2;
+								if (iradx * iradx + irady * irady > imaxrad2) continue;
+								for (int jz=0; jz<ibin; jz++) {
+									if (iz + jz >= lq->nQryFiles) continue;
+									short spix = (ppQryPixel[iz + jz])[(iy + jy) * ixqry + ix + jx];
+									if (spix == SHRT_MIN) continue;
+									isum += spix;
+									icount++;
+								}
+							}
+						}
+						if (icount) isum /= icount;
+						psBinQryPixel[iz/ibin * ibxqry * ibyqry + iy/ibin * ibxqry + ix/ibin] = isum;
+					}
+				}
+			}
+		}
+		//minimization
+		for (int jstep=0; jstep<10; jstep++) {
+			ProcessMessage();
+			if (dlg) {if (dlg->bStarted == false) break;}
+			if (dqueue) {if (dqueue->iStatus == CDLGQUEUE_STOP) break;}
+			//grad
+			CString line; line.Format("Lsqfit: search binning%d origin", ibin);
+			if (pf) pf->m_wndStatusBar.SetPaneText(1, line);
+			CXyz cGrad(0, 0, 0);
+			double dsum0 = GetImageDiff(psBinRefPixel, psBinQryPixel, ibin, cDelta, CXyz(0, 0, 0),
+											ibxref, ibyref, ibzref, ibxqry, ibyqry, ibzqry);
+			ProcessMessage();
+			if (dlg) {if (dlg->bStarted == false) break;}
+			if (dqueue) {if (dqueue->iStatus == CDLGQUEUE_STOP) break;}
+			if (dsum0 > 0) {
+				line.Format("Lsqfit: search binning%d gradx", ibin);
+				if (pf) pf->m_wndStatusBar.SetPaneText(1, line);
+				double dsumx = GetImageDiff(psBinRefPixel, psBinQryPixel, ibin, cDelta, CXyz(1, 0, 0),
+												ibxref, ibyref, ibzref, ibxqry, ibyqry, ibzqry);
+				line.Format("Lsqfit: search binning%d grady", ibin);
+				if (pf) pf->m_wndStatusBar.SetPaneText(1, line);
+				double dsumy = GetImageDiff(psBinRefPixel, psBinQryPixel, ibin, cDelta, CXyz(0, 1, 0),
+												ibxref, ibyref, ibzref, ibxqry, ibyqry, ibzqry);
+				line.Format("Lsqfit: search binning%d gradz", ibin);
+				if (pf) pf->m_wndStatusBar.SetPaneText(1, line);
+				double dsumz = GetImageDiff(psBinRefPixel, psBinQryPixel, ibin, cDelta, CXyz(0, 0, 1),
+												ibxref, ibyref, ibzref, ibxqry, ibyqry, ibzqry);
+				if (dsumx >= 0) cGrad.x = dsumx - dsum0;
+				if (dsumy >= 0) cGrad.y = dsumy - dsum0;
+				if (dsumz >= 0) cGrad.z = dsumz - dsum0;
+				if (cGrad.Length2() > 0) cGrad.UnitLength();
+			}
+			//line search
+			dsummin = (dsum0 > 0) ? dsum0 : 0; double dmin = 0;
+			CString msg3 = "step", msg4 = " ";
+			double diff[10];
+			const double dstep = 0.5;
+			const double dlimit = dstep * (10 - 1);
+			double dx4 = 0, dx3 = 0, dx2 = 0, dx = 0, dx2y = 0, dxy = 0, dy = 0, dy2 = 0;
+			for (int k=0; k<10; k++) {
+				double dgrad = k * dstep;
+				line; line.Format("Lsqfit: search binning%d grad%.1f", ibin, dgrad);
+				if (pf) pf->m_wndStatusBar.SetPaneText(1, line);
+				ProcessMessage();
+				if (dlg) {if (dlg->bStarted == false) break;}
+				if (dqueue) {if (dqueue->iStatus == CDLGQUEUE_STOP) break;}
+				double dsumg = GetImageDiff(psBinRefPixel, psBinQryPixel, ibin, cDelta, cGrad.X(-dgrad),
+											ibxref, ibyref, ibzref, ibxqry, ibyqry, ibzqry);
+				diff[k] = (dsumg < 0) ? 0 : sqrt(dsumg);
+				line.Format("%.1f\t", dgrad); msg3 += line;
+				line.Format("%.2f\t", diff[k]); msg4 += line;
+				dx4 += (dgrad * dgrad * dgrad * dgrad);
+				dx3 += (dgrad * dgrad * dgrad);
+				dx2 += (dgrad * dgrad);
+				dx += dgrad;
+				dx2y += (dgrad * dgrad * diff[k]);
+				dxy += (dgrad * diff[k]);
+				dy += diff[k];
+				dy2 += (diff[k] * diff[k]);
+//				if (dsumg < 0) continue;
+//				if (dsumg < dsummin){dsummin = dsumg; dmin = dgrad;}
+			}
+			double a[9];
+			a[0] = dx4; a[1] = dx3; a[2] = dx2;
+			a[3] = dx3; a[4] = dx2; a[5] = dx;
+			a[6] = dx2; a[7] = dx;  a[8] = 10;
+			double dpeakx = 0, da = 0, devy = 0;
+			if (InvMatrix(a, 3, 1E-6) == 0) {
+				da = a[0]*dx2y + a[1]*dxy + a[2]*dy;
+				double db = a[3]*dx2y + a[4]*dxy + a[5]*dy;
+				double dc = a[6]*dx2y + a[7]*dxy + a[8]*dy;
+				dpeakx = -db / (2 * da);
+				//CString mmsg; mmsg.Format("%f %f %f %f", da, db, dc, dpeakx); AfxMessageBox(mmsg);
+				if ((da > 0.01)&&(dpeakx >= 0)&&(dpeakx <= dlimit)) {
+					for (int k=0; k<10; k++) {//deviation from model
+						double x = k * dstep;
+						double d = da * x * x + db * x + dc;
+						devy += (d - diff[k]) * (d - diff[k]);
+					}
+//					if ( sqrt(devy/10) < 0.5 * sqrt(dy2 / 10 -(dy * dy / 100)) ) {
+						dsummin = GetImageDiff(psBinRefPixel, psBinQryPixel, ibin, cDelta, cGrad.X(-dpeakx),
+												ibxref, ibyref, ibzref, ibxqry, ibyqry, ibzqry);
+						dmin = dpeakx;
+						cDelta.x -= cGrad.x * ibin * dmin;
+						cDelta.y -= cGrad.y * ibin * dmin;
+						cDelta.z -= cGrad.z * ibin * dmin;
+//					}
+					devy = sqrt(devy/10) / sqrt(dy2 / 10 -(dy * dy / 100));
+				}
+			}
+			CString msg2; 
+			msg2.Format("Shift(x y z) RMSD  grad(x y z) x binning x step | peak 2ndOrder\r\n(%.1f %.1f %.1f) %.2f  (%.3f %.3f %.3f)x%dx%.1f | %.1f %.2f\r\n", 
+				cDelta.x, cDelta.y, cDelta.z, (dsummin < 0) ? 0 : sqrt(dsummin), cGrad.x, cGrad.y, cGrad.z, ibin, dmin, dpeakx, da);
+			msg2 += msg3 + "\r\n" + msg4 + "\r\n";
+			msglog += msg2;
+			if (dlg) {
+				dlg->m_Result += msg2;
+				dlg->UpdateData(FALSE);
+				ProcessMessage();
+			}
+			if (dmin < 0.2) break;
+		}//jstep<5
+	}//ibin
+	if (psBinRefPixel) delete [] psBinRefPixel;
+	if (psBinQryPixel) delete [] psBinQryPixel;
+	//if (dlg) dlg->m_Result.Empty();
+	CString msg;
+	TReal minlsq = sqrt(dsummin); 
+	msg.Format("ref(0 0 0)=qry(%.1f %.1f %.1f) rmsd=%.2f",  cDelta.x, cDelta.y, cDelta.z, minlsq);
+	if (dlg) {
+		if (dlg->bStarted) {
+			if (pf) pf->m_wndStatusBar.SetPaneText(1, "Lsqfit: " + msg);
+			if (flog.m_hFile != CFile::hFileNull) {
+				flog.WriteString(" Min: " + msg + "\r\n");
+				flog.WriteString(msglog);
+			}
+			dlg->m_Result = msg + "\r\n--------------\r\n" + dlg->m_Result;
+			ProcessMessage();
+			rtn.Format("(%.1f %.1f %.1f)%.2f", cDelta.x, cDelta.y, cDelta.z, minlsq);
+		} else {
+			if (pf) pf->m_wndStatusBar.SetPaneText(1, "Lsqfit: aborted");
+		}
+		dlg->bStarted = false;
+	} else if (dqueue) {
+		if (dqueue->iStatus != CDLGQUEUE_STOP) {
+			if (pf) pf->m_wndStatusBar.SetPaneText(1, "Lsqfit: " + msg);
+			if (flog.m_hFile != CFile::hFileNull) {
+				flog.WriteString(" Min: " + msg + "\r\n");
+				flog.WriteString(msglog);
+			}
+			rtn.Format("(%.1f %.1f %.1f)%.2f", cDelta.x, cDelta.y, cDelta.z, minlsq);
+		} else {
+			if (pf) pf->m_wndStatusBar.SetPaneText(1, "Lsqfit: aborted");
+		}
+	} else {
+		if (pf) pf->m_wndStatusBar.SetPaneText(1, "Lsqfit: " + msg);
+		if (flog.m_hFile != CFile::hFileNull) {
+			flog.WriteString(" Min: " + msg + "\r\n");
+			flog.WriteString(msglog);
+		}
+	}
+	if (flog.m_hFile != CFile::hFileNull) {
+		flog.WriteString("---------------------------------------------------\r\n");
+		flog.Close();
+	}
+	//delete images
+	for (int i=0; i<lq->nRefFiles; i++) {if (ppRefPixel[i]) delete [] ppRefPixel[i];}
+	if (ppRefPixel) delete [] ppRefPixel;
+	if (pMaxRefPixel) delete [] pMaxRefPixel;
+	for (int i=0; i<lq->nQryFiles; i++) {if (ppQryPixel[i]) delete [] ppQryPixel[i];}
+	if (ppQryPixel) delete [] ppQryPixel;
+	if (pMaxQryPixel) delete [] pMaxQryPixel;
+	return rtn;
+}
+
+unsigned __stdcall GetImageDiffThread(void* pArg) {
+	RECONST_INFO* ri = (RECONST_INFO*)pArg;
+	if (!ri) return 0;
+	//
+	short* psBinRefPixel = *(ri->ppRef);
+	short* psBinQryPixel = *(ri->ppQry);
+	int ibin = ri->max_d_ifp;
+	CXyz cDelta = *(ri->pcxyz1);
+	CXyz cDisp = *(ri->pcxyz2);
+	int ibxref = ri->max_d_igp;
+	int ibyref = ri->ixdim;
+	int ibyref0 = ri->drStart;
+	int ibyref1 = ri->drEnd;
+	int ibzref = ri->iInterpolation;
+	int ibxqry = ri->iLenSinogr;
+	int ibyqry = ri->iMultiplex;
+	int ibzqry = ri->iOffset;
+
+	double dsum0 = 0; int icount = 0;
+	const __int64 ibxyqry = ibxqry * ibyqry;
+	const __int64 ibxyref = ibxref * ibyref;
+	for (int iry=ibyref0; iry<ibyref1; iry++) {
+	//for (int iry=0; iry<ibyref; iry++) {
+		const int iqy = (int)(iry + cDelta.y/ibin + cDisp.y);
+		const double dy = iry + cDelta.y/ibin + cDisp.y - iqy;
+		if ((iqy < 0)||(iqy >= ibyqry)) continue;
+		if (dy < 0) continue;
+		for (int irz=0; irz<ibzref; irz++) {
+			const int iqz = (int)(irz + cDelta.z/ibin + cDisp.z);
+			const double dz = irz + cDelta.z/ibin + cDisp.z - iqz;
+			if ((iqz < 0)||(iqz >= ibzqry)) continue;
+			if (dz < 0) continue;
+			const __int64 iqidx = iqz * ibxyqry + iqy * ibxqry;
+			const __int64 iridx = irz * ibxyref + iry * ibxref;
+			for (int irx=0; irx<ibxref; irx++) {
+				const int iqx = (int)(irx + cDelta.x/ibin + cDisp.x);
+				const double dx = irx + cDelta.x/ibin + cDisp.x - iqx;
+				if ((iqx < 0)||(iqx >= ibxqry)) continue;
+				if (dx < 0) continue;
+				icount++;
+				const int istepx = (iqx == ibxqry-1) ? 0 : 1;
+				const int istepy = (iqy == ibyqry-1) ? 0 : ibxqry;
+				short sa0 = psBinQryPixel[iqidx + iqx];
+				short sa1 = psBinQryPixel[iqidx + iqx + istepx];
+				short sa2 = psBinQryPixel[iqidx + iqx + istepy];
+				short sa3 = psBinQryPixel[iqidx + iqx + istepx + istepy]; 
+				double dpix0 = dx * (dy * sa3 + (1.0-dy) * sa1) + (1.0-dx) * (dy * sa2 + (1.0-dy) * sa0);
+				const __int64 istepz = (iqz == ibzqry-1) ? 0 : ibxyqry;
+				sa0 = psBinQryPixel[iqidx + istepz + iqx];
+				sa1 = psBinQryPixel[iqidx + istepz + iqx + istepx];
+				sa2 = psBinQryPixel[iqidx + istepz + iqx + istepy];
+				sa3 = psBinQryPixel[iqidx + istepz + iqx + istepx + istepy]; 
+				double dpix1 = dx * (dy * sa3 + (1.0-dy) * sa1) + (1.0-dx) * (dy * sa2 + (1.0-dy) * sa0);
+				double dqrypix = dz * dpix1 + (1.0-dz) * dpix0;
+				double diff = dqrypix - psBinRefPixel[iridx + irx];
+				dsum0 += (diff * diff);
+			}
+		}
+	}
+	//if (icount) *(ri->pd1) = dsum0 / icount;
+	//else *(ri->pd1) = -1;
+	ri->i64sum = icount;
+	ri->center = dsum0;
+	ri->iStatus = RECONST_INFO_IDLE;
+	return 0;
+}
+
+double CGazoApp::GetImageDiff(short* psBinRefPixel, short* psBinQryPixel, int ibin, CXyz cDelta, CXyz cDisp, 
+							   int ibxref, int ibyref, int ibzref, int ibxqry, int ibyqry, int ibzqry) {
+	double dsum0 = 0; int icount = 0;
+	const __int64 ibxyqry = ibxqry * ibyqry;
+	const __int64 ibxyref = ibxref * ibyref;
+	/*
+	for (int iry=0; iry<ibyref; iry++) {
+		const int iqy = (int)(iry + cDelta.y/ibin + 0.5 + cDisp.y);
+		if ((iqy < 0)||(iqy >= ibyqry)) continue;
+		for (int irz=0; irz<ibzref; irz++) {
+			const int iqz = (int)(irz + cDelta.z/ibin + 0.5 + cDisp.z);
+			if ((iqz < 0)||(iqz >= ibzqry)) continue;
+			const __int64 iqidx = iqz * ibxyqry + iqy * ibxqry;
+			const __int64 iridx = irz * ibxyref + iry * ibxref;
+			for (int irx=0; irx<ibxref; irx++) {
+				int iqx = (int)(irx + cDelta.x/ibin + 0.5 + cDisp.x);
+				if ((iqx < 0)||(iqx >= ibxqry)) continue;
+				int iqry = psBinQryPixel[iqidx + iqx];
+				if (iqry == SHRT_MIN) continue;
+				int iref = psBinRefPixel[iridx + irx];
+				if (iref == SHRT_MIN) continue;
+				icount++;
+				isum0 += ((iqry - iref) * (iqry - iref));
+			}
+		}
+	}*/
+	RECONST_INFO ri[MAX_CPU];
+	const int nCPU = (int)(this->dlgProperty.iCPU);
+	//const int nCPU=1;
+	for (int i=nCPU-1; i>=0; i--) {
+		ri[i].hThread = NULL;
+		ri[i].iStartSino = i;
+		if (i) ri[i].bMaster = false; else ri[i].bMaster = true;
+		ri[i].iStatus = RECONST_INFO_BUSY;
+		ri[i].max_d_ifp = ibin;
+		ri[i].max_d_igp = ibxref;
+		ri[i].ixdim = ibyref;
+		ri[i].drStart = (ibyref / nCPU) * i;
+		ri[i].drEnd = (i == nCPU-1) ? ibyref : (ibyref / nCPU) * (i+1);
+		ri[i].iInterpolation = ibzref;
+		ri[i].iLenSinogr = ibxqry;
+		ri[i].iMultiplex = ibyqry;
+		ri[i].iOffset = ibzqry;
+		ri[i].ppRef = &psBinRefPixel;
+		ri[i].ppQry = &psBinQryPixel;
+		ri[i].pcxyz1 = &cDelta;
+		ri[i].pcxyz2 = &cDisp;
+		ri[i].center = 0;//result
+		ri[i].i64sum = 0;//result
+		void* pArg = (void*)(&(ri[i]));
+		if (i) {
+			ri[i].hThread = (unsigned int)_beginthreadex( NULL, 0, GetImageDiffThread, pArg, 0, &(ri[i].threadID) );
+		} else {
+			GetImageDiffThread(&(ri[i]));
+		}
+	}//i
+	int ist = RECONST_INFO_IDLE;
+	do {
+		ist = RECONST_INFO_IDLE;
+		for (int i=nCPU-1; i>=0; i--) ist |= ri[i].iStatus;
+	} while (ist != RECONST_INFO_IDLE);
+	for (int i=nCPU-1; i>=0; i--) {
+		if (ri[i].hThread) CloseHandle((HANDLE)(ri[i].hThread));
+		dsum0 += ri[i].center;
+		icount += (int)ri[i].i64sum;
+	}
+	/*
+	for (int iry=0; iry<ibyref; iry++) {
+		const int iqy = (int)(iry + cDelta.y/ibin + cDisp.y);
+		const double dy = iry + cDelta.y/ibin + cDisp.y - iqy;
+		if ((iqy < 0)||(iqy >= ibyqry)) continue;
+		if (dy < 0) continue;
+		for (int irz=0; irz<ibzref; irz++) {
+			const int iqz = (int)(irz + cDelta.z/ibin + cDisp.z);
+			const double dz = irz + cDelta.z/ibin + cDisp.z - iqz;
+			if ((iqz < 0)||(iqz >= ibzqry)) continue;
+			if (dz < 0) continue;
+			const __int64 iqidx = iqz * ibxyqry + iqy * ibxqry;
+			const __int64 iridx = irz * ibxyref + iry * ibxref;
+			for (int irx=0; irx<ibxref; irx++) {
+				const int iqx = (int)(irx + cDelta.x/ibin + cDisp.x);
+				const double dx = irx + cDelta.x/ibin + cDisp.x - iqx;
+				if ((iqx < 0)||(iqx >= ibxqry)) continue;
+				if (dx < 0) continue;
+				icount++;
+				const int istepx = (iqx == ibxqry-1) ? 0 : 1;
+				const int istepy = (iqy == ibyqry-1) ? 0 : ibxqry;
+				short sa0 = psBinQryPixel[iqidx + iqx];
+				short sa1 = psBinQryPixel[iqidx + iqx + istepx];
+				short sa2 = psBinQryPixel[iqidx + iqx + istepy];
+				short sa3 = psBinQryPixel[iqidx + iqx + istepx + istepy]; 
+				double dpix0 = dx * (dy * sa3 + (1.0-dy) * sa1) + (1.0-dx) * (dy * sa2 + (1.0-dy) * sa0);
+				const __int64 istepz = (iqz == ibzqry-1) ? 0 : ibxyqry;
+				sa0 = psBinQryPixel[iqidx + istepz + iqx];
+				sa1 = psBinQryPixel[iqidx + istepz + iqx + istepx];
+				sa2 = psBinQryPixel[iqidx + istepz + iqx + istepy];
+				sa3 = psBinQryPixel[iqidx + istepz + iqx + istepx + istepy]; 
+				double dpix1 = dx * (dy * sa3 + (1.0-dy) * sa1) + (1.0-dx) * (dy * sa2 + (1.0-dy) * sa0);
+				double dqrypix = dz * dpix1 + (1.0-dz) * dpix0;
+				double diff = dqrypix - psBinRefPixel[iridx + irx];
+				dsum0 += (diff * diff);
+			}
+		}
+	}*/
+	if (icount) return (dsum0 / icount);
+	else return -1;
+}
+
 void CGazoApp::OnFileSavequeue()
 {
 	// TODO: ここにコマンド ハンドラ コードを追加します。
@@ -1120,3 +1797,15 @@ void CGazoApp::OnUpdateViewDragscroll(CCmdUI *pCmdUI)
 	pCmdUI->SetCheck(bDragScroll);
 }
 
+
+void CGazoApp::OnViewWheeltogo()
+{
+	// TODO: ここにコマンド ハンドラ コードを追加します。
+	if (bWheelToGo) bWheelToGo = false; else bWheelToGo = true;
+}
+
+void CGazoApp::OnUpdateViewWheeltogo(CCmdUI *pCmdUI)
+{
+	// TODO: ここにコマンド更新 UI ハンドラ コードを追加します。
+	pCmdUI->SetCheck(bWheelToGo);
+}

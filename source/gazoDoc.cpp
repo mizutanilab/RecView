@@ -1485,6 +1485,9 @@ TErr CGazoDoc::BatchReconst(RECONST_QUEUE* rq) {
 		}
 		line.Format(" From layer %d (center=%.2f) to layer %d (center=%.2f)\r\n", rq->iLayer1, rq->dCenter1, rq->iLayer2, rq->dCenter2);
 		flog.WriteString(line);
+		if (rq->iLayer1 == rq->iLayer2) {
+			line.Format("  Axis increment %.3f\r\n", rq->dAxisInc); flog.WriteString(line);
+		}
 		line.Format(" Dataset: %d\r\n", rq->iDatasetSel);
 		if (rq->iLossFrameSet >= 0) {
 			flog.WriteString(line);
@@ -1577,51 +1580,84 @@ TErr CGazoDoc::BatchReconst(RECONST_QUEUE* rq) {
 	const int ipintp = (int) pow((double)2, iZooming);
 	const int ixdimp = rq->iXdim * ipintp / iBinning;
 	//Body code
-	for (int i=iy1; i<=iy2; i+=iMultiplex*iBinning) {
-		if (i + iBinning-1 > iydim-1) break;
-		CString fn;
-		//int iyend = ((i+iMultiplex*iBinning-1) < iy2) ? (i+iMultiplex*iBinning-1) : iy2;
-		int iyend = i+iMultiplex*iBinning-1;
-		if (iyend > iy2) {
-			iyend = iy2;
-			iMultiplex = (iy2 - i + 1) / iBinning;
-			if ((iy2 - i + 1) % iBinning) iMultiplex++;
-		}
-		fn.Format(" layer %d-%d", i, iyend);
-		pf->m_wndStatusBar.SetPaneText(1, "Generating sinogram " + dataName + fn);
-		double deltaCent = 0;
-		if (iy1 == iy2) {
-			fc = fc1;
-		} else {
-			deltaCent = (fc2 - fc1) / (iy2 - iy1);
-			fc = fc1 + deltaCent * (i - iy1);
-		}
-		if ( err = GenerateSinogram(rq, i, fc, deltaCent, iMultiplex) ) {error.Log(err); return err;}
-		//if (dlgReconst.m_hWnd) dlgReconst.m_Progress.SetPos(iProgressEnd/2);
-		if (dlgReconst.iStatus == CDLGRECONST_STOP) {
-			if (pf) {pf->m_wndStatusBar.SetPaneText(1, "Aborted");}
-			return 0;
-		}
-		//layer
-		for (int j=0; j<iMultiplex*iBinning; j+=iBinning) {
-			::ProcessMessage();
+	if (iy1 != iy2) {//181202
+		for (int i=iy1; i<=iy2; i+=iMultiplex*iBinning) {
+			if (i + iBinning-1 > iydim-1) break;
+			CString fn;
+			//int iyend = ((i+iMultiplex*iBinning-1) < iy2) ? (i+iMultiplex*iBinning-1) : iy2;
+			int iyend = i+iMultiplex*iBinning-1;
+			if (iyend > iy2) {
+				iyend = iy2;
+				iMultiplex = (iy2 - i + 1) / iBinning;
+				if ((iy2 - i + 1) % iBinning) iMultiplex++;
+			}
+			fn.Format(" layer %d-%d", i, iyend);
+			pf->m_wndStatusBar.SetPaneText(1, "Generating sinogram " + dataName + fn);
+			double deltaCent = 0;
+			if (iy1 == iy2) {
+				fc = fc1;
+			} else {
+				deltaCent = (fc2 - fc1) / (iy2 - iy1);
+				fc = fc1 + deltaCent * (i - iy1);
+			}
+			if ( err = GenerateSinogram(rq, i, fc, deltaCent, iMultiplex) ) {error.Log(err); return err;}
+			//if (dlgReconst.m_hWnd) dlgReconst.m_Progress.SetPos(iProgressEnd/2);
+			if (dlgReconst.iStatus == CDLGRECONST_STOP) {
+				if (pf) {pf->m_wndStatusBar.SetPaneText(1, "Aborted");}
+				return 0;
+			}
+			//layer
+			for (int j=0; j<iMultiplex*iBinning; j+=iBinning) {
+				::ProcessMessage();
+				if (dlgReconst.iStatus == CDLGRECONST_STOP) break;
+				int iLayer = i + j;
+				if (iLayer > iy2) break;
+				if (iLayer + iBinning-1 > iydim-1) break;
+				if (iy1 == iy2) fc = fc1;
+				else fc = fc1 + (fc2 - fc1) * (iLayer - iy1) / (iy2 - iy1);
+				fn.Format(" layer %d center %.3f", iLayer, fc);
+				pf->m_wndStatusBar.SetPaneText(1, "Backprojection " + dataName + fn);
+				double tcpu = 0; float pixelBase = 0, pixelDiv = 1;
+				//161022 if ( err = DeconvBackProj(rq, fc, iMultiplex, j,//&ifp, &nifp, 
+				if ( err = DeconvBackProj(rq, fc, iMultiplex, j/iBinning, 
+											&numOfSampleSinogr, &tcpu, &pixelBase, &pixelDiv) ) {
+					error.Log(err);
+				}
+				if (dlgReconst.iStatus == CDLGRECONST_STOP) break;
+				fn.Format("%09d", iLayer);
+				fn = rq->outFilePath + rq->outFilePrefix + fn.Right(ideg) + ".tif";
+				CFile file;
+				if (!file.Open(fn, CFile::modeCreate | CFile::modeWrite | CFile::shareDenyWrite)) continue;
+				CString imageDesc;
+				imageDesc.Format("%d\t%.6f\t%.6f\t%.6f\t%.6f\t%d\t%.6f\t%.6f ",
+					numOfSampleSinogr, rq->dPixelWidth, pixelDiv, pixelBase, fc, 
+					rq->iFilter + 1, 55.111697, 0.461227);
+				if (err = WriteTifMonochrome16(&file, iReconst, ixdimp, ixdimp, imageDesc)) error.Log(err);
+				file.Close();
+			}
 			if (dlgReconst.iStatus == CDLGRECONST_STOP) break;
-			int iLayer = i + j;
-			if (iLayer > iy2) break;
+		}
+	} else {//(iy1 == iy2)
+		for (fc=floor(fc1 + 0.5); fc<=fc2; fc+=rq->dAxisInc) {
+			::ProcessMessage();
+			CString fn;
+			fn.Format(" layer %d center %.3f", iy1, fc);
+			pf->m_wndStatusBar.SetPaneText(1, "Generating sinogram " + dataName + fn);
+			if ( err = GenerateSinogram(rq, iy1, fc, 0, 1) ) {error.Log(err); return err;}
+			if (dlgReconst.iStatus == CDLGRECONST_STOP) break;
+			//layer
+			int iLayer = iy1;
 			if (iLayer + iBinning-1 > iydim-1) break;
-			if (iy1 == iy2) fc = fc1;
-			else fc = fc1 + (fc2 - fc1) * (iLayer - iy1) / (iy2 - iy1);
 			fn.Format(" layer %d center %.3f", iLayer, fc);
 			pf->m_wndStatusBar.SetPaneText(1, "Backprojection " + dataName + fn);
 			double tcpu = 0; float pixelBase = 0, pixelDiv = 1;
-//161022	if ( err = DeconvBackProj(rq, fc, iMultiplex, j,//&ifp, &nifp, 
-			if ( err = DeconvBackProj(rq, fc, iMultiplex, j/iBinning, 
-										&numOfSampleSinogr, &tcpu, &pixelBase, &pixelDiv) ) {
+			if ( err = DeconvBackProj(rq, fc, 1, 0, &numOfSampleSinogr, &tcpu, &pixelBase, &pixelDiv) ) {
 				error.Log(err);
 			}
 			if (dlgReconst.iStatus == CDLGRECONST_STOP) break;
-			fn.Format("%09d", iLayer);
-			fn = rq->outFilePath + rq->outFilePrefix + fn.Right(ideg) + ".tif";
+			CString fmt; fmt.Format("%%0%dd_%%.1f", ideg);
+			fn.Format(fmt, iLayer, fc);
+			fn = rq->outFilePath + rq->outFilePrefix + fn + ".tif";
 			CFile file;
 			if (!file.Open(fn, CFile::modeCreate | CFile::modeWrite | CFile::shareDenyWrite)) continue;
 			CString imageDesc;
@@ -1630,9 +1666,9 @@ TErr CGazoDoc::BatchReconst(RECONST_QUEUE* rq) {
 				rq->iFilter + 1, 55.111697, 0.461227);
 			if (err = WriteTifMonochrome16(&file, iReconst, ixdimp, ixdimp, imageDesc)) error.Log(err);
 			file.Close();
+			if (rq->bOffsetCT) ResetSinogram();
 		}
-		if (dlgReconst.iStatus == CDLGRECONST_STOP) break;
-	}
+	}//if (iy1 != iy2)
 	bCmdLine = btmp;
 	if (dlgReconst.m_hWnd) dlgReconst.m_Progress.SetPos(iProgressEnd);
 	if (dlgReconst.iStatus == CDLGRECONST_STOP) {
@@ -4322,7 +4358,9 @@ TErr CGazoDoc::ProceedImage(int nproc) {
 	sExt.MakeUpper();
 	if ((sExt == ".IMG")||(sExt == ".TIF")) {
 		CString filename = fnm;
-		const CString fprefix = filename.SpanExcluding("0123456789.");
+		//181202 const CString fprefix = filename.SpanExcluding("0123456789.");
+		CString fprefix = filename; 
+		fprefix.TrimRight("0123456789.");
 		CString fidx = filename.Mid(fprefix.GetLength());
 		int ifn = atoi(fidx) + nproc;
 		if (ifn < 0) return 28001;
@@ -4330,8 +4368,11 @@ TErr CGazoDoc::ProceedImage(int nproc) {
 		fidx.Format(fmt, ifn);
 		_stprintf_s(fnm, _MAX_FNAME, fprefix + fidx);
 		_tmakepath_s(path_buffer, _MAX_PATH, drive, dir, fnm, ext);
+//AfxMessageBox(fprefix);
+//AfxMessageBox(path_buffer);
 		CFile file;
-		CString sfnext = ""; int ifnext = -1;
+		CString sfnext = ""; double difnext = -1;
+		const double didx0 = atof(filename.Mid(fprefix.GetLength()));
 		if (!file.Open(path_buffer, CFile::modeRead | CFile::shareDenyWrite)) {
 			//search for the nearest file
 			_stprintf_s(fnm, _MAX_FNAME, fprefix + "*");
@@ -4340,27 +4381,31 @@ TErr CGazoDoc::ProceedImage(int nproc) {
 			GetFileList(path_buffer, &sFileList);
 			//CDlgMessage dlg;
 			int iPos = 0; bool bFound = false;
+//AfxMessageBox(sFileList);
 			do {
 				const CString fn = sFileList.Tokenize(_T("\r\n"), iPos);
 				if (fn.IsEmpty()) break;
 				if (fn.GetLength() <= fprefix.GetLength()) continue;
 				fidx = fn.Mid(fprefix.GetLength());
-				if (fidx.SpanIncluding("0123456789").GetLength() == 0) continue;
-				int idx = atoi(fn.Mid(fprefix.GetLength()));
+				if (fidx.SpanIncluding("0123456789.").GetLength() == 0) continue;
+				double didx1 = atof(fn.Mid(fprefix.GetLength()));
 				if (nproc > 0) {
-					if (idx > ifn) {
-						if ((ifnext < 0)||(idx < ifnext)) {ifnext = idx; sfnext = fn;}
+					if (didx1 > didx0) {
+						if ((difnext < 0)||(didx1 < difnext)) {difnext = didx1; sfnext = fn;}
 					}
 				} else {
-					if (idx < ifn) {
-						if ((ifnext < 0)||(idx > ifnext)) {ifnext = idx; sfnext = fn;}
+					if (didx1 < didx0) {
+						if ((difnext < 0)||(didx1 > difnext)) {difnext = didx1; sfnext = fn;}
 					}
 				}
+//CString msg; msg.Format("%s %f %f %s", fn, didx0, didx1, sfnext); AfxMessageBox(msg);
 				//dlg.m_Msg += fn + " : " + fn2 + "\r\n";
 			} while (true);
-			if (ifnext < 0) return 28001;
-			//dlg.DoModal();
-			_tmakepath_s( path_buffer, _MAX_PATH, drive, dir, sfnext.SpanExcluding("."), ext);
+			if (difnext < 0) return 28001;
+			_stprintf_s(path_buffer, _MAX_PATH, sfnext);
+			TCHAR fnextnm[_MAX_FNAME];
+			_tsplitpath_s( path_buffer, NULL, 0, NULL, 0, fnextnm, _MAX_FNAME, NULL, 0);
+			_tmakepath_s( path_buffer, _MAX_PATH, drive, dir, fnextnm, ext);
 			if (!file.Open(path_buffer, CFile::modeRead | CFile::shareDenyWrite)) return 28001;
 		}
 		TErr err = ReadFile(&file);
@@ -4599,7 +4644,7 @@ void CGazoDoc::OnTomoStat()
 		sigma = sigma / pixDiv;
 		scr.Format("LAC\r\n Mean\tStdDev\r\n %.3f\t%.3f\r\n", sum, sigma); line += scr;
 	}
-	int iHisto[255];
+	int iHisto[256];
 	for (int i=0; i<=255; i++) {iHisto[i] = 0;}
 	double dscale = (ipmax > 255) ? (ipmax / 255.) : 1.;
 	ipmin - -1, ipmax = -1;

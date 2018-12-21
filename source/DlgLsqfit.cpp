@@ -26,6 +26,7 @@ CDlgLsqfit::CDlgLsqfit(CWnd* pParent /*=NULL*/)
 	, m_YHigh(10)
 	, m_ZLow(-5)
 	, m_ZHigh(5)
+	, m_bMaxDiameter(FALSE)
 {
 	nRefFiles = 0;
 	nQryFiles = 0;
@@ -49,12 +50,26 @@ void CDlgLsqfit::UpdateNfiles() {
 
 void CDlgLsqfit::EnableCtrl() {
 	GetDlgItem(IDC_LSQFIT_START)->EnableWindow(TRUE);
+	GetDlgItem(IDC_LSQFIT_QUEUE)->EnableWindow(TRUE);
 	GetDlgItem(IDC_LSQFIT_STOP)->EnableWindow(FALSE);
 	GetDlgItem(IDOK)->EnableWindow(TRUE);
+	GetDlgItem(IDC_LSQFIT_XLOW)->EnableWindow(TRUE);
+	GetDlgItem(IDC_LSQFIT_YLOW)->EnableWindow(TRUE);
+	GetDlgItem(IDC_LSQFIT_YHIGH)->EnableWindow(TRUE);
+	GetDlgItem(IDC_LSQFIT_ZLOW)->EnableWindow(TRUE);
+	GetDlgItem(IDC_LSQFIT_ZHIGH)->EnableWindow(TRUE);
 	if (bStarted) {
 		GetDlgItem(IDC_LSQFIT_START)->EnableWindow(FALSE);
+		GetDlgItem(IDC_LSQFIT_QUEUE)->EnableWindow(FALSE);
 		GetDlgItem(IDC_LSQFIT_STOP)->EnableWindow(TRUE);
 		GetDlgItem(IDOK)->EnableWindow(FALSE);
+	}
+	if (m_bMaxDiameter) {
+		GetDlgItem(IDC_LSQFIT_XLOW)->EnableWindow(FALSE);
+		GetDlgItem(IDC_LSQFIT_YLOW)->EnableWindow(FALSE);
+		GetDlgItem(IDC_LSQFIT_YHIGH)->EnableWindow(FALSE);
+		GetDlgItem(IDC_LSQFIT_ZLOW)->EnableWindow(FALSE);
+		GetDlgItem(IDC_LSQFIT_ZHIGH)->EnableWindow(FALSE);
 	}
 }
 
@@ -69,7 +84,7 @@ void CDlgLsqfit::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_LSQFIT_XLOW, m_XLow);
 	DDV_MinMaxInt(pDX, m_XLow, -100, 100);
 	DDX_Text(pDX, IDC_LSQFIT_XHIGH, m_XHigh);
-	DDV_MinMaxInt(pDX, m_XHigh, -100, 100);
+	DDV_MinMaxInt(pDX, m_XHigh, -100, 10000);
 	DDX_Text(pDX, IDC_LSQFIT_YLOW, m_YLow);
 	DDV_MinMaxInt(pDX, m_YLow, -100, 100);
 	DDX_Text(pDX, IDC_LSQFIT_YHIGH, m_YHigh);
@@ -78,6 +93,7 @@ void CDlgLsqfit::DoDataExchange(CDataExchange* pDX)
 	DDV_MinMaxInt(pDX, m_ZLow, -100, 100);
 	DDX_Text(pDX, IDC_LSQFIT_ZHIGH, m_ZHigh);
 	DDV_MinMaxInt(pDX, m_ZHigh, -100, 100);
+	DDX_Check(pDX, IDC_LSQFIT_MAXDIA, m_bMaxDiameter);
 }
 
 
@@ -87,6 +103,7 @@ BEGIN_MESSAGE_MAP(CDlgLsqfit, CDialog)
 	ON_BN_CLICKED(IDC_LSQFIT_QRYSET, &CDlgLsqfit::OnBnClickedLsqfitQryset)
 	ON_BN_CLICKED(IDC_LSQFIT_STOP, &CDlgLsqfit::OnBnClickedLsqfitStop)
 	ON_BN_CLICKED(IDC_LSQFIT_QUEUE, &CDlgLsqfit::OnBnClickedLsqfitQueue)
+	ON_BN_CLICKED(IDC_LSQFIT_MAXDIA, &CDlgLsqfit::OnBnClickedLsqfitMaxdia)
 END_MESSAGE_MAP()
 
 
@@ -107,10 +124,25 @@ void CDlgLsqfit::OnBnClickedLsqfitRefset()
 	if (fileDlg.DoModal() == IDCANCEL) return;
 	POSITION pos = fileDlg.GetStartPosition();
 	nRefFiles = 0;
+	m_RefList.Empty();
 	TCHAR path_buffer[_MAX_PATH];//_MAX_PATH = 260, typically
 	//TCHAR drive[_MAX_DRIVE]; TCHAR dir[_MAX_DIR];// TCHAR fnm[_MAX_FNAME];
 	while (pos) {
 		_stprintf_s(path_buffer, _MAX_PATH, fileDlg.GetNextPathName(pos));
+		//181217
+		if (!m_QryList.IsEmpty() && (nRefFiles == 0)) {
+			TCHAR rdrive[_MAX_DRIVE]; TCHAR rdir[_MAX_DIR];
+			_tsplitpath_s( path_buffer, rdrive, _MAX_DRIVE, rdir, _MAX_DIR, NULL, 0, NULL, 0 );
+			TCHAR qpath_buffer[_MAX_PATH]; TCHAR qdrive[_MAX_DRIVE]; TCHAR qdir[_MAX_DIR];
+			int iqpos = 0;
+			_stprintf_s(qpath_buffer, _MAX_PATH, m_QryList.Tokenize(_T("\r\n"), iqpos));
+			_tsplitpath_s( qpath_buffer, qdrive, _MAX_DRIVE, qdir, _MAX_DIR, NULL, 0, NULL, 0 );
+			if ((_tcscmp(rdrive, qdrive) == 0)&&(_tcscmp(rdir, qdir) == 0)) {
+				m_Result += "*****The folders of Ref and Qry sets are the same*****\r\n";
+				UpdateData(FALSE);
+			}
+		}
+		//
 		m_RefList += path_buffer;
 		m_RefList += "\r\n";
 		nRefFiles++;
@@ -139,9 +171,27 @@ void CDlgLsqfit::OnBnClickedLsqfitQryset()
 	if (fileDlg.DoModal() == IDCANCEL) return;
 	POSITION pos = fileDlg.GetStartPosition();
 	nQryFiles = 0;
+	m_QryList.Empty();
 	TCHAR path_buffer[_MAX_PATH];//_MAX_PATH = 260, typically
 	while (pos) {
 		_stprintf_s(path_buffer, _MAX_PATH, fileDlg.GetNextPathName(pos));
+		//181217
+		if (!m_RefList.IsEmpty() && (nQryFiles == 0)) {
+			TCHAR qdrive[_MAX_DRIVE]; TCHAR qdir[_MAX_DIR];
+			_tsplitpath_s( path_buffer, qdrive, _MAX_DRIVE, qdir, _MAX_DIR, NULL, 0, NULL, 0 );
+			TCHAR rpath_buffer[_MAX_PATH]; TCHAR rdrive[_MAX_DRIVE]; TCHAR rdir[_MAX_DIR];
+			int irpos = 0;
+			_stprintf_s(rpath_buffer, _MAX_PATH, m_RefList.Tokenize(_T("\r\n"), irpos));
+			_tsplitpath_s( rpath_buffer, rdrive, _MAX_DRIVE, rdir, _MAX_DIR, NULL, 0, NULL, 0 );
+			//CString msg;
+			//msg.Format("%s %s %s\r\n%s %s %s", path_buffer, qdrive, qdir, rpath_buffer, rdrive, rdir);
+			//AfxMessageBox(msg);
+			if ((_tcscmp(rdrive, qdrive) == 0)&&(_tcscmp(rdir, qdir) == 0)) {
+				m_Result += "*****The folders of Ref and Qry sets are the same*****\r\n";
+				UpdateData(FALSE);
+			}
+		}
+		//
 		m_QryList += path_buffer;
 		m_QryList += "\r\n";
 		nQryFiles++;
@@ -180,304 +230,8 @@ void CDlgLsqfit::OnBnClickedLsqfitStart()
 	lq.m_RefList = this->m_RefList;
 	lq.m_QryList = this->m_QryList;
 	CGazoApp* pApp = (CGazoApp*) AfxGetApp();
-	pApp->Lsqfit(&lq, this, NULL);
-	/*120828
-	short** ppRefPixel = new short*[nRefFiles];
-	int* pMaxRefPixel = new int[nRefFiles];
-	for (int i=0; i<nRefFiles; i++) {
-		ppRefPixel[i] = NULL;
-		pMaxRefPixel[i] = 0;
-	}
-	short** ppQryPixel = new short*[nQryFiles];
-	int* pMaxQryPixel = new int[nQryFiles];
-	for (int i=0; i<nQryFiles; i++) {
-		ppQryPixel[i] = NULL;
-		pMaxQryPixel[i] = 0;
-	}
-	const int nLsqList = (m_XHigh - m_XLow + 1) * (m_YHigh - m_YLow + 1) * (m_ZHigh - m_ZLow + 1);
-	CString* sLsqList = new CString[nLsqList];
-	for (int i=0; i<nLsqList; i++) {sLsqList[i].Empty();}
-
-	CFile fp;
-	int* ibuf = NULL;
-	//Reading reference image set
-	CString str = m_RefList;
-	int iPos = 0;
-	int ixref = -1, iyref = -1;
-	for (int i=0; i<nRefFiles; i++) {
-		CString fn= str.Tokenize(_T("\r\n"), iPos);
-		if (fn.IsEmpty()) continue;
-		if (!fp.Open(fn, CFile::modeRead | CFile::shareDenyWrite)) {m_Result += "Not found: " + fn; break;}
-		float pixDiv = 0, pixBase = 0, fCenter = 0;
-		float pw = 1;
-		int iydim = 0, ixdim = 0, iFilter = 0;
-		int nbuf = 0;
-		if (ReadTif(&fp, &ibuf, &nbuf, &iydim, &ixdim, &pixDiv, &pixBase, 
-								&fCenter, &iFilter, &pw)) {
-			m_Result += "Unknown format: " + fn;
-			fp.Close();
-			break;
-		}
-		if (ixref < 0) {ixref = ixdim; iyref = iydim;}
-		else if ((ixdim != ixref)||(iydim != iyref)) {
-			m_Result += "Image size not matched: " + fn;
-			fp.Close();
-			break;
-		}
-		if (pixDiv < 0) {pixDiv = 0; pixBase = 0;}
-		m_Result += " Ref: " + fn + "\r\n";
-		fp.Close();
-		ppRefPixel[i] = new short[nbuf];
-		pMaxRefPixel[i] = nbuf;
-		for (int j=0; j<nbuf; j++) {
-			float absCoeff = (ibuf[j] / pixDiv + pixBase) * 10;
-			if (ibuf[j] == 0) (ppRefPixel[i])[j] = SHRT_MIN;
-			else if (absCoeff < SHRT_MIN+1) (ppRefPixel[i])[j] = SHRT_MIN+1;
-			else if (absCoeff > SHRT_MAX) (ppRefPixel[i])[j] = SHRT_MAX;
-			else (ppRefPixel[i])[j] = (short)(absCoeff);
-			//(ppRefPixel[i])[j] = (unsigned short)(ibuf[j]);
-		}
-		UpdateData(FALSE);
-	}
-	//Reading query image set
-	str = m_QryList;
-	iPos = 0;
-	int ixqry = -1, iyqry = -1;
-	for (int i=0; i<nQryFiles; i++) {
-		CString fn= str.Tokenize(_T("\r\n"), iPos);
-		if (fn.IsEmpty()) continue;
-		if (!fp.Open(fn, CFile::modeRead | CFile::shareDenyWrite)) {m_Result += "Not found: " + fn; break;}
-		float pixDiv = 0, pixBase = 0, fCenter = 0;
-		float pw = 1;
-		int iydim = 0, ixdim = 0, iFilter = 0;
-		int nbuf = 0;
-		if (ReadTif(&fp, &ibuf, &nbuf, &iydim, &ixdim, &pixDiv, &pixBase, 
-								&fCenter, &iFilter, &pw)) {
-			m_Result += "Unknown format: " + fn;
-			fp.Close();
-			break;
-		}
-		if (ixqry < 0) {ixqry = ixdim; iyqry = iydim;}
-		else if ((ixdim != ixqry)||(iydim != iyqry)) {
-			m_Result += "Image size not matched: " + fn;
-			fp.Close();
-			break;
-		}
-		if (pixDiv < 0) {pixDiv = 0; pixBase = 0;}
-		m_Result += " Qry: " + fn + "\r\n";
-		fp.Close();
-		ppQryPixel[i] = new short[nbuf];
-		pMaxQryPixel[i] = nbuf;
-		for (int j=0; j<nbuf; j++) {
-			float absCoeff = (ibuf[j] / pixDiv + pixBase) * 10;
-			if (ibuf[j] == 0) (ppQryPixel[i])[j] = SHRT_MIN;
-			else if (absCoeff < SHRT_MIN+1) (ppQryPixel[i])[j] = SHRT_MIN+1;
-			else if (absCoeff > SHRT_MAX) (ppQryPixel[i])[j] = SHRT_MAX;
-			else (ppQryPixel[i])[j] = (short)(absCoeff);
-			//(ppQryPixel[i])[j] = (unsigned short)(ibuf[j]);
-		}
-		UpdateData(FALSE);
-	}
-	bStarted = true;
-	EnableCtrl();
-	int iLsqList = 0;
-	RECONST_INFO ri[MAX_CPU];
-	struct _timeb tstruct; double tm0;
-	_ftime_s( &tstruct );
-	tm0 = tstruct.time + tstruct.millitm * 0.001;
-	//output logs
-	TCHAR path_buffer[_MAX_PATH];//_MAX_PATH = 260, typically
-	TCHAR drive[_MAX_DRIVE]; TCHAR dir[_MAX_DIR];// TCHAR fnm[_MAX_FNAME];
-	_stprintf_s(path_buffer, _MAX_PATH, m_QryList.SpanExcluding(_T("\r\n")));
-	_tsplitpath_s(path_buffer, drive, _MAX_DRIVE, dir, _MAX_DIR, NULL, 0, NULL, 0 );
-	_tmakepath_s(path_buffer, _MAX_PATH, drive, dir, "0recviewlog", ".txt");
-	//AfxMessageBox(path_buffer); return;//////////////
-	CStdioFile flog;
-	if (flog.Open(path_buffer, CFile::modeReadWrite | CFile::modeCreate | CFile::modeNoTruncate | CFile::typeText)) {
-		flog.SeekToEnd();
-		TCHAR tctime[26];
-		_tctime_s(tctime, 26, &(tstruct.time));
-		const CString stime = tctime;
-		CString line;
-		line.Format("LSQ fit [%s]\r\n", stime.Left(24));
-		flog.WriteString(line);
-		flog.WriteString(m_Result);
-	}
-	//lsq fitting
-	int nCPU = 1;
-	if (pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_CUDA) {
-		nCPU = (int)(pApp->dlgProperty.iCUDA);
-		short** d_ppRefPixel = new short*[nRefFiles];
-		short** d_ppQryPixel = new short*[nQryFiles];
-		unsigned __int64* h_result = new unsigned __int64[ixref * 2];
-		unsigned __int64* d_result = NULL;
-		for (int i=0; i<nRefFiles; i++) {d_ppRefPixel[i] = NULL;}
-		for (int i=0; i<nQryFiles; i++) {d_ppQryPixel[i] = NULL;}
-		CudaLsqfitMemAlloc(d_ppRefPixel, d_ppQryPixel, pMaxRefPixel, pMaxQryPixel, 
-						ppRefPixel, ppQryPixel, nRefFiles, nQryFiles, ixref, &d_result);
-		for (int ix=m_XLow; ix<=m_XHigh; ix++) {
-			for (int iy=m_YLow; iy<=m_YHigh; iy++) {
-				for (int iz=m_ZLow; iz<=m_ZHigh; iz++) {
-					int nlsq = 0;
-					__int64 ilsq = 0;
-					for (int jrz=0; jrz<nRefFiles; jrz++) {
-						const int jqz = jrz + iz;
-						if ((jqz < 0)||(jqz >= nQryFiles)) continue;
-						short* d_ref = d_ppRefPixel[jrz];
-						short* d_qry = d_ppQryPixel[jqz];
-						CudaLsqfitHost(d_ref, d_qry, ixref, iyref, ixqry, iyqry,
-										ix, iy, &ilsq, &nlsq, d_result, h_result);
-					}
-					if (nlsq) {
-						TReal rlsq = sqrt(ilsq / (TReal)nlsq);
-						TReal dilsq = (double)ilsq;
-						//120624 CString msg; msg.Format("%d %d %d %f %.0f/%d\r\n", ix, iy, iz, rlsq, dilsq, nlsq);
-						//120624 m_Result += msg;
-						CString msg; msg.Format("%f (%d %d %d) %.0f/%d\r\n", rlsq, ix, iy, iz, dilsq, nlsq);
-						m_Result = "RMSD (dx dy dz) SumDiff/NSum\r\n" + msg;
-						sLsqList[iLsqList++] = msg;
-					}
-					ProcessMessage();
-					if (bStarted == false) break;
-				}
-				UpdateData(FALSE);
-				if (bStarted == false) break;
-			}
-			if (bStarted == false) break;
-		}
-		CudaLsqfitMemFree(d_ppRefPixel, d_ppQryPixel, nRefFiles, nQryFiles, d_result);
-		if (d_ppRefPixel) delete [] d_ppRefPixel;
-		if (d_ppQryPixel) delete [] d_ppQryPixel;
-		if (h_result) delete [] h_result;
-	} else {//pApp->dlgProperty.m_ProcessorType
-		nCPU = (int)(pApp->dlgProperty.iCPU);
-		for (int ix=m_XLow; ix<=m_XHigh; ix++) {
-			for (int iy=m_YLow; iy<=m_YHigh; iy++) {
-				for (int iz=m_ZLow; iz<=m_ZHigh; iz+=nCPU) {
-					for (int i=nCPU-1; i>=0; i--) {
-						ri[i].hThread = NULL;
-						ri[i].iStartSino = i;
-						if (i) ri[i].bMaster = false; else ri[i].bMaster = true;
-						ri[i].iStatus = RECONST_INFO_IDLE;
-						ri[i].i64result = 0;//double
-						ri[i].drStart = 0;//int
-						if (iz + i > m_ZHigh) continue;
-						ri[i].iStatus = RECONST_INFO_BUSY;
-						ri[i].max_d_ifp = nRefFiles;
-						ri[i].max_d_igp = nQryFiles;
-						ri[i].ixdim = ix;
-						ri[i].iInterpolation = iy;
-						ri[i].iLenSinogr = ixref;
-						ri[i].iMultiplex = iyref;
-						ri[i].iOffset = ixqry;
-						ri[i].maxSinogrLen = iyqry;
-						ri[i].drEnd = iz + i;
-						ri[i].ppRef = ppRefPixel;
-						ri[i].ppQry = ppQryPixel;
-						void* pArg = (void*)(&(ri[i]));
-						if (i) {
-							ri[i].hThread = (unsigned int)_beginthreadex( NULL, 0, LsqfitThread, pArg, 0, &(ri[i].threadID) );
-						} else {
-							LsqfitThread(&(ri[i]));
-						}
-					}
-					int ist = RECONST_INFO_IDLE;
-					do {
-						ist = RECONST_INFO_IDLE;
-						for (int i=nCPU-1; i>=0; i--) ist |= ri[i].iStatus;
-					} while (ist != RECONST_INFO_IDLE);
-					for (int i=nCPU-1; i>=0; i--) {if (ri[i].hThread) CloseHandle((HANDLE)(ri[i].hThread));}//120723
-					for (int i=0; i<nCPU; i++) {
-						if (iz + i > m_ZHigh) continue;
-						__int64 ilsq = ri[i].i64result;//__int64
-						int nlsq = ri[i].drStart;//int
-						if (nlsq) {
-							TReal rlsq = sqrt(ilsq / (TReal)nlsq);
-							TReal dilsq = (double)ilsq;
-							//120624 CString msg; msg.Format("%d %d %d %f %.0f/%d\r\n", ix, iy, iz+i, rlsq, dilsq, nlsq);
-							//120624 m_Result += msg;
-							CString msg; msg.Format("%f (%d %d %d) %.0f/%d\r\n", rlsq, ix, iy, iz+i, dilsq, nlsq);
-							m_Result = "RMSD (dx dy dz) SumDiff/NSum\r\n" + msg;
-							sLsqList[iLsqList++] = msg;
-						}
-					}
-				/*for (int iz=m_ZLow; iz<=m_ZHigh; iz++) {
-					__int64 ilsq = 0;
-					int nlsq = 0;
-					for (int jrz=0; jrz<nRefFiles; jrz++) {
-						const int jqz = jrz + iz;
-						if ((jqz < 0)||(jqz >= nQryFiles)) continue;
-						int* pRef = ppRefPixel[jrz];
-						int* pQry = ppQryPixel[jqz];
-						for (int jry=0; jry<iyref; jry++) {
-							const int jqy = jry + iy;
-							if ((jqy < 0)||(jqy >= iyqry)) continue;
-							int idx0r = jry * ixref;
-							int idx0q = jqy * ixqry;
-							for (int jrx=0; jrx<ixref; jrx++) {
-								const int jqx = jrx + ix;
-								if ((jqx < 0)||(jqx >= ixqry)) continue;
-								__int64 idiff = pRef[idx0r + jrx] - pQry[idx0q + jqx];
-								ilsq += idiff * idiff;
-								nlsq++;
-							}
-						}
-					}
-					if (nlsq) {
-						TReal rlsq = sqrt(ilsq / (TReal)nlsq);
-						TReal dilsq = (double)ilsq;
-						CString msg; msg.Format("(%d %d %d) %f %f/%d\r\n", ix, iy, iz, rlsq, dilsq, nlsq);
-						m_Result += msg;
-						if ((minlsq < 0)||(rlsq < minlsq)) {
-							minlsq = rlsq;
-							mx = ix; my = iy; mz = iz;
-						}
-					}///*
-					ProcessMessage();
-					if (bStarted == false) break;
-				}
-				UpdateData(FALSE);
-				if (bStarted == false) break;
-			}
-			if (bStarted == false) break;
-		}
-	}
-	//sort
-	CString** pLsqList = new CString*[iLsqList];
-	for (int i=0; i<iLsqList; i++) {pLsqList[i] = &(sLsqList[i]);}
-	qsort( (void *)pLsqList, (size_t)iLsqList, sizeof(CString*), LsqFitCompare );
-	m_Result.Empty();
-	for (int i=0; i<iLsqList; i++) {m_Result += " " + *(pLsqList[i]);}
-	_ftime_s( &tstruct );
-	TReal tcpu = tstruct.time + tstruct.millitm * 0.001 - tm0;
-	if (bStarted) {
-		CString msg;
-		TReal minlsq = 0; int mx = 0, my = 0, mz = 0;
-		sscanf_s(*(pLsqList[0]), "%lf (%d %d %d)", &minlsq, &mx, &my, &mz);
-		msg.Format(" Min: ref(0 0 0)=qry(%d %d %d) rmsd=%f\r\n RMSD (dx dy dz) SumDiff/NSum\r\n", mx, my, mz, minlsq);
-		m_Result = msg + m_Result;
-		if (flog.m_hFile != CFile::hFileNull) {
-			flog.WriteString(msg);
-			for (int i=0; i<30; i++) {flog.WriteString(" " + *(pLsqList[i]));}
-		}
-		msg.Format("CPU=%fsec\r\n", tcpu);
-		m_Result += msg;
-	}
-	if (flog.m_hFile != CFile::hFileNull) {
-		flog.WriteString("---------------------------------------------------\r\n");
-		flog.Close();
-	}
-	bStarted = false;
-	//delete images
-	for (int i=0; i<nRefFiles; i++) {if (ppRefPixel[i]) delete [] ppRefPixel[i];}
-	if (ppRefPixel) delete [] ppRefPixel;
-	if (pMaxRefPixel) delete [] pMaxRefPixel;
-	for (int i=0; i<nQryFiles; i++) {if (ppQryPixel[i]) delete [] ppQryPixel[i];}
-	if (ppQryPixel) delete [] ppQryPixel;
-	if (pMaxQryPixel) delete [] pMaxQryPixel;
-	if (sLsqList) delete [] sLsqList;
-	if (pLsqList) delete [] pLsqList;
-	120828*/
+	if (m_bMaxDiameter) pApp->LsqfitMin(&lq, this, NULL);
+	else pApp->Lsqfit(&lq, this, NULL);
 	EnableCtrl();
 	UpdateData(FALSE);
 }
@@ -504,8 +258,29 @@ void CDlgLsqfit::OnBnClickedLsqfitQueue()
 	lq.m_ZHigh = this->m_ZHigh;
 	lq.m_RefList = this->m_RefList;
 	lq.m_QryList = this->m_QryList;
+	lq.m_bMaxDiameter =  this->m_bMaxDiameter;
 	CGazoApp* pApp = (CGazoApp*) AfxGetApp();
 	pApp->dlgQueue.AddLsqfitQueue(&lq);
 	//
 	CDialog::OnOK();
+}
+
+void CDlgLsqfit::OnBnClickedLsqfitMaxdia()
+{
+	// TODO: ここにコントロール通知ハンドラ コードを追加します。
+	UpdateData();
+	EnableCtrl();
+}
+
+BOOL CDlgLsqfit::OnInitDialog()
+{
+	CDialog::OnInitDialog();
+
+	// TODO:  ここに初期化を追加してください
+	if (m_bMaxDiameter) m_XHigh = 2000;
+	UpdateData(FALSE);
+	EnableCtrl();
+
+	return TRUE;  // return TRUE unless you set the focus to a control
+	// 例外 : OCX プロパティ ページは必ず FALSE を返します。
 }

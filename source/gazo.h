@@ -22,6 +22,7 @@
 #include "DlgLsqfit.h"
 #include "DlgRenumFiles.h"
 #include <afxmt.h>//131019 CMutex
+#include "cxyz.h"//181214
 //#include "DlgDialbox.h"
 
 /////////////////////////////////////////////////////////////////////////////
@@ -46,11 +47,12 @@ public:
 	void SetIdle();
 	bool IsBusy();
 	CString Lsqfit(LSQFIT_QUEUE* lq, CDlgLsqfit* dlg = NULL, CDlgQueue* dqueue = NULL);
+	CString LsqfitMin(LSQFIT_QUEUE* lq, CDlgLsqfit* dlg = NULL, CDlgQueue* dqueue = NULL);
 
 	int iAvailableCPU;
 	//150101 HCURSOR hCursorRot;
 	CString sProgVersion;
-	bool bShowBoxAxis, bDragScroll;
+	bool bShowBoxAxis, bDragScroll, bWheelToGo;
 
 	CDlgQueue dlgQueue;
 	CDlgProperty dlgProperty;
@@ -64,6 +66,8 @@ public:
 
 private:
 	TErr CalcAvgImage(CString path, CString* files, int nfiles);
+	double GetImageDiff(short* psBinRefPixel, short* psBinQryPixel, int ibin, CXyz cDelta, CXyz cDisp, 
+							   int ibxref, int ibyref, int ibzref, int ibxqry, int ibyqry, int ibzqry);
 
 protected:
 	int iStatus;
@@ -101,8 +105,11 @@ protected:
 	afx_msg void OnUpdateViewDragscroll(CCmdUI *pCmdUI);
 	//afx_msg void OnFileDialbox();
 	//afx_msg LRESULT OnDialbox(WPARAM wParam, LPARAM lParam);//161210
+	afx_msg void OnViewWheeltogo();
+	afx_msg void OnUpdateViewWheeltogo(CCmdUI *pCmdUI);
 };
 
+unsigned __stdcall GetImageDiffThread(void* pArg);
 
 /////////////////////////////////////////////////////////////////////////////
 

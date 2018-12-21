@@ -9,6 +9,8 @@
 	typedef void* cufftHandle;
 #endif
 
+class CXyz;
+
 #if !defined( _RECONSTINFO_H_ )
 #define _RECONSTINFO_H_
 struct RECONST_INFO {
@@ -73,6 +75,8 @@ struct RECONST_INFO {
 	unsigned __int64 i64sum;
 	short** ppRef;
 	short** ppQry;
+	CXyz* pcxyz1;
+	CXyz* pcxyz2;
 	//drift list
 	int* piDrift;
 	int iFlag;

@@ -2734,6 +2734,14 @@ unsigned __stdcall LsqfitThread(void* pArg) {
 }
 
 TErr InvMatrix(TReal* a, int n, TReal eps) {
+	//howto 181217
+	//inverse matrix of a
+	//n: dimension
+	//eps: typically 1E-6
+	//example: a(3x3), n=3
+	//( a[0] a[1] a[2])
+	//| a[3] a[4] a[5]|
+	//( a[6] a[7] a[8])
 	int i, j; TReal aw, am;
 	if (eps < 0) return 10082;
 	if (n == 0) return 10082;

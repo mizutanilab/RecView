@@ -913,8 +913,15 @@ void CGazoView::OnLButtonUp(UINT nFlags, CPoint point)
 
 BOOL CGazoView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt) 
 {
-	CMainFrame* pf = (CMainFrame*) AfxGetMainWnd();
-	if (!bLButtonDown) {
+	//CMainFrame* pf = (CMainFrame*) AfxGetMainWnd();
+	const CGazoApp* pApp = (CGazoApp*) AfxGetApp();
+	CGazoDoc* pd = GetDocument();
+	if ((pApp->bWheelToGo) || (GetKeyState(VK_SHIFT) < 0)) {
+		if (pd) {
+			if (zDelta < 0) pd->ProceedImage(1);
+			else if (zDelta > 0) pd->ProceedImage(-1);
+		}
+	} else if (!bLButtonDown) {
 		/*150101
 		if (::GetCursor() == ((CGazoApp*)AfxGetApp())->hCursorRot) {
 			iBoxAngle -= zDelta * 2 / WHEEL_DELTA;

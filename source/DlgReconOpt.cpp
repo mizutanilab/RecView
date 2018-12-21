@@ -31,6 +31,7 @@ CDlgReconOpt::CDlgReconOpt(CWnd* pParent /*=NULL*/)
 	, m_sDriftListPath(_T(""))
 	, m_FrameUsage(CDLGRECONST_FRAME_ALL)
 	, m_bSkipInitialFlatsInHDF5(FALSE)
+	, m_dAxisInc(0.5)
 {
 	nDataset = 1;
 	iDatasetSel = 0;
@@ -65,6 +66,8 @@ void CDlgReconOpt::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_RECONST_DRIFTLISTPATH, m_sDriftListPath);
 	DDX_Radio(pDX, IDC_RECONST_FRAMEALL, m_FrameUsage);
 	DDX_Check(pDX, IDC_RECONST_SKIPINITIALFLATSINHDF5, m_bSkipInitialFlatsInHDF5);
+	DDX_Text(pDX, IDC_RECONST_AXISINC, m_dAxisInc);
+	DDV_MinMaxDouble(pDX, m_dAxisInc, 0, 10);
 }
 
 

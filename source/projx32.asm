@@ -24,10 +24,12 @@ projx32 PROC param:dword
 	local ixdimp :dword
 	local ixdimp4 :dword
 	local pmxcsr :dword
+	local smxcsr :dword
 ;store registers
 	push esi
 	push edi
 	push ebx
+	stmxcsr smxcsr
 ;get pointer to args
 	mov esi, param ;arg #1
 ;load valiables	
@@ -64,11 +66,11 @@ projx32 PROC param:dword
 	add eax, [esi + 20]; ixy += ifp
 	mov edi, eax
 
-;sse rounding mode RC=01B
-;	stmxcsr pmxcsr
-;	and pmxcsr, 0FFFF9FFFh
+;sse rounding mode RC=00B (MXCSR[14:13])
+	stmxcsr pmxcsr
+	and pmxcsr, 0FFFF9FFFh
 ;	or pmxcsr,  000002000h
-;	ldmxcsr pmxcsr
+	ldmxcsr pmxcsr
 
 ;start process
 	mov ecx, [esi + 12]; ixdimpg
@@ -137,6 +139,7 @@ LOOPYEND:
 	dec edx
 	jge LOOPY ; iy >= 0
 
+	ldmxcsr smxcsr
 	pop ebx
 	pop edi
 	pop esi

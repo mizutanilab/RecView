@@ -58,6 +58,8 @@
 #define IDC_RECONST_DRIFTLISTPATH       1015
 #define IDC_HISTG_BITMAP                1016
 #define IDC_RECONST_TILT                1016
+#define IDC_RECONST_CUTOFF2             1016
+#define IDC_RECONST_AXISINC             1016
 #define IDC_RECONST_RESOLN              1017
 #define IDC_RECONST_SELECT              1017
 #define IDC_HISTG_HSTMAX                1018
@@ -102,6 +104,8 @@
 #define IDC_RECONST_ANGINTP             1044
 #define IDC_MOVE1                       1044
 #define IDC_RESOLNPLOT_PLOTR            1044
+#define IDC_LSQFIT_MINDIA               1044
+#define IDC_LSQFIT_MAXDIA               1044
 #define IDC_PROP_INTELCPU               1045
 #define IDC_RECONST_ZERNIKE             1045
 #define IDC_MOVE2                       1045
@@ -350,6 +354,8 @@
 #define ID_ANALYSIS_ENLARGE             32839
 #define ID_ANALYSIS_RADIALPROFILE       32840
 #define ID_ANALYSIS_POLYGONLASSO        32841
+#define ID_VIEW_WHEELTOGO               32842
+#define IDM_VIEW_WHEELTOGO              32843
 #define ID_POPUPQUEUE_DEL               32860
 
 // Next default values for new objects
@@ -358,7 +364,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_3D_CONTROLS                     1
 #define _APS_NEXT_RESOURCE_VALUE        150
-#define _APS_NEXT_COMMAND_VALUE         32842
+#define _APS_NEXT_COMMAND_VALUE         32844
 #define _APS_NEXT_CONTROL_VALUE         1128
 #define _APS_NEXT_SYMED_VALUE           102
 #endif

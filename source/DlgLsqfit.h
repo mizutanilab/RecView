@@ -46,4 +46,7 @@ public:
 	int m_ZHigh;
 	afx_msg void OnBnClickedLsqfitStop();
 	afx_msg void OnBnClickedLsqfitQueue();
+	BOOL m_bMaxDiameter;
+	afx_msg void OnBnClickedLsqfitMaxdia();
+	virtual BOOL OnInitDialog();
 };

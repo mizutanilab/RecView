@@ -59,4 +59,5 @@ public:
 	afx_msg void OnBnClickedReconstSetdriftlist();
 	int m_FrameUsage;
 	BOOL m_bSkipInitialFlatsInHDF5;
+	double m_dAxisInc;
 };

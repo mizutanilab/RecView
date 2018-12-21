@@ -45,6 +45,7 @@ CDlgReconst::CDlgReconst(CWnd* pParent /*=NULL*/)
 	m_AngularIntp = false;
 	m_Zernike = false;
 	m_FrameUsage = CDLGRECONST_FRAME_ALL;
+	m_dAxisInc = 0.5;
 
 	m_TiltAngle = 0;
 	m_Outpath = _T("");
@@ -245,8 +246,12 @@ END_MESSAGE_MAP()
 void CDlgReconst::OnReconstQueue() 
 {
 	if (!pd) return;
+	UpdateData();//181202
 	if (CheckParams()) {AfxMessageBox("Parameter error"); return;}
-	UpdateData();
+	//181202 UpdateData();
+	if (m_Slice1 == m_Slice2) {
+		if (AfxMessageBox("This will generate axis-scan images.\r\nProceed?", MB_OKCANCEL) == IDCANCEL) return;
+	}
 	//
 	RECONST_QUEUE rq;
 	rq.iTrimWidth = m_Trim;
@@ -286,6 +291,7 @@ void CDlgReconst::OnReconstQueue()
 	rq.drX = m_drX;
 	rq.drY = m_drY;
 	rq.drOmit = m_drOmit;
+	rq.dAxisInc = m_dAxisInc;
 	if (m_bDriftList) rq.dReconFlags |= RQFLAGS_DRIFTLIST;
 	if (m_bDriftParams) rq.dReconFlags |= RQFLAGS_DRIFTPARAMS;
 	rq.sDriftListPath = m_sDriftListPath;
@@ -362,6 +368,9 @@ void CDlgReconst::OnOK()
 	}
 	UpdateData();
 	if (CheckParams()) {AfxMessageBox("Parameter error"); return;}
+	if (m_Slice1 == m_Slice2) {
+		if (AfxMessageBox("This will generate axis-scan images.\r\nProceed?", MB_OKCANCEL) == IDCANCEL) return;
+	}
 	iStatus = CDLGRECONST_BUSY;
 	CGazoApp* pApp = (CGazoApp*) AfxGetApp();
 	pApp->SetBusy();
@@ -405,6 +414,7 @@ void CDlgReconst::OnOK()
 		rq.drX = m_drX;
 		rq.drY = m_drY;
 		rq.drOmit = m_drOmit;
+		rq.dAxisInc = m_dAxisInc;
 		if (m_bDriftList) rq.dReconFlags |= RQFLAGS_DRIFTLIST;
 		if (m_bDriftParams) rq.dReconFlags |= RQFLAGS_DRIFTPARAMS;
 		rq.sDriftListPath = m_sDriftListPath;
@@ -771,6 +781,7 @@ void CDlgReconst::OnBnClickedReconstOptions()
 	dlg.m_bDriftList = m_bDriftList;
 	dlg.m_bDriftParams = m_bDriftParams;
 	dlg.m_FrameUsage = m_FrameUsage;
+	dlg.m_dAxisInc = m_dAxisInc;
 	//if (pd) dlg.nDataset = pd->maxHisFrame / pd->CountFrameFromConvBat(pd->GetDataPath());
 	dlg.nDataset = m_nDataset;
 	if (dlg.DoModal() == IDCANCEL) return;
@@ -795,6 +806,7 @@ void CDlgReconst::OnBnClickedReconstOptions()
 	m_bDriftList = dlg.m_bDriftList ? true : false;
 	m_bDriftParams = dlg.m_bDriftParams ? true : false;
 	m_FrameUsage = dlg.m_FrameUsage;
+	m_dAxisInc = dlg.m_dAxisInc;
 	//140728
 	//if (m_FrameUsage == CDLGRECONST_FRAME_ALL) AfxMessageBox("Frame all");
 	//else if (m_FrameUsage == CDLGRECONST_FRAME_ODD) AfxMessageBox("Frame odd");

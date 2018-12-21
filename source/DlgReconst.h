@@ -81,6 +81,7 @@ public:
 	CString m_sDriftListPath;
 	bool m_bDriftList;
 	bool m_bDriftParams;
+	double m_dAxisInc;
 
 	int m_FrameUsage;
 	bool bOptionUpdated;

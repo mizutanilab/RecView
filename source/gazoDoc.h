@@ -47,6 +47,7 @@ class CGazoDoc : public CDocument
 friend class CDlgReconst;
 friend class CDlgFrameList;
 friend class CMainFrame;
+friend class CGazoView;
 
 public:
 	CGazoDoc();

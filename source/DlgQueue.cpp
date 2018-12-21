@@ -421,7 +421,8 @@ void CDlgQueue::OnOK()
 		} else if (m_QueueList.GetItemText(i, 0) == "Lsqfit") {
 			CString desc = m_QueueList.GetItemText(i, 2);
 			LSQFIT_QUEUE* lq = &(lsqfitQueue[idx]);
-			lsqfitResult = pApp->Lsqfit(lq, NULL, this);
+			if (lq->m_bMaxDiameter) lsqfitResult = pApp->LsqfitMin(lq, NULL, this);//181214
+			else lsqfitResult = pApp->Lsqfit(lq, NULL, this);
 			if (desc.Left(3) == "ND ") desc = desc.Mid(3);
 			m_QueueList.SetItemText(i, 2, lsqfitResult + " " + desc);
 		}
@@ -736,6 +737,7 @@ TErr CDlgQueue::SaveQueue(CStdioFile* fp) {
 			line.Format("dataPath %s\r\n", rq->dataPath); fp->WriteString(line);
 			line.Format("dCenter1 %lf\r\n", rq->dCenter1); fp->WriteString(line);
 			line.Format("dCenter2 %lf\r\n", rq->dCenter2); fp->WriteString(line);
+			line.Format("dAxisInc %lf\r\n", rq->dAxisInc); fp->WriteString(line);
 			line.Format("dCutoff %lf\r\n", rq->dCutoff); fp->WriteString(line);
 			line.Format("dOrder %lf\r\n", rq->dOrder); fp->WriteString(line);
 			line.Format("dPixelWidth %lf\r\n", rq->dPixelWidth); fp->WriteString(line);
@@ -833,6 +835,7 @@ TErr CDlgQueue::SaveQueue(CStdioFile* fp) {
 			line.Format("m_YHigh %d\r\n", lq->m_YHigh); fp->WriteString(line);
 			line.Format("m_ZLow %d\r\n", lq->m_ZLow); fp->WriteString(line);
 			line.Format("m_ZHigh %d\r\n", lq->m_ZHigh); fp->WriteString(line);
+			if (lq->m_bMaxDiameter) fp->WriteString("bMaxDiameter TRUE\r\n"); else fp->WriteString("bMaxDiameter FALSE\r\n");
 		}
 		fp->WriteString("End\r\n");
 	}
@@ -862,6 +865,7 @@ TErr CDlgQueue::LoadQueue(CStdioFile* fp) {
 				} else if (cmd == "dataPath") {rq.dataPath = param;
 				} else if (cmd == "dCenter1") {if (sscanf_s(param, "%lf", &(rq.dCenter1)) < 1) msg += line;
 				} else if (cmd == "dCenter2") {if (sscanf_s(param, "%lf", &(rq.dCenter2)) < 1) msg += line;
+				} else if (cmd == "dAxisInc") {if (sscanf_s(param, "%lf", &(rq.dAxisInc)) < 1) msg += line;
 				} else if (cmd == "dCutoff") {if (sscanf_s(param, "%lf", &(rq.dCutoff)) < 1) msg += line;
 				} else if (cmd == "dOrder") {if (sscanf_s(param, "%lf", &(rq.dOrder)) < 1) msg += line;
 				} else if (cmd == "dPixelWidth") {if (sscanf_s(param, "%lf", &(rq.dPixelWidth)) < 1) msg += line;
@@ -992,6 +996,7 @@ TErr CDlgQueue::LoadQueue(CStdioFile* fp) {
 				} else if (cmd == "m_YHigh") {if (sscanf_s(param, "%d", &(lq.m_YHigh)) < 1) msg += line;
 				} else if (cmd == "m_ZLow") {if (sscanf_s(param, "%d", &(lq.m_ZLow)) < 1) msg += line;
 				} else if (cmd == "m_ZHigh") {if (sscanf_s(param, "%d", &(lq.m_ZHigh)) < 1) msg += line;
+				} else if (cmd == "bMaxDiameter") {if (param == "TRUE") lq.m_bMaxDiameter = TRUE; else if (param == "FALSE") lq.m_bMaxDiameter = FALSE; else msg += line;
 				} else if (cmd == "m_RefList") {
 					for (int j=0; j<lq.nRefFiles; j++) {
 						if (!fp->ReadString(line)) break;

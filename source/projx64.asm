@@ -24,9 +24,11 @@ projx64 PROC
 
 ;local valiables
 	local pmxcsr :dword
+	local smxcsr :dword
 ;store registers
 	push rsi
 	push rdi
+	stmxcsr smxcsr
 ;get pointer to args
 	mov rsi, rcx	; arg #1
 ;load valiables	
@@ -61,11 +63,11 @@ projx64 PROC
 	add rax, [rsi + 40]	; ixy += ifp
 	mov rdi, rax
 
-;sse rounding mode RC=01B
-;	stmxcsr pmxcsr
-;	and pmxcsr, 0FFFF9FFFh
-;	or pmxcsr,  000002000h
-;	ldmxcsr pmxcsr
+;sse rounding mode RC=00B (MXCSR[14:13])
+	stmxcsr pmxcsr
+	and pmxcsr, 0FFFF9FFFh
+;	or pmxcsr,  000006000h
+	ldmxcsr pmxcsr
 
 ;start process
 	mov rcx, [rsi + 24]	; ixdimpg
@@ -134,6 +136,7 @@ LOOPYEND:
 	dec rdx	; iy--
 	jge LOOPY	; iy >= 0
 
+	ldmxcsr smxcsr
 	pop rdi
 	pop rsi
 	ret
