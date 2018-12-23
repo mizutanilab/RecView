@@ -3491,6 +3491,24 @@ TErr CGazoDoc::DeconvBackProj(RECONST_QUEUE* rq, double center, int iMultiplex, 
 	} else {
 		return 21022;
 	}
+	int** ppiReconst = NULL;
+	try {
+		if (nCPU > 1) {
+			ppiReconst = new int*[nCPU - 1];
+			for (int i = 0; i < nCPU - 1; i++) {
+				ppiReconst[i] = new int[maxReconst];
+				memset(ppiReconst[i], 0, sizeof(int) * maxReconst);
+			}
+		}
+	}
+	catch (CException* e) {
+		e->Delete();
+		if (ppiReconst) {
+			for (int i = 0; i < nCPU - 1; i++) {if (ppiReconst[i]) delete[] ppiReconst[i];}
+			delete[] ppiReconst;
+		}
+		return 21023;
+	}
 	for (int i=nCPU-1; i>=0; i--) {
 		ri[i].hThread = NULL;
 		ri[i].iStatus = RECONST_INFO_BUSY;
@@ -3499,7 +3517,7 @@ TErr CGazoDoc::DeconvBackProj(RECONST_QUEUE* rq, double center, int iMultiplex, 
 		ri[i].iInterpolation = iInterpolation;
 		ri[i].center = (center + HALFPIXEL_OFFSET) / iBinning;
 		ri[i].iLenSinogr = rq->iSinoYdim + 1;//090214 iLenSinogr;
-		ri[i].iReconst = iReconst;
+		ri[i].iReconst = i ? ppiReconst[i-1] : iReconst;
 		ri[i].nSinogr = nSinogr;
 		//ri[i].dataName = dataName;
 		strcpy_s(ri[i].dataName, dataName.Left(60));
@@ -3525,6 +3543,7 @@ TErr CGazoDoc::DeconvBackProj(RECONST_QUEUE* rq, double center, int iMultiplex, 
 	int ist = RECONST_INFO_IDLE;
 	do {
 		::ProcessMessage();
+		Sleep(10);//181223
 		ist = RECONST_INFO_IDLE;
 		for (int i=nCPU-1; i>=0; i--) {
 			if (ri[i].iStatus == RECONST_INFO_ERROR) {
@@ -3535,7 +3554,16 @@ TErr CGazoDoc::DeconvBackProj(RECONST_QUEUE* rq, double center, int iMultiplex, 
 			ist |= ri[i].iStatus;
 		}
 	} while (ist != RECONST_INFO_IDLE);
-	for (int i=nCPU-1; i>=0; i--) {if (ri[i].hThread) CloseHandle((HANDLE)(ri[i].hThread));}//120723
+	for (int i=0; i<nCPU; i++) {
+		if (ri[i].hThread) CloseHandle((HANDLE)(ri[i].hThread));
+		if ((i >= 1) && ppiReconst) {
+			if (ppiReconst[i-1]) {
+				for (int j = 0; j < maxReconst; j++) { iReconst[j] += (ppiReconst[i-1])[j]; }
+				delete[] ppiReconst[i-1];
+			}
+		}
+	}
+	if (ppiReconst) delete[] ppiReconst;
 	//
 	if (pf) {
 		if (dlgReconst.iStatus == CDLGRECONST_STOP) {
