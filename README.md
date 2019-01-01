@@ -1,8 +1,8 @@
-﻿## RecView <A href="https://scicrunch.org/scicrunch/Resources/record/nlx_144509-1/SCR_016531/resolver">RRID:SCR_016531</A>
-RecView is a program for tomographic reconstruction and image processing. It consists of approx 22,000 lines of custom source codes in C++, CUDA C, OpenCL, and x86/x86_64 assembly languages including SIMD. RecView is designed for processing data obtained at the BL20B2, BL20XU, BL37XU, and BL47XU beamlines of the SPring-8 synchrotron radiation facility and also those taken at the 32-ID beamline of Advanced Photon Source (APS) of Argonne National Laboratory. 
+## RecView <A href="https://scicrunch.org/scicrunch/Resources/record/nlx_144509-1/SCR_016531/resolver">RRID:SCR_016531</A>
+RecView is a program for tomographic reconstruction and image processing. It consists of over 25,000 lines of custom source codes in C++, CUDA C, OpenCL, and x86/x86_64 (x64) assembly languages including SIMD instructions up to AVX2. RecView is designed for processing data obtained at the BL20B2, BL20XU, BL37XU, and BL47XU beamlines of the SPring-8 synchrotron radiation facility and also those taken at the 32-ID beamline of Advanced Photon Source (APS) of Argonne National Laboratory. 
 
-<IMG width=100 height=140 alt=testPattern src="pics/testPattern.png" align=left>
-Three-dimensional structural analysis with microtomography (micro-CT) or nanotomography (nano-CT) is performed by recording two-dimensional x-ray images while rotating the sample. Then tomographic sections are calculated from x-ray images by the convolution back-projection method. This reconstruction calculation is repeated for each tomographic slice, giving the three-dimensional structure. RecView is a program for the tomographic reconstruction calculations with graphical user interfaces. Multiple datasets can be continuously processed by using its queueing function. Zooming reconstruction (an example is shown left), Gaussian convolution, and many other procedures for image processing are also implemented. The resolution of real sample image can be estimated with a Fourier-domain plot by using this program.
+<IMG width=100 height=140 alt=testPattern src="binary/testPattern.png" align=left>
+Three-dimensional structural analysis with microtomography (micro-CT) or nanotomography (nano-CT) is performed by recording two-dimensional x-ray images while rotating the sample. Then tomographic sections are calculated from the x-ray images by the convolution back-projection method. This calculation is repeated for each tomographic slice to reconstruct the entire three-dimensional structure. RecView is a program for the tomographic reconstruction calculation with graphical user interfaces. Multiple datasets can be continuously processed by using its queueing function. Zooming reconstruction (an example is shown left), Gaussian convolution for denoising, and many other procedures for image processing are also implemented. Resolution of real sample images can be estimated with the Fourier domain plot by using this program. 
 <BR clear=left>
 
 ## License
@@ -22,35 +22,38 @@ RecView is provided under the BSD 2-Clause License.
 <a href="http://dx.doi.org/10.1063/1.3625388">DOI</a> 
 <a href="http://link.aip.org/link/?APCPCS/1365/403/1">AIP</a> 
 </li>
-
 <li>R. Mizutani and Y. Suzuki (2012). X-ray microtomography in biology. <i>Micron</i> <b>43(2-3)</b>, 104-115. Review. 
 <a href="http://dx.doi.org/10.1016/j.micron.2011.10.002">DOI</a> 
 <a href="http://www.ncbi.nlm.nih.gov/pubmed/22036251">PubMed</a> 
 <a href="https://arxiv.org/abs/1609.02263">arXiv</a> 
 </li>
-
 <li>R. Mizutani, R. Saiga, S. Takekoshi, C. Inomoto, N. Nakamura, M. Itokawa, M. Arai, K. Oshima, A. Takeuchi, K. Uesugi, Y. Terada and Y. Suzuki (2016). A method for estimating spatial resolution of real image in the Fourier domain. <i>J. Microscopy</i> <b>261(1)</b>, 57-66.
 <a href="http://dx.doi.org/10.1111/jmi.12315">DOI</a> 
 <a href="http://www.ncbi.nlm.nih.gov/pubmed/26444300">PubMed</a> 
 <a href="https://arxiv.org/abs/1609.02268">arXiv</a> 
 </li>
+<LI>R. Saiga, A. Takeuchi, K. Uesugi, Y. Terada, Y. Suzuki and R. Mizutani (2018). Method for estimating modulation transfer function from sample images. <I>Micron</I> <B>105</B>, 64-69.
+ <A href="https://doi.org/10.1016/j.micron.2017.11.009">DOI</A>
+ <a href="https://www.ncbi.nlm.nih.gov/pubmed/29179010">PubMed</a> 
+<A href="http://arxiv.org/abs/1711.09776">arXiv</A></li>
+</li>
 </ul>
 
 ## Release notes
-The binary folder contains several executables. Please use 'RecView.exe' appropriate for your PC platform. The executables were generated using Visual Studio 2008 C++ compiler, MASM for x64, CUDA toolkit 5.5, and ATI Stream SDK 2.1. If your PC has NVIDIA Tesla, GeForce or Quadro GPU processors, you can use the CUDA version. The dynamic link libraries (64 bit: 'cudart64_55.dll' and 'cufft64_55.dll'; 32 bit: 'cudart32_55.dll' and 'cufft32_55.dll') should be placed in the folder where the RecView CUDA executable is extracted. These library files are also available from the <a href="http://www.nvidia.com/object/cuda_home.html">official NVIDIA site</a> as part of the CUDA toolkit. ATI stream processors Radeon, FireStream, and FirePro are also supported. To run the executable with ATI processors, you should install the [ATI Catalyst driver suite](http://www.amd.com/en-gb/innovations/software-technologies/catalyst) to add the OpenCL library 'OpenCL.dll' to the Windows folder. 
-We now have a plan to move to Visual Studio 2017 and CUDA Toolkit 10.0 in the next release. The 32-bit CUDA and the ATI executables will become unavailable. The present VS2008 code will be kept in a separate folder. 
+The binary folder contains several executables. Please use 'RecView.exe' appropriate for your PC platform. These executables are prepared by using Visual Studio 2017 C++ and CUDA Toolkit 10.0. If your PC is running 64-bit Windows and has NVIDIA Tesla, GeForce or Quadro GPU processors, you can use the CUDA version. The dynamic link libraries ('cudart64_100.dll' and 'cufft64_100.dll') must be placed in the folder where the RecView CUDA executable is downloaded. The library files are also available from the <a href="https://developer.nvidia.com/cuda-toolkit-archive">official NVIDIA site</a> as part of the CUDA Toolkit. The former version including 32-bit CUDA and ATI executables (along with their source code) is placed in the 'vs2008' folder. 
 
-A test dataset in TIFF format is also provided in the binary folder. 
+A test dataset in TIFF format is also available from the binary folder. 
 
 <UL>
+  <LI>Build-190102. We moved to Visual Studio 2017 and CUDA Toolkit 10.0 from this release. CUDA executable on the x86 platform became unavailable. ATI executable is not compiled at present. The x86/x64 reconstruction kernels were revised by using the AVX2 instruction set. CUDA routines were revised to be compatible with the new CUDA Toolkit. 
   <LI>Build-181222. Axis-scan images can be generated by specifying different center values with the same slice position. An alternative robust algorithm for least-square 3D fitting is now implemented. A bugfix in multithreading. 
   <LI>Build-180614. Bugfix of the pause/resume function in the queueing dialog.  
   <LI>Build-180505. Reslicing routine was revised to minimize memory usage and to allow users to specify the reslicing direction with a vector. Polygon lasso function was implemented for defining ROI of statistical analysis.  
   <LI>v5.4.1 (27 Jan 2018). Image analysis routines were updated. No revision were made in the offset CT kernel. Errors observed for some offset-CT data taken at SPring-8 were due to the 'conv.bat' files. Its workaround is described in the FAQ section below. Executable of this release is available only for x64 platforms because this is a very minor revision. 
   <LI>v5.4.0 (3 May 2017). Image analysis routines were updated. The offset CT routine is now under revision. 
   <LI>v5.3.0 (6 Jan 2017). Routines for <a href="https://github.com/mizutanilab/BluetoothDials">our dial input device</a> were implemented.
-  <LI>v5.2.0 (13 Nov 2016). Frame selection dialog was implemented. Routines for the sinogram generation were revised.
-  <LI>v5.1.1 (released 18 Sep 2016). Reconstruction kernels for x86/x64 processors were updated using assembly code. The kernels are accelerated with vectorized instructions (compiler option /arch:SSE2 didn't work well with our c++ code). Performances are:
+ ?<LI>v5.2.0 (13 Nov 2016). Frame selection dialog was implemented. Routines for the sinogram generation were revised.
+  <LI>v5.1.1 (released 18 Sep 2016). Reconstruction kernels for x86/x64 processors were updated using assembly code. The kernels are accelerated with vectorized instructions. Performances are:
     <UL>
     <LI>Tau (Quadro K4200, 1344 cores, 780 MHz) = 0.27 nsec (2.1 sec for a 2048x2048 tomogram from 1800 projections),
     <LI>Tau (Core i5-4670 (x64), 4 threads, 3.4 GHz) = 0.34 nsec (2.6 sec for a 2048x2048 tomogram from 1800 projections),
@@ -76,11 +79,11 @@ Here, tau is the time constant required for one pixel projection. For example, o
     <LI>Tau (448 cores, 607 MHz) = 0.0813 nsec (23.4 sec for a 8000x8000 tomogram from 4500 projections) by using GeForce GTX470 with 1.28 GB of GDDR5 memory,
     <LI>Tau (112 cores, 500 MHz) = 0.243 nsec (1.75 sec for a 2000x2000 tomogram from 1800 projections) by using Quadro FX 3700 with 512 MB of GDDR3 memory,
     <LI>Tau (80 cores, 650 MHz) = 2.86 nsec (20.6 sec for a 2000x2000 tomogram from 1800 projections) by using Radeon HD 5450 with 512 MB of DDR2 memory,
-    <LI>Tau (4 threads, 3.16 GHz) = 0.825 nsec (5.94 sec for a 2000x2000 tomogram from 1800 projections) by using Xeon (x86),
-    <LI>Tau (4 threads, 3.16 GHz) = 0.808 nsec (5.82 sec for a 2000x2000 tomogram from 1800 projections) by using Xeon (x64).
+    <LI>Tau (4 threads, 3.16 GHz) = 0.825 nsec (5.94 sec for a 2000x2000 tomogram from 1800 projections) by using Xeon E5410 (x86),
+    <LI>Tau (4 threads, 3.16 GHz) = 0.808 nsec (5.82 sec for a 2000x2000 tomogram from 1800 projections) by using Xeon E5410 (x64).
     </UL>
 Here, tau is the time constant required for one pixel projection. For example, one tomogram of 2000 x 2000 pixels from 1800 projection frames can be reconstructed in tau x 2000 x 2000 x 1800 sec. Drift correction options were also provided in this revision.
-  <LI>v2.0.0 (released 21 Jan 2009). x64 platform is now supported. The x64 version can generate larger tomograms upto 10<sup>6</sup> x 10<sup>6</sup> pixels. Performance: tau(3.16 GHz) = 0.789 nsec using Xeon (x64, 4 threads). Performace of x86 version: tau(3.16 GHz) = 0.849 nsec using Core2Duo (x86, 2 threads), or tau = 1.395 nsec (x86, single thread).
+  <LI>v2.0.0 (released 21 Jan 2009). x64 platform is now supported. The x64 version can generate larger tomograms upto 10<sup>6</sup> x 10<sup>6</sup> pixels. Performance: tau(3.16 GHz) = 0.789 nsec using Xeon E5410 (x64, 4 threads). Performace of x86 version: tau(3.16 GHz) = 0.849 nsec using Core2Duo (x86, 2 threads), or tau = 1.395 nsec (x86, single thread).
   <LI>v1.0.0 (released 6 Mar 2008).
 </LI></UL>
 
@@ -97,28 +100,28 @@ Double click the 'RecView' executable.
 From the menu bar, select 'File'-'Open' and choose an image file.
 
 <B>Computing environment</B>  
-The GPU/CPU processors and memory usage can be specified in the 'Tomography'-'Resource usage' dialog.
+The GPU/CPU processors and memory usage can be specified in the 'Tomography'-'Computing config' dialog.
 
-<B>Reconstruction</B>  
-Open 'Tomography'-'Reconstruction' dialog. Enter appropriate parameters for your reconstruction calculation. 'Get center' determines the position of the rotation axis automatically. Tomographic sections can be generated with 'Show image' buttons. 'Batch' executes the reconstruction calculations through 'from' to 'to' sections.
+<B>Reconstruction</B>
+Open 'Tomography'-'Reconstruction' dialog. Enter slice position in the 'From' or 'To' field. Tomographic sections can be generated with 'Show image' buttons. You can adjust the rotation axis position using the 'Rotation center' field. 'Batch' invokes the reconstruction calculations through 'From' to 'To' sections. Several options are also available, such as the 'Offset CT' checkbox to switch the reconstruction kernel to the offset-CT mode. Many other options including the zooming reconstruction can be found in the 'Options' dialog. 
 
 <B>Trimming or reformatting images</B>  
-The 'Tomography'-'Histogram/Conversion' menu provides several tools for trimming, converting to 8-bit format, removing surrounding capillary pixels, and so on.
+The 'Tomography'-'Histogram/conversion' dialog provides several tools for trimming, converting to 8-bit TIFF, removing surrounding capillary pixels, and so on.
 
 ## Frequently asked questions
 <OL>
   <LI><b>System requirements</b></LI>
-    RecView can be executed on a Windows PC running XP, Vista, or Windows 7-10 with an x86 or x64 CPU and local storage. If you run RecView without GPU processor, we recommend to use CPUs released after approx 2005 (i.e., Pentium4 / Athlon64 or later), because SSE2 SIMD instructions are used in our x86/x64 reconstruction kernels. This is not a requirement, but the performance differs by a factor of 2-3 with or without SSE2.<br><br>
+    RecView can be executed on a Windows PC running Windows 7-10 with an x86 or x64 CPU and a local storage. The CUDA routines can be executed on NVIDIA GPU processors with 'compute capability' 3.0 or later (this corresponds to Kepler processors or later). If you run RecView without GPU processor, we recommend to use CPUs released after approx 2005 (i.e., Pentium4 / Athlon64 or later), because SSE2 SIMD instructions are used in the x86/x64 reconstruction kernel. This is not a requirement, but the performance may differ by a factor of 2-3 with or without SSE2. The x86/x64 kernel also uses AVX2 instructions if available. <br><br>
   <LI><b>Manuals</b></LI>
     A brief how-to-use guide has been published as the appendix of the following paper. A step-by-step manual in Japanese is provided in the docs folder.<BR><BR>
 R. Mizutani, A. Takeuchi, K. Uesugi, S. Takekoshi, R.Y. Osamura and Y. Suzuki (2009). Three-dimensional microstructural analysis of human brain tissue by using synchrotron radiation microtomographs. In <I>Handbook on White Matter</I>, eds. Westland, T.B. & Calton, R.N., New York, Nova Science Publishers, pp. 247-277.
 <A href="https://drive.google.com/open?id=0Byx6vGOSewwpcGdISUp0YTk5QW8">PDF (9.5 MB)</A><br><br>
   <LI><b>What kind of data can be processed?</b></LI>
-    RecView is designed for the reconstruction of tomographic data obtained at SPring-8 and APS. However, any kind of data can be processed. Please contact the author if you have problems in using this program with data from other tomographs. Dataset requirements are:
+    RecView is designed for the reconstruction of tomographic data obtained at SPring-8 and APS. However, any kind of data can be processed. Please contact the author if you have problems in using this program with your own data. Dataset requirements are:
     <UL>
-      <LI>We use file names beginning with alphabet characters followed by frame number, such as 'q0005.tif'.</LI>
+      <LI>We use file names beginning with alphabet characters followed by sequential frame number, such as 'q0005.tif' for frame 5.</LI>
       <LI>Place a dark-field image 'dark.tif' in the dataset folder.</LI>
-      <LI>RecView also needs a paprameter file 'output.log' in plain text format (an example is given in the test dataset). This file has four fields:<BR>
+      <LI>Prepare a paprameter file 'output.log' in plain text format (an example is given in the test dataset). This file has four fields:<BR>
 <pre>
 frame#      time(msec)     angle(deg) 0=flatfield/1=sample
 00001       00012.46900    000.0000        0
@@ -133,18 +136,31 @@ frame#      time(msec)     angle(deg) 0=flatfield/1=sample
       </LI>
     </UL><br>
   <LI><b>RecView returns an error when processing offset-CT data taken at SPring-8.</b></LI>
-    In the offset CT mode, the difference between start and stop angles of the sample rotation should be 360 degree, such as -180 to 180 deg or 0 to 360 deg. If the 'stop angle' was not 360 degree in your offset-CT experiment, 'conv.bat' file seems to have incorrect contents. You have to edit it manually before the reconstruction calculation. Or you can find some examples of conv.bat and output.log files in the 'docs' folder. <br><br>
-  <LI><b>How to try the test dataset?</b></LI>
+    In the offset CT, the sample should be rotated by 360 degrees. But start and stop angles vary depending on your setup, such as -180 to 180 deg or 0 to 360 deg. If the 'stop angle' was not 360 deg in your offset-CT experiment, 'conv.bat' file seems to have incorrect contents. You have to edit it manually before the reconstruction calculation. Or you can find examples of conv.bat and output.log files in the 'docs' folder. <br><br>
+  <LI><b>How to try the test dataset.</b></LI>
     <UL>
       <LI>Extract all files in the archived test dataset.</LI>
       <LI>Open one of TIFF files (such as Q0005.tif) using RecView.</LI>
       <LI>Open 'Tomography'-'Reconstruction...' dialog.</LI>
-      <LI>Enter '380' in the 'From' layer field.</LI>
-      <LI>Enter '311' in the 'From' rotation-center field.</LI>
-      <LI>Click 'Show image' below. In seconds, a cross section of an aluminum wire with a square-wave pattern carved on its surface will be shown.</LI>
+      <LI>Enter '380' in the 'From'-'Layer' field.</LI>
+      <LI>Enter '311' in the 'From'-'Rotation center' field.</LI>
+      <LI>Click 'Show image' button. In seconds, a cross section of an aluminum wire with a square-wave pattern carved on its surface will be shown.</LI>
     </UL><br>
   <LI><b>Does RecView make network connections?</b></LI>
-      No, never. However, remote folders such as workgroup PCs are searched when you open files. It's probably one of default functions of Windows OS depending on your environment.
+      No, never. However, remote folders such as workgroup PCs are searched when you open files. It's probably one of default functions of Windows depending on your environment.
+  <LI><b>My samples showed drifts in the reconsturcted images. How can I prepare biological samples for the synchrotron radiation experiment? </b></LI>
+      Please see the following: <BR><BR>
+R. Saiga and R. Mizutani (2018). Preparation of soft tissue samples for synchrotron radiation microtomography and nanotomography. <I>Protocol Exchange</I> DOI: 10.1038/protex.2018.085. 
+ <A href="https://www.nature.com/protocolexchange/protocols/6905">web</A>
+ <A href="http://dx.doi.org/10.1038/protex.2018.085">DOI</A></li><br><br>
+  <LI><b>How to prepare a development environment for RecView.</b></LI>
+You need Visual Studio 2017 and CUDA Toolkit 10.0 to compile the source code. The 'Desktop Environment with C++' package and 'Visual C++ MFC' component should be installed. You may also need to update the GPU driver to the latest one to run the executable.
+      <UL>
+        <LI>Install 'Visual Studio Comunity 2017' from the <a href="https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=Community">Microsoft site</a>. Choose 'Desktop Development with C++' and include the 'Visual C++ MFC' component. We recommend to include language packs of English(US) and Japanese. </LI>
+        <LI>Download 'CUDA Toolkit 10.0' from the <a href="https://developer.nvidia.com/cuda-toolkit-archive">NVIDIA Toolkit site</a> and istall. The installation will associate the toolkit with Visual Studio.</LI>
+        <LI>Download the latest GPU driver from the <a href="https://www.nvidia.co.jp/Download/index.aspx">NVIDIA driver site</a> and install. It is not recommended to update the driver from Device Manager of WIndows Control Panel.</LI>
+        <LI>Open the Visual Studio solution file 'gazo.sln'. Choose appropriate platform (x64 or Win32) and build version (Release or CUDA_Release) in the toolbar fields and invoke the compilation from the 'Build' menu..You can find a resultant executable in the "x64" or "Win32" folder. </LI>
+    </UL><br>
 </OL>
 
 ## Contact

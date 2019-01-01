@@ -5,16 +5,23 @@
 //#include "cutil_inline.h"
 #include "reconstinfo.h"
 
-#define CUDA_ERROR_INSUFFICIENT_DRIVER 19001
+#define CUDA_ERROR_DEVICEINFO_MASK 0x0000ffff
+#define CUDA_ERROR_INSUFFICIENT_DRIVER 0x00010000
+#define CUDA_ERROR_INSUFFICIENT_COMPUTE_CAPABILITY 0x00020000
+#define CUDA_ERROR_VIRTUAL_DEVICE_DETECTED 0x00040000
+#define CUDA_ERROR_DEVICE_GETPROPERTY 0x00080000
+#define CUDA_ERROR_DEVICE_GETCOUNT 0x00100000
 
 //Host routine
 extern "C" void CudaReconstHost(RECONST_INFO* ri, int idev, bool bReport);
 extern "C" void CudaReconstMemFree(RECONST_INFO* ri);
 extern "C" void CudaReconstHostFFT(RECONST_INFO* ri, int idev, bool bReport);
 //extern "C" void CudaReconstHostLong(RECONST_INFO* ri, int idev);
-extern "C" int GetCudaDeviceCount();
-extern "C" int GetCudaMaxThreadsPerBlock();
-extern "C" int GetCudaWarpSize();
+extern "C" int GetCudaDeviceCount(int iMinComputeCapability);
+extern "C" int GetCudaMaxThreadsPerBlock(int iDeviceCount);
+extern "C" int GetCudaWarpSize(int iDeviceCount);
+extern "C" int GetCudaDeviceName(int iDevice, char* pcName, int iszcName);
+extern "C" int GetCudaDeviceComputingCapability(int iDevice, int* piMajor, int* piMinor);
 
 extern "C" void CudaSinogramHost(RECONST_INFO* ri, int idev, bool bReport);
 

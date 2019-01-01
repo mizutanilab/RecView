@@ -2,9 +2,12 @@
 .xmm
 .model flat, c
 
-.data
-align 16
+DATA segment align(32)
+F76543210 real4 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0
+F88888888 real4 8.0, 8.0, 8.0, 8.0, 8.0, 8.0, 8.0, 8.0
+F00000000 real4 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
 F3210 real4 0.0, 1.0, 2.0, 3.0
+DATA ends
 
 .code
 
@@ -25,14 +28,39 @@ projx32 PROC param:dword
 	local ixdimp4 :dword
 ;	local pmxcsr :dword
 ;	local smxcsr :dword
+
 ;store registers
 	push esi
 	push edi
 	push ebx
+	push ebp
 ;	stmxcsr smxcsr
+
 ;get pointer to args
 	mov esi, param ;arg #1
-;load valiables	
+
+;load valiables	and constants
+;	mov ixdimpg, [esi + 12]
+	mov eax, [esi + 16]
+	mov ixdimp, eax
+;	mov eax, ixdimp
+	shl eax, 2
+	mov ixdimp4, eax
+;	mov ifp, [esi + 20]
+;	mov igp, [esi + 24]
+
+;sse rounding mode RC=00B (MXCSR[14:13])
+;	stmxcsr pmxcsr
+;	and pmxcsr, 0FFFF9FFFh
+;	or pmxcsr,  000000000h
+;	ldmxcsr pmxcsr
+
+;jump to AVX routine
+	mov eax, [esi + 28]	; AVX flag
+	and eax, 000000001h
+	jnz USEAVX
+
+;SSE
 	mov eax, [esi] ; &fcos
 	movss xmm0, real4 ptr [eax]
 	shufps xmm0, xmm0, 0
@@ -47,17 +75,6 @@ projx32 PROC param:dword
 
 	movaps xmm6, F3210
 
-;	mov ixdimpg, [esi + 12]
-	mov eax, [esi + 16]
-	mov ixdimp, eax
-;	mov ifp, [esi + 20]
-;	mov igp, [esi + 24]
-
-;init params
-	mov eax, ixdimp
-	shl eax, 2
-	mov ixdimp4, eax
-
 	mov eax, ixdimp ; iy
 	mov ecx, eax
 	dec eax
@@ -66,13 +83,6 @@ projx32 PROC param:dword
 	add eax, [esi + 20]; ixy += ifp
 	mov edi, eax
 
-;sse rounding mode RC=00B (MXCSR[14:13])
-;	stmxcsr pmxcsr
-;	and pmxcsr, 0FFFF9FFFh
-;	or pmxcsr,  000000000h
-;	ldmxcsr pmxcsr
-
-;start process
 	mov ecx, [esi + 12]; ixdimpg
 	mov esi, [esi + 24]; igp
 
@@ -140,6 +150,62 @@ LOOPYEND:
 	jge LOOPY ; iy >= 0
 
 ;	ldmxcsr smxcsr
+	pop ebp
+	pop ebx
+	pop edi
+	pop esi
+	ret
+
+USEAVX:
+;load valiables	
+	mov eax, [esi + 12]	; ixdimpg
+	vcvtsi2ss xmm6, xmm6, eax	; xmm6<==ixdimpg
+	vbroadcastss ymm6, xmm6	; ymm6<==ixdimpg, ixdimpg, ixdimpg, ixdimpg
+	vcvtsi2ss xmm1, xmm1, ixdimp	; xmm1<==ixdimp
+	vbroadcastss ymm1, xmm1	; ymm1<==ixdimp, ixdimp, ixdimp, ixdimp
+	mov eax, [esi]	; &fcos
+	vbroadcastss ymm0, real4 ptr [eax]
+	mov eax, [esi + 4]	; &fsin
+	mov ecx, [esi + 8]	; &foffset
+	mov edi, [esi + 20]	; ifp
+	mov esi, [esi + 24]	; igp
+	
+	mov edx, 0	; iy<==ixdimp
+ALOOPY:
+	mov ebx, 0	; ix<==0
+	vmovaps ymm2, F76543210	; reset ix
+	vcvtsi2ss xmm3, xmm3, edx	; xmm3<==iy
+	vbroadcastss ymm3, xmm3	; xmm3<==iy, iy, iy, iy
+	vbroadcastss ymm5, real4 ptr [eax]
+	vmulps ymm5, ymm5, ymm3	; iy * fsin for each float
+	vbroadcastss ymm7, real4 ptr [ecx]	; ymm7<==foffset
+	vaddps ymm5, ymm5, ymm7	; ymm5<==iy * fsin + foffset
+ALOOPX:
+	vmulps ymm4, ymm0, ymm2	; (ix+n) * fcos
+	vaddps ymm4, ymm4, ymm5	; (ix+n) * fcos + foffset
+	vcmpltps ymm7, ymm4, ymm6	; ymm7[i:i]=1 if (ymm4 < ixdimpg)
+	vcmpgeps ymm3, ymm4, F00000000	; ymm3[i:i]=1 if (ymm4 >= 0)
+	vpand ymm7, ymm7, ymm3
+	vpxor ymm3, ymm3, ymm3	; clear ymm3
+	vcvttps2dq ymm4, ymm4	; ymm4 float*8 to integer32*8
+	vpgatherdd ymm3, [esi + ymm4 * 4], ymm7	; load [esi+ymm4*4] if ymm7=1
+	vcmpltps ymm7, ymm2, ymm1	; ymm7[i:i]=1 if (ymm2 < ixdimp)
+	vpmaskmovd ymm4, ymm7, [edi + ebx * 4]
+	vpaddd ymm4, ymm3, ymm4
+	vpmaskmovd [edi + ebx * 4], ymm7, ymm4
+
+	vaddps ymm2, ymm2, F88888888	; ymm2 + 8.0
+	add ebx, 8
+	cmp ebx, ixdimp
+	jnae ALOOPX	; ix < ixdimp
+ALOOPYEND2:
+	add edi, ixdimp4 ; +ixdimp*4
+	inc edx	; iy++
+	cmp edx, ixdimp
+	jnae ALOOPY	; iy < ixdimp
+
+;	ldmxcsr smxcsr
+	pop ebp
 	pop ebx
 	pop edi
 	pop esi

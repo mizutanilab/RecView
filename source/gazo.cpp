@@ -97,34 +97,57 @@ CGazoApp::CGazoApp()
 	//GetSystemInfo(&si);
 	//iAvailableCPU = (int)si.dwNumberOfProcessors * 2;
 	int CPUInfo[4];
-	__cpuid(CPUInfo, 1);
-	//const int iHyperThreading = (CPUInfo[3] & 0x10000000) / 0x10000000;
-	const int iLogicalProcessorCount = (CPUInfo[1] & 0x00ff0000) / 0x00010000;
+	int iLogicalProcessorCount = 1;
 	bool bSIMD = false;
-//160918	if ( (CPUInfo[3] & 0x00800000) && //MMX
-//		 (CPUInfo[3] & 0x02000000) && //SSE
-//		 (CPUInfo[3] & 0x04000000) && //SSE2
-//		 (CPUInfo[2] & 0x00000001) )  //SSE3
-	if ( (CPUInfo[3] & 0x00800000) && //MMX
-		 (CPUInfo[3] & 0x02000000) && //SSE
-		 (CPUInfo[3] & 0x04000000) ) //SSE2
-		 bSIMD = true;
+	bool bAVX2 = false;//181222
+	__cpuid(CPUInfo, 0);
+	int idmax = CPUInfo[0];
+	if (idmax >= 1) {
+		__cpuid(CPUInfo, 1);
+		//const int iHyperThreading = (CPUInfo[3] & 0x10000000) / 0x10000000;
+		iLogicalProcessorCount = (CPUInfo[1] & 0x00ff0000) / 0x00010000;
+		//160918	if ( (CPUInfo[3] & 0x00800000) && //MMX
+		//		 (CPUInfo[3] & 0x02000000) && //SSE
+		//		 (CPUInfo[3] & 0x04000000) && //SSE2
+		//		 (CPUInfo[2] & 0x00000001) )  //SSE3
+		if ((CPUInfo[3] & 0x00800000) && //MMX
+			(CPUInfo[3] & 0x02000000) && //SSE
+			(CPUInfo[3] & 0x04000000)) //SSE2
+			bSIMD = true;
+	}
+	if (idmax >= 7) {
+		__cpuidex(CPUInfo, 7, 0);
+		if (CPUInfo[1] & (1 << 5)) bAVX2 = true;
+	}
 	//131019===>
 	iAvailableCPU = ::GetProcessorCoreCount();
 	if (iAvailableCPU <= 0) iAvailableCPU = iLogicalProcessorCount > 1 ? iLogicalProcessorCount : 1;
 	//===>131019
 	//
-	int iCUDAcount = GetCudaDeviceCount();
-	if (iCUDAcount == CUDA_ERROR_INSUFFICIENT_DRIVER) {
-		iCUDAcount = 0;
-		AfxMessageBox("INSUFFICIENT CUDA DRIVER\r\nCuda GPU cannot be used.");//131022
+	int iCUDAcount = GetCudaDeviceCount(300);
+	//The compute capability number is set in the Project-Property-CUDA C/C++ page
+	//minimum number for CUDA Tk 10.0 is compute_30 (__CUDA_ARCH__ = 300)
+	char pcDeviceName[256];
+	if (iCUDAcount & CUDA_ERROR_INSUFFICIENT_DRIVER) {
+		AfxMessageBox("INSUFFICIENT CUDA DRIVER\r\nNo cuda GPU is available.");//131022
+	} else if (iCUDAcount & CUDA_ERROR_DEVICE_GETCOUNT) {
+		AfxMessageBox("ERROR IN DEVICE DETECTION\r\nNo cuda GPU is available.");
+	} else if (iCUDAcount & CUDA_ERROR_DEVICE_GETPROPERTY) {
+		CString msg = "ERROR IN DEVICE PROPERTY INQUIRY";
+		if (GetCudaDeviceName(iCUDAcount & CUDA_ERROR_DEVICEINFO_MASK, pcDeviceName, 256) == 0) msg.Format("ERROR IN DEVICE PROPERTY INQUIRY\r\n%s", pcDeviceName);
+		AfxMessageBox(msg);
+	} else if (iCUDAcount & CUDA_ERROR_INSUFFICIENT_COMPUTE_CAPABILITY) {
+		CString msg = "INSUFFICIENT COMPUTE CAPABILITY";
+		if (GetCudaDeviceName(iCUDAcount & CUDA_ERROR_DEVICEINFO_MASK, pcDeviceName, 256) == 0) msg.Format("INSUFFICIENT COMPUTE CAPABILITY\r\n%s", pcDeviceName);
+		AfxMessageBox(msg);
 	}
-	int iCUDAblock = GetCudaMaxThreadsPerBlock();
-	int iCUDAwarp = GetCudaWarpSize();
+	iCUDAcount &= CUDA_ERROR_DEVICEINFO_MASK;
+	int iCUDAblock = GetCudaMaxThreadsPerBlock(iCUDAcount);
+	int iCUDAwarp = GetCudaWarpSize(iCUDAcount);
 	int iATIcount, iATImaxwork, iATIunitwork;
 	CLInitATIstreamDeviceInfo(&iATIcount, &iATImaxwork, &iATIunitwork);//DO NOT call this func twice
 	//
-	dlgProperty.Init(iAvailableCPU, bSIMD, 
+	dlgProperty.Init(iAvailableCPU, bSIMD, bAVX2, 
 						iCUDAcount, iCUDAblock, iCUDAwarp, 
 						iATIcount, iATImaxwork, iATIunitwork);
 	//prevPixelWidth = -1;

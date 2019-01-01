@@ -221,7 +221,8 @@ void CudaReconstHost(RECONST_INFO* ri, int idev, bool bReport) {
 	}
 	CCmplx* p = NULL;
 	int* igp = NULL;
-	const int imargin = ixdimp;
+	//181228 const int imargin = ixdimp;
+	const int imargin = 0;
 	const int igpdim = (ixdimp + imargin * 2) * DBPT_GINTP;
 	try{
 		p = new CCmplx[ndim];

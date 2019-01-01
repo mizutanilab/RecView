@@ -18,20 +18,6 @@ typedef int BOOL;
 texture<int, 1, cudaReadModeElementType> tex_igp;
 int blocksize = CUDA_BLOCKSIZE;
 
-
-//160804 kernel4 was rrevised but not tested
-__global__ void
-projKernel4(int* d_ifp, int ixdimp, float fsin, float fcos, float foffset) {
-	int ix = blockDim.x * blockIdx.x + threadIdx.x;
-	if (ix >= ixdimp) return;
-	int ixy = ix;
-	for (int iy=0; iy<ixdimp; iy++) {
-		float fx1 = ix * fcos + iy * fsin + foffset; 
-		d_ifp[ixy] += tex1Dfetch(tex_igp, (int)(fx1));
-		ixy += ixdimp;
-	}
-}
-
 __global__ void
 projKernel8f(int* d_ifp, int ixdimp, float fsin, float fcos, float foffset) {
 	int ix = blockDim.x * blockIdx.x + threadIdx.x;
@@ -42,6 +28,16 @@ projKernel8f(int* d_ifp, int ixdimp, float fsin, float fcos, float foffset) {
 	d_ifp[ixy] += tex1Dfetch(tex_igp, (int)(fx1));
 	if (iy >= ixdimp - 1) return;
 	d_ifp[ixy + ixdimp] += tex1Dfetch(tex_igp, (int)(fx1 + fsin));
+}
+
+__global__ void
+projKernel9(int* d_ifp, int ixdimp, float fsin, float fcos, float foffset) {
+	int ix = blockDim.x * blockIdx.x + threadIdx.x;
+	if (ix >= ixdimp) return;
+	int iy = blockIdx.y;
+	float fx1 = ix * fcos + iy * fsin + foffset;
+	int ixy = ix + ixdimp * iy;
+	d_ifp[ixy] += tex1Dfetch(tex_igp, (int)(fx1));
 }
 
 __global__ void
@@ -141,14 +137,16 @@ void CudaDeconvBackProj(int ixdim, int iIntpDim, int ndim, float center, double 
 	const int gridsize_intp = (int)(ceil( ixdim / (float)blocksize));
 	dim3 dimGrid_intp(gridsize_intp, iIntpDim);
 	intpKernel<<< dimGrid_intp, dimBlock >>>(d_p, d_strip, ixdim, ndim, iIntpDim, center);
-	cudaThreadSynchronize();
+	//181227 cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 	//FFT-filter
 	cufftExecC2C(*fftplan, (cufftComplex*)d_p, (cufftComplex*)d_p, CUFFT_FORWARD );
 	//
 	const int gridsize_ndim = (int)(ceil( ndim / (float)blocksize));
 	dim3 dimGrid_ndim(gridsize_ndim);
 	filtKernel<<< dimGrid_ndim, dimBlock >>>(d_p, d_filt, ndim);
-	cudaThreadSynchronize();
+	//181227 cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 	//
 	cufftExecC2C(*fftplan, (cufftComplex*)d_p, (cufftComplex*)d_p, CUFFT_INVERSE );
 	//
@@ -157,23 +155,19 @@ void CudaDeconvBackProj(int ixdim, int iIntpDim, int ndim, float center, double 
 	p2igpCopyKernel<<< dimGrid_p2igp, dimBlock >>>(d_p, d_igp, ixdimp, ihoffset, fscale);
 	//without DBPT_GINTP
 	//p2igpCopyKernel<<< dimGrid_ixdimp, dimBlock >>>(d_p, d_igp, ixdimp, ihoffset, fscale);
-	cudaThreadSynchronize();
+	//181227 cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 	//params
 	const float fcos = (float)(cos(theta) * DBPT_GINTP);
 	const float fsin = (float)(-sin(theta) * DBPT_GINTP);
 	const float fcenter = (float)((ixdimh + center - (int)(center)) * DBPT_GINTP);
 	const float foffset = fcenter - ixdimh * (fcos + fsin);
-	//Kernels
-	//shared memory must not be used since its use causes device driver crash
-	//
-	//Kernel4 for emulation mode
-	//projKernel4<<< dimGrid_ixdimp, dimBlock >>>(d_ifp, ixdimp, fsin, fcos, foffset);
-	//
-	//Kernel8f
+	//Kernel
 	int iydim = (ixdimp >> 1) + (ixdimp & 0x01);
 	dim3 dimGrid(gridsize, iydim);// 0<=blockIdx.x<gridsize, 0<=blockIdx.y<iydim
 	projKernel8f<<< dimGrid, dimBlock >>>(d_ifp, ixdimp, fsin, fcos, foffset);
 	//
+	cudaUnbindTexture(tex_igp);
 	//cudaThreadSynchronize();
 }
 
@@ -189,30 +183,24 @@ void CudaBackProj(int ixdim, int iIntpDim, float center, double theta, int* d_if
 	const int gridsize = (int)(ceil( ixdimp / (float)blocksize));
 	//igp texture
 	textureReference* texRefPtr;
-	//131011 if (cudaSuccess != cudaGetTextureReference((const textureReference **)&texRefPtr, "tex_igp")) return;
 	if (cudaSuccess != cudaGetTextureReference((const textureReference **)&texRefPtr, &tex_igp)) return;
     cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<int>();
-	//with DBPT_GINTP
-	const unsigned int mem_size_igp = sizeof(int) * ixdimp * DBPT_GINTP;
-	if (cudaSuccess != cudaBindTexture(0, texRefPtr, d_igp, &channelDesc, mem_size_igp)) return;
-	//130923 cutilSafeCall( cudaBindTexture(0, texRefPtr, d_igp, &channelDesc, mem_size_igp));
 	tex_igp.addressMode[0] = cudaAddressModeClamp;
 	tex_igp.filterMode = cudaFilterModePoint;
 	tex_igp.normalized = false;    // access with integer texture coordinates
+	const unsigned int mem_size_igp = sizeof(int) * ixdimp * DBPT_GINTP;
+	if (cudaSuccess != cudaBindTexture(0, texRefPtr, d_igp, &channelDesc, mem_size_igp)) return;
 	//params
 	const float fcos = (float)(cos(theta) * DBPT_GINTP);
 	const float fsin = (float)(-sin(theta) * DBPT_GINTP);
 	const float fcenter = (float)((ixdimh + center - (int)(center)) * DBPT_GINTP);
 	const float foffset = fcenter - ixdimh * (fcos + fsin);
-	//
-	//Kernel4 for emulation mode
-	//dim3 dimGrid_ixdimp(gridsize);
-	//projKernel4<<< dimGrid_ixdimp, dimBlock >>>(d_ifp, ixdimp, fsin, fcos, foffset);
-	//
-	//Kernel8f
-	int iydim = (ixdimp >> 1) + (ixdimp & 0x01);
+	//Kernel
+	int iydim = ixdimp;
 	dim3 dimGrid(gridsize, iydim);// 0<=blockIdx.x<gridsize, 0<=blockIdx.y<iydim
-	projKernel8f<<< dimGrid, dimBlock >>>(d_ifp, ixdimp, fsin, fcos, foffset);
+	projKernel9<<< dimGrid, dimBlock >>>(d_ifp, ixdimp, fsin, fcos, foffset);
+
+	cudaUnbindTexture(tex_igp);
 }
 
 __global__ void
@@ -280,7 +268,7 @@ void CudaLsqfit(short* d_ref, short* d_qry, int ixref, int iyref, int ixqry, int
 	lsqfitKernel<<< dimGrid, dimBlock >>>(d_ref, d_qry, ixref, iyref, ixqry, iyqry, ix, iy, d_result);
 }
 
-extern "C" int GetCudaDeviceCount() {
+extern "C" int GetCudaDeviceCount(int iMinComputeCapability) {
     int deviceCount;
 	cudaError_t cerr = cudaGetDeviceCount(&deviceCount);
 	if (cerr == cudaErrorNoDevice) {
@@ -288,57 +276,74 @@ extern "C" int GetCudaDeviceCount() {
 	} else if (cerr == cudaErrorInsufficientDriver) {
 		return CUDA_ERROR_INSUFFICIENT_DRIVER;
 	} else if (cerr != cudaSuccess) {
-		return 0;
+		return CUDA_ERROR_DEVICE_GETCOUNT;
 	}
 	//130923 cutilSafeCall(cudaGetDeviceCount(&deviceCount));
 
-    //detect virtual device
-    if (deviceCount) {
-	    cudaDeviceProp deviceProp;
-		if (cudaSuccess != cudaGetDeviceProperties(&deviceProp, 0)) return 0;
-		//130923 cutilSafeCall(cudaGetDeviceProperties(&deviceProp, 0));
-	    if (deviceProp.major == 9999 && deviceProp.minor == 9999) {
-			//comment out the follwing line to enable virtual device
-			deviceCount = 0;
-		}
+    //detect virtual device or low "compute capability" 181226
+	//const int iMinComputeCapability = __CUDA_ARCH__;
+	//The compute capability number is set in the Project-Property-CUDA C/C++ page
+	//minimum number for CUDA Tk 10.0 is compute_30 (__CUDA_ARCH__ = 300)
+	for (int i=0; i<deviceCount; i++) {
+		cudaDeviceProp deviceProp;
+		if (cudaSuccess != cudaGetDeviceProperties(&deviceProp, i)) { return i | CUDA_ERROR_DEVICE_GETPROPERTY; }
+		if (deviceProp.major == 9999 && deviceProp.minor == 9999) { return i | CUDA_ERROR_VIRTUAL_DEVICE_DETECTED; }//virtual device
+		else if (deviceProp.major * 100 + deviceProp.minor * 10 < iMinComputeCapability) { return i | CUDA_ERROR_INSUFFICIENT_COMPUTE_CAPABILITY; }//low "compute capability"
 	}
+
+//	if (deviceCount) {
+//	    cudaDeviceProp deviceProp;
+//		if (cudaSuccess != cudaGetDeviceProperties(&deviceProp, 0)) return 0;
+//		//130923 cutilSafeCall(cudaGetDeviceProperties(&deviceProp, 0));
+//	    if (deviceProp.major == 9999 && deviceProp.minor == 9999) {
+//			//comment out the follwing line to enable virtual device
+//			deviceCount = 0;
+//		}
+//	}
     return deviceCount;
 }
 
-extern "C" int GetCudaMaxThreadsPerBlock() {
-	int iCUDAblock = 65536;
-    int iDeviceCount = GetCudaDeviceCount();
-	if (iDeviceCount == CUDA_ERROR_INSUFFICIENT_DRIVER) iDeviceCount = 0;
-    //detect virtual device
+extern "C" int GetCudaDeviceName(int iDevice, char* pcName, int iszcName) {//181226
+	const int isz = (iszcName < 256) ? iszcName : 256;
 	cudaDeviceProp deviceProp;
-    if (iDeviceCount) {
-		if (cudaSuccess != cudaGetDeviceProperties(&deviceProp, 0)) return CUDA_BLOCKSIZE;
-		//130923 cutilSafeCall(cudaGetDeviceProperties(&deviceProp, 0));
-	    if (deviceProp.major == 9999 && deviceProp.minor == 9999) {
-		    iDeviceCount = 0; iCUDAblock = CUDA_BLOCKSIZE;
-		}
-		for (int i=0; i<iDeviceCount; i++) {
-			if (deviceProp.maxThreadsPerBlock < iCUDAblock) iCUDAblock = deviceProp.maxThreadsPerBlock;
-		}
+	if (cudaSuccess != cudaGetDeviceProperties(&deviceProp, iDevice)) { return CUDA_ERROR_DEVICE_GETPROPERTY; }
+	if (deviceProp.major == 9999 && deviceProp.minor == 9999) { return CUDA_ERROR_VIRTUAL_DEVICE_DETECTED; }//virtual device
+	for (int i = 0; i < isz; i++) {
+		char c = deviceProp.name[i];
+		pcName[i] = c;
+		if (c == 0) break;
 	}
+	return 0;
+}
+
+extern "C" int GetCudaDeviceComputingCapability(int iDevice, int* piMajor, int* piMinor) {//181226
+	cudaDeviceProp deviceProp;
+	if (cudaSuccess != cudaGetDeviceProperties(&deviceProp, iDevice)) { return CUDA_ERROR_DEVICE_GETPROPERTY; }
+	if (deviceProp.major == 9999 && deviceProp.minor == 9999) { return CUDA_ERROR_VIRTUAL_DEVICE_DETECTED; }//virtual device
+	*piMajor = deviceProp.major;
+	*piMinor = deviceProp.minor;
+	return 0;
+}
+
+extern "C" int GetCudaMaxThreadsPerBlock(int iDeviceCount) {
+	int iCUDAblock = 65536;
+	bool bDeviceDetected = false;
+	cudaDeviceProp deviceProp;
+	for (int i = 0; i < iDeviceCount; i++) {
+		if (cudaSuccess != cudaGetDeviceProperties(&deviceProp, i)) { continue; }
+		if (deviceProp.maxThreadsPerBlock < iCUDAblock) iCUDAblock = deviceProp.maxThreadsPerBlock;
+		bDeviceDetected = true;
+	}
+	if (!bDeviceDetected) iCUDAblock = CUDA_BLOCKSIZE;
 	return iCUDAblock;
 }
 
-extern "C" int GetCudaWarpSize() {
+extern "C" int GetCudaWarpSize(int iDeviceCount) {
 	int iCUDAwarp = CUDA_WARPSIZE;
-    int iDeviceCount = GetCudaDeviceCount();
-	if (iDeviceCount == CUDA_ERROR_INSUFFICIENT_DRIVER) iDeviceCount = 0;
-    //detect virtual device
 	cudaDeviceProp deviceProp;
-    if (iDeviceCount) {
-		if (cudaSuccess != cudaGetDeviceProperties(&deviceProp, 0)) return CUDA_WARPSIZE;
-		//130923 cutilSafeCall(cudaGetDeviceProperties(&deviceProp, 0));
-	    if (deviceProp.major == 9999 && deviceProp.minor == 9999) {
-		    iDeviceCount = 0;
-		}
-		for (int i=0; i<iDeviceCount; i++) {
-			if (deviceProp.warpSize < iCUDAwarp) iCUDAwarp = deviceProp.warpSize;
-		}
+	for (int i = 0; i < iDeviceCount; i++) {
+		if (cudaSuccess != cudaGetDeviceProperties(&deviceProp, i)) { continue; }
+		if (deviceProp.warpSize < iCUDAwarp) iCUDAwarp = deviceProp.warpSize;
 	}
 	return iCUDAwarp;
 }

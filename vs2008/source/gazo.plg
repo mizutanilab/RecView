@@ -1,0 +1,78 @@
+<html>
+<body>
+<pre>
+<h1>ﾋﾞﾙﾄﾞのﾛｸﾞ</h1>
+<h3>
+--------------------構成: gazo - Win32 Release--------------------
+</h3>
+<h3>ｺﾏﾝﾄﾞ ﾗｲﾝ</h3>
+Creating command line "rc.exe /l 0x411 /fo"Release/gazo.res" /d "NDEBUG" /d "_AFXDLL" "D:\vcwin\gazo\gazo.rc"" 
+一時ﾌｧｲﾙ "C:\WINDOWS\TEMP\RSPD071.TMP" を作成し、次の内容を記録します
+[
+/nologo /MD /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_AFXDLL" /D "_MBCS" /Fp"Release/gazo.pch" /Yu"stdafx.h" /Fo"Release/" /Fd"Release/" /FD /c 
+"D:\vcwin\gazo\ccmplx.cpp"
+"D:\vcwin\gazo\cerror.cpp"
+"D:\vcwin\gazo\cfft.cpp"
+"D:\vcwin\gazo\ChildFrm.cpp"
+"D:\vcwin\gazo\DlgHistogram.cpp"
+"D:\vcwin\gazo\DlgMessage.cpp"
+"D:\vcwin\gazo\DlgQueue.cpp"
+"D:\vcwin\gazo\DlgReconst.cpp"
+"D:\vcwin\gazo\gazo.cpp"
+"D:\vcwin\gazo\gazoDoc.cpp"
+"D:\vcwin\gazo\gazoView.cpp"
+"D:\vcwin\gazo\MainFrm.cpp"
+]
+Creating command line "cl.exe @C:\WINDOWS\TEMP\RSPD071.TMP" 
+一時ﾌｧｲﾙ "C:\WINDOWS\TEMP\RSPD072.TMP" を作成し、次の内容を記録します
+[
+/nologo /MD /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_AFXDLL" /D "_MBCS" /Fp"Release/gazo.pch" /Yc"stdafx.h" /Fo"Release/" /Fd"Release/" /FD /c 
+"D:\vcwin\gazo\StdAfx.cpp"
+]
+Creating command line "cl.exe @C:\WINDOWS\TEMP\RSPD072.TMP" 
+一時ﾌｧｲﾙ "C:\WINDOWS\TEMP\RSPD073.TMP" を作成し、次の内容を記録します
+[
+/nologo /subsystem:windows /incremental:no /pdb:"Release/gazo.pdb" /machine:I386 /out:"Release/gazo.exe" 
+.\Release\ccmplx.obj
+.\Release\cerror.obj
+.\Release\cfft.obj
+.\Release\ChildFrm.obj
+.\Release\DlgHistogram.obj
+.\Release\DlgMessage.obj
+.\Release\DlgQueue.obj
+.\Release\DlgReconst.obj
+.\Release\gazo.obj
+.\Release\gazoDoc.obj
+.\Release\gazoView.obj
+.\Release\MainFrm.obj
+.\Release\StdAfx.obj
+.\Release\gazo.res
+]
+ｺﾏﾝﾄﾞ ﾗｲﾝ "link.exe @C:\WINDOWS\TEMP\RSPD073.TMP" の作成中
+<h3>ｱｳﾄﾌﾟｯﾄ ｳｨﾝﾄﾞｳ</h3>
+ﾘｿｰｽをｺﾝﾊﾟｲﾙ中...
+ｺﾝﾊﾟｲﾙ中...
+StdAfx.cpp
+ｺﾝﾊﾟｲﾙ中...
+ccmplx.cpp
+cerror.cpp
+cfft.cpp
+ChildFrm.cpp
+DlgHistogram.cpp
+DlgMessage.cpp
+DlgQueue.cpp
+DlgReconst.cpp
+gazo.cpp
+gazoDoc.cpp
+gazoView.cpp
+MainFrm.cpp
+ｺｰﾄﾞを生成中...
+ﾘﾝｸ中...
+
+
+
+<h3>結果</h3>
+gazo.exe - ｴﾗｰ 0、警告 0
+</pre>
+</body>
+</html>

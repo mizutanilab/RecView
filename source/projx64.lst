@@ -1,15 +1,39 @@
-Microsoft (R) Macro Assembler (x64) Version 9.00.21022.08   12/24/18 05:48:26
+Microsoft (R) Macro Assembler (x64) Version 14.16.27025.1   01/01/19 06:00:35
 projx64.asm						     Page 1 - 1
 
 
 				;ml64.exe
 
- 00000000			.data
-				align 16
- 00000000 00000000		F3210 real4 0.0, 1.0, 2.0, 3.0
+ 00000000			DATA segment align(32)
+ 00000000 00000000		F76543210 real4 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0
 	   3F800000
 	   40000000
 	   40400000
+	   40800000
+	   40A00000
+	   40C00000
+	   40E00000
+ 00000020 41000000		F88888888 real4 8.0, 8.0, 8.0, 8.0, 8.0, 8.0, 8.0, 8.0
+	   41000000
+	   41000000
+	   41000000
+	   41000000
+	   41000000
+	   41000000
+	   41000000
+ 00000040 00000000		F00000000 real4 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+	   00000000
+	   00000000
+	   00000000
+	   00000000
+	   00000000
+	   00000000
+	   00000000
+ 00000060 00000000		F3210 real4 0.0, 1.0, 2.0, 3.0
+	   3F800000
+	   40000000
+	   40400000
+ 00000070			DATA ends
 
  00000000			.code
 
@@ -32,155 +56,348 @@ projx64.asm						     Page 1 - 1
 				;local valiables
 				;	local pmxcsr :dword
 				;	local smxcsr :dword
+
 				;store registers
- 00000000  56				push rsi
- 00000001  57				push rdi
-				;	stmxcsr smxcsr
+ 00000000  53				push rbx
+ 00000001  55				push rbp
+ 00000002  56				push rsi
+ 00000003  57				push rdi
+
 				;get pointer to args
- 00000002  48/ 8B F1			mov rsi, rcx	; arg #1
-				;load valiables	
- 00000005  48/ 8B 06			mov rax, [rsi]	; &fcos
- 00000008  F3/ 0F 10 00			movss xmm0, real4 ptr [rax]
- 0000000C  0F C6 C0 00			shufps xmm0, xmm0, 0
-					
- 00000010  48/ 8B 46 08			mov rax, [rsi + 8]	; &fsin
- 00000014  F3/ 0F 10 08			movss xmm1, real4 ptr [rax]
- 00000018  0F C6 C9 00			shufps xmm1, xmm1, 0
-
- 0000001C  48/ 8B 46 10			mov rax, [rsi + 16]	; &foffset
- 00000020  F3/ 0F 10 38			movss xmm7, real4 ptr [rax]
- 00000024  0F C6 FF 00			shufps xmm7, xmm7, 0
-
- 00000028  0F 28 35			movaps xmm6, F3210
-	   00000000 R
-					
-				;	mov ixdimpg, [rsi + 24]
- 0000002F  4C/ 8B 56 20			mov r10, [rsi + 32]	; ixdimp
-				;	mov ifp, [rsi + 40]
-				;	mov igp, [rsi + 48]
+ 00000004  48/ 8B F1			mov rsi, rcx	; arg #1
 
 				;init params
- 00000033  4D/ 8B CA			mov r9, r10
- 00000036  49/ C1 E1 02			shl r9, 2	; r9<==ixdimp * 4
-
- 0000003A  49/ 8B C2			mov rax, r10; iy = ixdimp
- 0000003D  48/ 8B C8			mov rcx, rax
- 00000040  48/ FF C8			dec rax
- 00000043  48/ F7 E9			imul rcx
- 00000046  48/ C1 E0 02			shl rax, 2	; ixy = ixdimp * (ixdimp - 1) * 4
- 0000004A  48/ 03 46 28			add rax, [rsi + 40]	; ixy += ifp
- 0000004E  48/ 8B F8			mov rdi, rax
+				;	mov ixdimpg, [rsi + 24]
+ 00000007  4C/ 8B 56 20			mov r10, [rsi + 32]	; ixdimp
+ 0000000B  4D/ 8B CA			mov r9, r10
+ 0000000E  49/ C1 E1 02			shl r9, 2	; r9<==ixdimp * 4
+				;	mov ifp, [rsi + 40]
+				;	mov igp, [rsi + 48]
 
 				;sse rounding mode RC=00B (MXCSR[14:13])
 				;	stmxcsr pmxcsr
 				;	and pmxcsr, 0FFFF9FFFh
-				;	or pmxcsr,  000000000h
 				;	ldmxcsr pmxcsr
 
-				;start process
- 00000051  48/ 8B 4E 18			mov rcx, [rsi + 24]	; ixdimpg
- 00000055  48/ 8B 76 30			mov rsi, [rsi + 48]	; igp
+				;jump to AVX routine
+ 00000012  48/ 8B 46 38			mov rax, [rsi + 56]	; AVX flag
+ 00000016  48/ 83 E0 01			and rax, 000000001h
+ 0000001A  0F 85 000000F3		jnz USEAVX
 
- 00000059  49/ 8B D2			mov rdx, r10	; iy<==ixdimp
- 0000005C  48/ FF CA			dec rdx
- 0000005F  48/ C7 C0			mov rax, 0
+				;load valiables	
+ 00000020  49/ 8B C2			mov rax, r10; iy = ixdimp
+ 00000023  48/ 8B C8			mov rcx, rax
+ 00000026  48/ FF C8			dec rax
+ 00000029  48/ F7 E9			imul rcx
+ 0000002C  48/ C1 E0 02			shl rax, 2	; ixy = ixdimp * (ixdimp - 1) * 4
+ 00000030  48/ 03 46 28			add rax, [rsi + 40]	; ixy += ifp
+ 00000034  48/ 8B F8			mov rdi, rax
+
+ 00000037  48/ 8B 06			mov rax, [rsi]	; &fcos
+ 0000003A  F3/ 0F 10 00			movss xmm0, real4 ptr [rax]
+ 0000003E  0F C6 C0 00			shufps xmm0, xmm0, 0
+					
+ 00000042  48/ 8B 46 08			mov rax, [rsi + 8]	; &fsin
+ 00000046  F3/ 0F 10 08			movss xmm1, real4 ptr [rax]
+ 0000004A  0F C6 C9 00			shufps xmm1, xmm1, 0
+
+ 0000004E  48/ 8B 46 10			mov rax, [rsi + 16]	; &foffset
+ 00000052  F3/ 0F 10 38			movss xmm7, real4 ptr [rax]
+ 00000056  0F C6 FF 00			shufps xmm7, xmm7, 0
+
+ 0000005A  0F 28 35			movaps xmm6, F3210
+	   00000060 R
+					
+				;start process
+ 00000061  48/ 8B 4E 18			mov rcx, [rsi + 24]	; ixdimpg
+ 00000065  48/ 8B 76 30			mov rsi, [rsi + 48]	; igp
+
+ 00000069  49/ 8B D2			mov rdx, r10	; iy<==ixdimp
+ 0000006C  48/ FF CA			dec rdx
+ 0000006F  48/ C7 C0			mov rax, 0
 	   00000000
- 00000066			LOOPY:
- 00000066  49/ 8B DA			mov rbx, r10	; ix<==ixdimp
- 00000069  48/ FF CB			dec rbx
- 0000006C  F3/ 48/ 0F 2A DA		cvtsi2ss xmm3, rdx	; xmm3<==iy
- 00000071  0F C6 DB 00			shufps xmm3, xmm3, 0	; xmm3<==iy, iy, iy, iy
- 00000075  0F 28 E9			movaps xmm5, xmm1	; xmm5<==fsin, fsin, fsin, fsin
- 00000078  0F 59 EB			mulps xmm5, xmm3	; iy * fsin for each float
- 0000007B  0F 58 EF			addps xmm5, xmm7	; + foffset for each float
- 0000007E			LOOPX:
- 0000007E  F3/ 48/ 0F 2A D3		cvtsi2ss xmm2, rbx	; xmm2<==ix
- 00000083  0F C6 D2 00			shufps xmm2, xmm2, 0	; xmm2<==ix, ix, ix, ix
- 00000087  0F 5C D6			subps xmm2, xmm6	; xmm2<==ix-3, ix-2, ix-2, ix
- 0000008A  0F 28 E0			movaps xmm4, xmm0	; xmm4<==fcos, fcos, fcos, fcos
- 0000008D  0F 59 E2			mulps xmm4, xmm2	; (ix-n) * fcos
- 00000090  0F 58 E5			addps xmm4, xmm5	; (ix-n) * fcos + foffset
- 00000093  F3/ 0F 5B E4			cvttps2dq xmm4, xmm4	; xmm4 float*4 to integer32*4
- 00000097  66| 0F 7E E0			movd eax, xmm4	; lower 4 bytes to eax
+ 00000076			LOOPY:
+ 00000076  49/ 8B DA			mov rbx, r10	; ix<==ixdimp
+ 00000079  48/ FF CB			dec rbx
+ 0000007C  F3/ 48/ 0F 2A DA		cvtsi2ss xmm3, rdx	; xmm3<==iy
+ 00000081  0F C6 DB 00			shufps xmm3, xmm3, 0	; xmm3<==iy, iy, iy, iy
+ 00000085  0F 28 E9			movaps xmm5, xmm1	; xmm5<==fsin, fsin, fsin, fsin
+ 00000088  0F 59 EB			mulps xmm5, xmm3	; iy * fsin for each float
+ 0000008B  0F 58 EF			addps xmm5, xmm7	; + foffset for each float
+ 0000008E			LOOPX:
+ 0000008E  F3/ 48/ 0F 2A D3		cvtsi2ss xmm2, rbx	; xmm2<==ix
+ 00000093  0F C6 D2 00			shufps xmm2, xmm2, 0	; xmm2<==ix, ix, ix, ix
+ 00000097  0F 5C D6			subps xmm2, xmm6	; xmm2<==ix-3, ix-2, ix-2, ix
+ 0000009A  0F 28 E0			movaps xmm4, xmm0	; xmm4<==fcos, fcos, fcos, fcos
+ 0000009D  0F 59 E2			mulps xmm4, xmm2	; (ix-n) * fcos
+ 000000A0  0F 58 E5			addps xmm4, xmm5	; (ix-n) * fcos + foffset
+ 000000A3  F3/ 0F 5B E4			cvttps2dq xmm4, xmm4	; xmm4 float*4 to integer32*4
+ 000000A7  66| 0F 7E E0			movd eax, xmm4	; lower 4 bytes to eax
 				;	pextrd eax, xmm4, 0	; SSE4.1
- 0000009B  3B C1			cmp eax, ecx	; ix<=>ixdimpg
- 0000009D  73 06			jae LOOPXSKIP1	; ix0 >= ixdimp * DBPT_GINTP or ix0 < 0
- 0000009F  8B 04 86			mov eax, [rsi + rax * 4]	; eax<==igp[ix * DBPT_GINTP]
- 000000A2  01 04 9F			add [rdi + rbx * 4], eax	; ifp[ix] += eax
- 000000A5			LOOPXSKIP1:
- 000000A5  48/ FF CB			dec rbx	; ix--
- 000000A8  7C 48			jl LOOPYEND	; ix < 0
- 000000AA  66| 0F 73 DC			psrldq xmm4, 4	; shift right by 4 bytes (integer32)
+ 000000AB  3B C1			cmp eax, ecx	; ix<=>ixdimpg
+ 000000AD  73 06			jae LOOPXSKIP1	; ix0 >= ixdimp * DBPT_GINTP or ix0 < 0
+ 000000AF  8B 04 86			mov eax, [rsi + rax * 4]	; eax<==igp[ix * DBPT_GINTP]
+ 000000B2  01 04 9F			add [rdi + rbx * 4], eax	; ifp[ix] += eax
+ 000000B5			LOOPXSKIP1:
+ 000000B5  48/ FF CB			dec rbx	; ix--
+ 000000B8  7C 48			jl LOOPYEND	; ix < 0
+ 000000BA  66| 0F 73 DC			psrldq xmm4, 4	; shift right by 4 bytes (integer32)
 	   04
- 000000AF  66| 0F 7E E0			movd eax, xmm4
+ 000000BF  66| 0F 7E E0			movd eax, xmm4
 				;	pextrd eax, xmm4, 1	; SSE4.1
- 000000B3  3B C1			cmp eax, ecx; ixdimpg
- 000000B5  73 06			jae LOOPXSKIP2	; ix0 >= ixdimp * DBPT_GINTP or ix0 < 0
- 000000B7  8B 04 86			mov eax, [rsi + rax * 4]
- 000000BA  01 04 9F			add [rdi + rbx * 4], eax
- 000000BD			LOOPXSKIP2:
- 000000BD  48/ FF CB			dec rbx	; ix--
- 000000C0  7C 30			jl LOOPYEND	; ix < 0
- 000000C2  66| 0F 73 DC			psrldq xmm4, 4
+ 000000C3  3B C1			cmp eax, ecx; ixdimpg
+ 000000C5  73 06			jae LOOPXSKIP2	; ix0 >= ixdimp * DBPT_GINTP or ix0 < 0
+ 000000C7  8B 04 86			mov eax, [rsi + rax * 4]
+ 000000CA  01 04 9F			add [rdi + rbx * 4], eax
+ 000000CD			LOOPXSKIP2:
+ 000000CD  48/ FF CB			dec rbx	; ix--
+ 000000D0  7C 30			jl LOOPYEND	; ix < 0
+ 000000D2  66| 0F 73 DC			psrldq xmm4, 4
 	   04
- 000000C7  66| 0F 7E E0			movd eax, xmm4
+ 000000D7  66| 0F 7E E0			movd eax, xmm4
 				;	pextrd eax, xmm4, 2	; SSE4.1
- 000000CB  3B C1			cmp eax, ecx; ixdimpg
- 000000CD  73 06			jae LOOPXSKIP3	; ix0 >= ixdimp * DBPT_GINTP or ix0 < 0
- 000000CF  8B 04 86			mov eax, [rsi + rax * 4]
- 000000D2  01 04 9F			add [rdi + rbx * 4], eax
- 000000D5			LOOPXSKIP3:
- 000000D5  48/ FF CB			dec rbx	; ix--
- 000000D8  7C 18			jl LOOPYEND	; ix < 0
- 000000DA  66| 0F 73 DC			psrldq xmm4, 4
+ 000000DB  3B C1			cmp eax, ecx; ixdimpg
+ 000000DD  73 06			jae LOOPXSKIP3	; ix0 >= ixdimp * DBPT_GINTP or ix0 < 0
+ 000000DF  8B 04 86			mov eax, [rsi + rax * 4]
+ 000000E2  01 04 9F			add [rdi + rbx * 4], eax
+ 000000E5			LOOPXSKIP3:
+ 000000E5  48/ FF CB			dec rbx	; ix--
+ 000000E8  7C 18			jl LOOPYEND	; ix < 0
+ 000000EA  66| 0F 73 DC			psrldq xmm4, 4
 	   04
- 000000DF  66| 0F 7E E0			movd eax, xmm4
+ 000000EF  66| 0F 7E E0			movd eax, xmm4
 				;	pextrd eax, xmm4, 3	; SSE4.1
- 000000E3  3B C1			cmp eax, ecx; ixdimpg
- 000000E5  73 06			jae LOOPXEND	; ix0 >= ixdimp * DBPT_GINTP or ix0 < 0
- 000000E7  8B 04 86			mov eax, [rsi + rax * 4]
- 000000EA  01 04 9F			add [rdi + rbx * 4], eax
- 000000ED			LOOPXEND:
- 000000ED  48/ FF CB			dec rbx	; ix--
- 000000F0  7D 8C			jge LOOPX	; ix >= 0
- 000000F2			LOOPYEND:
- 000000F2  49/ 2B F9			sub rdi, r9 ; ixdimp*4
- 000000F5  48/ FF CA			dec rdx	; iy--
- 000000F8  0F 8D FFFFFF68		jge LOOPY	; iy >= 0
+ 000000F3  3B C1			cmp eax, ecx; ixdimpg
+ 000000F5  73 06			jae LOOPXEND	; ix0 >= ixdimp * DBPT_GINTP or ix0 < 0
+ 000000F7  8B 04 86			mov eax, [rsi + rax * 4]
+ 000000FA  01 04 9F			add [rdi + rbx * 4], eax
+ 000000FD			LOOPXEND:
+ 000000FD  48/ FF CB			dec rbx	; ix--
+ 00000100  7D 8C			jge LOOPX	; ix >= 0
+ 00000102			LOOPYEND:
+ 00000102  49/ 2B F9			sub rdi, r9 ; ixdimp*4
+ 00000105  48/ FF CA			dec rdx	; iy--
+ 00000108  0F 8D FFFFFF68		jge LOOPY	; iy >= 0
 
 				;	ldmxcsr smxcsr
- 000000FE  5F				pop rdi
- 000000FF  5E				pop rsi
- 00000100  C3				ret
+ 0000010E  5F				pop rdi
+ 0000010F  5E				pop rsi
+ 00000110  5D				pop rbp
+ 00000111  5B				pop rbx
+ 00000112  C3				ret
 
- 00000101			projx64 ENDP
+ 00000113			USEAVX:
+				;load valiables	
+ 00000113  48/ 8B 06			mov rax, [rsi]	; &fcos
+ 00000116  C4 E2 7D/ 18 00		vbroadcastss ymm0, real4 ptr [rax]
+ 0000011B  4C/ 8B 46 08			mov r8, [rsi + 8]	; &fsin
+ 0000011F  4C/ 8B 5E 10			mov r11, [rsi + 16]	; &foffset
+
+ 00000123  48/ 8B 4E 18			mov rcx, [rsi + 24]	; ixdimpg
+ 00000127  C4 E1 CA/ 2A F1		vcvtsi2ss xmm6, xmm6, rcx	; xmm6<==ixdimpg
+ 0000012C  C4 E2 7D/ 18 F6		vbroadcastss ymm6, xmm6	; ymm6<==ixdimpg, ixdimpg, ixdimpg, ixdimpg
+ 00000131  C4 C1 F2/ 2A CA		vcvtsi2ss xmm1, xmm1, r10	; xmm1<==ixdimp
+ 00000136  C4 E2 7D/ 18 C9		vbroadcastss ymm1, xmm1	; ymm1<==ixdimp, ixdimp, ixdimp, ixdimp
+					
+ 0000013B  48/ 8B 7E 28			mov rdi, [rsi + 40]	; ifp
+ 0000013F  48/ 8B 76 30			mov rsi, [rsi + 48]	; igp
+
+ 00000143  48/ C7 C2			mov rdx, 0	; iy<==ixdimp
+	   00000000
+ 0000014A			ALOOPY:
+ 0000014A  48/ C7 C3			mov rbx, 0	; ix<==0
+	   00000000
+ 00000151  C5 FC/ 28 15			vmovaps ymm2, F76543210	; reset ix
+	   00000000 R
+ 00000159  C4 E1 E2/ 2A DA		vcvtsi2ss xmm3, xmm3, rdx	; xmm3<==iy
+ 0000015E  C4 E2 7D/ 18 DB		vbroadcastss ymm3, xmm3	; xmm3<==iy, iy, iy, iy
+ 00000163  C4 C2 7D/ 18 28		vbroadcastss ymm5, real4 ptr [r8]
+ 00000168  C5 D4/ 59 EB			vmulps ymm5, ymm5, ymm3	; iy * fsin for each float
+ 0000016C  C4 C2 7D/ 18 3B		vbroadcastss ymm7, real4 ptr [r11]	; ymm7<==foffset
+ 00000171  C5 D4/ 58 EF			vaddps ymm5, ymm5, ymm7	; ymm5<==iy * fsin + foffset
+ 00000175			ALOOPX:
+ 00000175  C5 FC/ 59 E2			vmulps ymm4, ymm0, ymm2	; (ix+n) * fcos
+ 00000179  C5 DC/ 58 E5			vaddps ymm4, ymm4, ymm5	; (ix+n) * fcos + foffset
+ 0000017D  C5 DC/ C2 FE 01		vcmpltps ymm7, ymm4, ymm6	; ymm7[i:i]=1 if (ymm4 < ixdimpg)
+ 00000182  C5 DC/ C2 1D			vcmpgeps ymm3, ymm4, F00000000	; ymm3[i:i]=1 if (ymm4 >= 0)
+	   00000040 R 0D
+ 0000018B  C5 C5/ DB FB			vpand ymm7, ymm7, ymm3
+ 0000018F  C5 E5/ EF DB			vpxor ymm3, ymm3, ymm3	; clear ymm3
+ 00000193  C5 FE/ 5B E4			vcvttps2dq ymm4, ymm4	; ymm4 float*8 to integer32*8
+ 00000197  C4 E2 45/ 90 1C		vpgatherdd ymm3, [rsi + ymm4 * 4], ymm7	; load [rsi+ymm4*4] if ymm7=1
+	   A6
+ 0000019D  C5 EC/ C2 F9 01		vcmpltps ymm7, ymm2, ymm1	; ymm7[i:i]=1 if (ymm2 < ixdimp)
+ 000001A2  C4 E2 45/ 8C 24		vpmaskmovd ymm4, ymm7, [rdi + rbx * 4]
+	   9F
+ 000001A8  C5 E5/ FE E4			vpaddd ymm4, ymm3, ymm4
+ 000001AC  C4 E2 45/ 8E 24		vpmaskmovd [rdi + rbx * 4], ymm7, ymm4
+	   9F
+
+ 000001B2  C5 EC/ 58 15			vaddps ymm2, ymm2, F88888888	; ymm2 + 8.0
+	   00000020 R
+ 000001BA  48/ 83 C3 08			add rbx, 8
+ 000001BE  49/ 3B DA			cmp rbx, r10
+ 000001C1  72 B2			jnae ALOOPX	; ix < ixdimp
+ 000001C3			ALOOPYEND2:
+ 000001C3  49/ 03 F9			add rdi, r9 ; +ixdimp*4
+ 000001C6  48/ FF C2			inc rdx	; iy++
+ 000001C9  49/ 3B D2			cmp rdx, r10
+ 000001CC  0F 82 FFFFFF78		jnae ALOOPY	; iy < ixdimp
+
+				;	ldmxcsr smxcsr
+ 000001D2  5F				pop rdi
+ 000001D3  5E				pop rsi
+ 000001D4  5D				pop rbp
+ 000001D5  5B				pop rbx
+ 000001D6  C3				ret
+
+				;test code to skip after vpgatherdd
+ 000001D7  C5 EC/ 58 15			vaddps ymm2, ymm2, F88888888	; ymm2 + 8.0
+	   00000020 R
+ 000001DF  C4 E3 7D/ 39 DC		vextracti128 xmm4, ymm3, 1
+	   01
+ 000001E5  C5 F9/ 7E D8			vmovd eax, xmm3	; lower 4 bytes to eax
+				;	cmp eax, ecx	; ix<=>ixdimpg
+				;	jae ALOOPXSKIP1	; ix0 >= ixdimp * DBPT_GINTP or ix0 < 0
+				;	mov eax, [rsi + rax * 4]	; eax<==igp[ix * DBPT_GINTP]
+ 000001E9  01 04 9F			add [rdi + rbx * 4], eax	; ifp[ix] += eax
+ 000001EC			ALOOPXSKIP1:
+ 000001EC  48/ FF C3			inc rbx	; ix++
+ 000001EF  49/ 3B DA			cmp rbx, r10; 
+ 000001F2  0F 83 0000008B		jae ALOOPYEND	; ix >= ixdimp
+ 000001F8  C5 E1/ 73 DB 04		vpsrldq xmm3, xmm3, 4	; shift right by 4 bytes (integer32)
+ 000001FD  C5 F9/ 7E D8			vmovd eax, xmm3
+				;	cmp eax, ecx; ixdimpg
+				;	jae ALOOPXSKIP2	; ix0 >= ixdimp * DBPT_GINTP or ix0 < 0
+				;	mov eax, [rsi + rax * 4]
+ 00000201  01 04 9F			add [rdi + rbx * 4], eax
+ 00000204			ALOOPXSKIP2:
+ 00000204  48/ FF C3			inc rbx	; ix++
+ 00000207  49/ 3B DA			cmp rbx, r10
+ 0000020A  73 77			jae ALOOPYEND	; ix >= ixdimp
+ 0000020C  C5 E1/ 73 DB 04		vpsrldq xmm3, xmm3, 4
+ 00000211  C5 F9/ 7E D8			vmovd eax, xmm3
+				;	cmp eax, ecx; ixdimpg
+				;	jae ALOOPXSKIP3	; ix0 >= ixdimp * DBPT_GINTP or ix0 < 0
+				;	mov eax, [rsi + rax * 4]
+ 00000215  01 04 9F			add [rdi + rbx * 4], eax
+ 00000218			ALOOPXSKIP3:
+ 00000218  48/ FF C3			inc rbx	; ix++
+ 0000021B  49/ 3B DA			cmp rbx, r10
+ 0000021E  73 63			jae ALOOPYEND	; ix >= ixdimp
+ 00000220  C5 E1/ 73 DB 04		vpsrldq xmm3, xmm3, 4
+ 00000225  C5 F9/ 7E D8			vmovd eax, xmm3
+				;	cmp eax, ecx; ixdimpg
+				;	jae ALOOPXSKIP4	; ix0 >= ixdimp * DBPT_GINTP or ix0 < 0
+				;	mov eax, [rsi + rax * 4]
+ 00000229  01 04 9F			add [rdi + rbx * 4], eax
+ 0000022C			ALOOPXSKIP4:
+ 0000022C  48/ FF C3			inc rbx	; ix++
+ 0000022F  49/ 3B DA			cmp rbx, r10
+ 00000232  73 4F			jae ALOOPYEND	; ix >= ixdimp
+ 00000234  C5 F9/ 7E E0			vmovd eax, xmm4
+				;	cmp eax, ecx; ixdimpg
+				;	jae ALOOPXSKIP5	; ix0 >= ixdimp * DBPT_GINTP or ix0 < 0
+				;	mov eax, [rsi + rax * 4]
+ 00000238  01 04 9F			add [rdi + rbx * 4], eax
+ 0000023B			ALOOPXSKIP5:
+ 0000023B  48/ FF C3			inc rbx	; ix++
+ 0000023E  49/ 3B DA			cmp rbx, r10
+ 00000241  73 40			jae ALOOPYEND	; ix >= ixdimp
+ 00000243  C5 D9/ 73 DC 04		vpsrldq xmm4, xmm4, 4
+ 00000248  C5 F9/ 7E E0			vmovd eax, xmm4
+				;	cmp eax, ecx; ixdimpg
+				;	jae ALOOPXSKIP6	; ix0 >= ixdimp * DBPT_GINTP or ix0 < 0
+				;	mov eax, [rsi + rax * 4]
+ 0000024C  01 04 9F			add [rdi + rbx * 4], eax
+ 0000024F			ALOOPXSKIP6:
+ 0000024F  48/ FF C3			inc rbx	; ix++
+ 00000252  49/ 3B DA			cmp rbx, r10
+ 00000255  73 2C			jae ALOOPYEND	; ix >= ixdimp
+ 00000257  C5 D9/ 73 DC 04		vpsrldq xmm4, xmm4, 4
+ 0000025C  C5 F9/ 7E E0			vmovd eax, xmm4
+				;	cmp eax, ecx; ixdimpg
+				;	jae ALOOPXSKIP7	; ix0 >= ixdimp * DBPT_GINTP or ix0 < 0
+				;	mov eax, [rsi + rax * 4]
+ 00000260  01 04 9F			add [rdi + rbx * 4], eax
+ 00000263			ALOOPXSKIP7:
+ 00000263  48/ FF C3			inc rbx	; ix++
+ 00000266  49/ 3B DA			cmp rbx, r10
+ 00000269  73 18			jae ALOOPYEND	; ix >= ixdimp
+ 0000026B  C5 D9/ 73 DC 04		vpsrldq xmm4, xmm4, 4
+ 00000270  C5 F9/ 7E E0			vmovd eax, xmm4
+				;	cmp eax, ecx; ixdimpg
+				;	jae ALOOPXEND	; ix0 >= ixdimp * DBPT_GINTP or ix0 < 0
+				;	mov eax, [rsi + rax * 4]
+ 00000274  01 04 9F			add [rdi + rbx * 4], eax
+ 00000277			ALOOPXEND:
+ 00000277  48/ FF C3			inc rbx	; ix++
+ 0000027A  49/ 3B DA			cmp rbx, r10
+ 0000027D  0F 82 FFFFFEF2		jnae ALOOPX	; ix < ixdimp
+ 00000283			ALOOPYEND:
+ 00000283  49/ 03 F9			add rdi, r9 ; +ixdimp*4
+ 00000286  48/ FF C2			inc rdx	; iy++
+ 00000289  49/ 3B D2			cmp rdx, r10
+ 0000028C  0F 82 FFFFFEB8		jnae ALOOPY	; iy < ixdimp
+
+				;	ldmxcsr smxcsr
+ 00000292  5F				pop rdi
+ 00000293  5E				pop rsi
+ 00000294  5D				pop rbp
+ 00000295  5B				pop rbx
+ 00000296  C3				ret
+
+ 00000297			projx64 ENDP
 
 				end
-Microsoft (R) Macro Assembler (x64) Version 9.00.21022.08   12/24/18 05:48:26
+Microsoft (R) Macro Assembler (x64) Version 14.16.27025.1   01/01/19 06:00:35
 projx64.asm						     Symbols 2 - 1
 
 
+
+
+Segments:
+
+                N a m e                  Length   Align   Class
+
+DATA . . . . . . . . . . . . . .	 00000070 32	  
 
 
 Procedures, parameters, and locals:
 
                 N a m e                 Type     Value    Attr
 
-projx64  . . . . . . . . . . . .	P 	 00000000 _TEXT	Length= 00000101 Public
-  LOOPY  . . . . . . . . . . . .	L 	 00000066 _TEXT	
-  LOOPX  . . . . . . . . . . . .	L 	 0000007E _TEXT	
-  LOOPXSKIP1 . . . . . . . . . .	L 	 000000A5 _TEXT	
-  LOOPXSKIP2 . . . . . . . . . .	L 	 000000BD _TEXT	
-  LOOPXSKIP3 . . . . . . . . . .	L 	 000000D5 _TEXT	
-  LOOPXEND . . . . . . . . . . .	L 	 000000ED _TEXT	
-  LOOPYEND . . . . . . . . . . .	L 	 000000F2 _TEXT	
+projx64  . . . . . . . . . . . .	P 	 00000000 _TEXT	Length= 00000297 Public
+  LOOPY  . . . . . . . . . . . .	L 	 00000076 _TEXT	
+  LOOPX  . . . . . . . . . . . .	L 	 0000008E _TEXT	
+  LOOPXSKIP1 . . . . . . . . . .	L 	 000000B5 _TEXT	
+  LOOPXSKIP2 . . . . . . . . . .	L 	 000000CD _TEXT	
+  LOOPXSKIP3 . . . . . . . . . .	L 	 000000E5 _TEXT	
+  LOOPXEND . . . . . . . . . . .	L 	 000000FD _TEXT	
+  LOOPYEND . . . . . . . . . . .	L 	 00000102 _TEXT	
+  USEAVX . . . . . . . . . . . .	L 	 00000113 _TEXT	
+  ALOOPY . . . . . . . . . . . .	L 	 0000014A _TEXT	
+  ALOOPX . . . . . . . . . . . .	L 	 00000175 _TEXT	
+  ALOOPYEND2 . . . . . . . . . .	L 	 000001C3 _TEXT	
+  ALOOPXSKIP1  . . . . . . . . .	L 	 000001EC _TEXT	
+  ALOOPXSKIP2  . . . . . . . . .	L 	 00000204 _TEXT	
+  ALOOPXSKIP3  . . . . . . . . .	L 	 00000218 _TEXT	
+  ALOOPXSKIP4  . . . . . . . . .	L 	 0000022C _TEXT	
+  ALOOPXSKIP5  . . . . . . . . .	L 	 0000023B _TEXT	
+  ALOOPXSKIP6  . . . . . . . . .	L 	 0000024F _TEXT	
+  ALOOPXSKIP7  . . . . . . . . .	L 	 00000263 _TEXT	
+  ALOOPXEND  . . . . . . . . . .	L 	 00000277 _TEXT	
+  ALOOPYEND  . . . . . . . . . .	L 	 00000283 _TEXT	
 
 
 Symbols:
 
                 N a m e                 Type     Value    Attr
 
-F3210  . . . . . . . . . . . . .	DWord	 00000000 _DATA	
+F00000000  . . . . . . . . . . .	DWord	 00000040 DATA	
+F3210  . . . . . . . . . . . . .	DWord	 00000060 DATA	
+F76543210  . . . . . . . . . . .	DWord	 00000000 DATA	
+F88888888  . . . . . . . . . . .	DWord	 00000020 DATA	
 WIN_X64  . . . . . . . . . . . .	Text   	 
 
 	   0 Warnings

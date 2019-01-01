@@ -1,6 +1,6 @@
 //{{NO_DEPENDENCIES}}
-// Microsoft Visual C++ generated include file.
-// Used by gazo.rc
+// Microsoft Visual C++ で生成されたインクルード ファイル。
+// gazo.rc で使用
 //
 #define IDC_RECONST_QUEUE               3
 #define IDC_HISTG_QUEUE                 3
@@ -146,6 +146,8 @@
 #define IDC_REFR_ATOMA                  1054
 #define IDC_PROP_ENFASTSEEK             1054
 #define IDC_REFR_DENSITY                1055
+#define IDC_PROP_SIMD3                  1055
+#define IDC_PROP_AVX2                   1055
 #define IDC_REFR_LAC                    1056
 #define IDC_REFR_XENERGY                1057
 #define IDC_REFR_S2DDIST                1058
@@ -363,7 +365,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_3D_CONTROLS                     1
-#define _APS_NEXT_RESOURCE_VALUE        150
+#define _APS_NEXT_RESOURCE_VALUE        151
 #define _APS_NEXT_COMMAND_VALUE         32844
 #define _APS_NEXT_CONTROL_VALUE         1128
 #define _APS_NEXT_SYMED_VALUE           102

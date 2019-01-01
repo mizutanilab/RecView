@@ -24,13 +24,13 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	virtual BOOL OnInitDialog();
-	void Init(int icpu, bool bsimd, 
+	void Init(int icpu, bool bsimd, bool bavx2, 
 		int iCudaCount, int iCudaBlock, int iCudaWarp,
 		int iATIcount, int iATImaxwork, int iATIunitwork);
 	CComboBox m_CPU;
 	CComboBox m_Memory;
 	int iCPU, iMemory;
-	bool bSIMD;
+	bool bSIMD, bAVX2;
 	int iCUDA, iCUDAnblock, iCUDAwarpsize;
 	int iATIstream, iATIstreamNwork, iATIstreamUnitwork;
 protected:
@@ -40,7 +40,7 @@ protected:
 	int rCUDA, maxCUDA, rCUDAnblock, maxCUDAThreadsPerBlock;
 	int r_ProcessorType;
 	int rATIstream, maxATIstream, rATIstreamNwork, maxATIstreamNwork;
-	BOOL rEnableSIMD;
+	BOOL rEnableSIMD, rEnableAVX2;
 	BOOL r_EnReport;
 	BOOL r_UseCUDAFFT;
 	BOOL r_EnFastSeek;
@@ -63,4 +63,6 @@ public:
 	CComboBox m_ATIstream;
 	CComboBox m_ATIstreamNwork;
 	BOOL m_EnFastSeek;
+	BOOL m_bEnableAVX2;
+	afx_msg void OnBnClickedPropSimd();
 };

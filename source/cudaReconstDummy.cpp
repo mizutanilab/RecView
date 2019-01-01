@@ -46,3 +46,12 @@ extern "C" int GetCudaWarpSize() {
 	return CUDA_WARPSIZE;
 }
 
+#define CUDA_ERROR_DEVICE_GETPROPERTY 0x00080000
+
+extern "C" int GetCudaDeviceName(int iDevice, char* pcName, int iszcName) {//181226
+	return CUDA_ERROR_DEVICE_GETPROPERTY;
+}
+
+extern "C" int GetCudaDeviceComputingCapability(int iDevice, int* piMajor, int* piMinor) {//181226
+	return CUDA_ERROR_DEVICE_GETPROPERTY;
+}

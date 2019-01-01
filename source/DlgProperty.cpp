@@ -17,8 +17,9 @@ CDlgProperty::CDlgProperty(CWnd* pParent /*=NULL*/)
 	, m_EnReport(TRUE)
 	, bUseCUDAFFT(FALSE)
 	, m_EnFastSeek(TRUE)
+	, m_bEnableAVX2(FALSE)
 {
-	Init(1, false, 0, CUDA_BLOCKSIZE, CUDA_WARPSIZE, 
+	Init(1, false, false, 0, CUDA_BLOCKSIZE, CUDA_WARPSIZE, 
 					0, ATISTREAM_MAXWORK, ATISTREAM_UNITWORK);
 }
 
@@ -26,7 +27,7 @@ CDlgProperty::~CDlgProperty()
 {
 }
 
-void CDlgProperty::Init(int icpu, bool bsimd, 
+void CDlgProperty::Init(int icpu, bool bsimd, bool bavx2, 
 						int iCudaCount, int iCudaBlock, int iCudaWarp,
 						int iATIcount, int iATImaxwork, int iATIunitwork) {
 	//CGazoApp* pApp = (CGazoApp*) AfxGetApp();
@@ -34,6 +35,8 @@ void CDlgProperty::Init(int icpu, bool bsimd,
 	iCPU = icpu > 1 ? icpu : 1;
 	bSIMD = bsimd;
 	if (bSIMD) bEnableSIMD = TRUE;//160918 enabled again
+	bAVX2 = bavx2;
+	if (bAVX2) m_bEnableAVX2 = TRUE;
 	maxCUDA = iCudaCount;
 	maxCUDAThreadsPerBlock = iCudaBlock;
 	iCUDAwarpsize = iCudaWarp;
@@ -70,6 +73,7 @@ void CDlgProperty::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_PROP_NATISTREAM, m_ATIstream);
 	DDX_Control(pDX, IDC_PROP_ATISTREAMNWORK, m_ATIstreamNwork);
 	DDX_Check(pDX, IDC_PROP_ENFASTSEEK, m_EnFastSeek);
+	DDX_Check(pDX, IDC_PROP_AVX2, m_bEnableAVX2);
 }
 
 
@@ -77,6 +81,7 @@ BEGIN_MESSAGE_MAP(CDlgProperty, CDialog)
 ON_BN_CLICKED(IDC_PROP_INTELCPU, &CDlgProperty::OnBnClickedIntelcpu)
 ON_BN_CLICKED(IDC_PROP_CUDAGPU, &CDlgProperty::OnBnClickedCudagpu)
 ON_BN_CLICKED(IDC_PROP_ATISTREAM, &CDlgProperty::OnBnClickedPropAtistream)
+ON_BN_CLICKED(IDC_PROP_SIMD, &CDlgProperty::OnBnClickedPropSimd)
 END_MESSAGE_MAP()
 
 
@@ -92,6 +97,7 @@ BOOL CDlgProperty::OnInitDialog()
 	rCUDA = iCUDA;
 	r_ProcessorType = m_ProcessorType;
 	rEnableSIMD = bEnableSIMD;
+	rEnableAVX2 = m_bEnableAVX2;
 	rCUDAnblock = iCUDAnblock;
 	r_EnReport = m_EnReport;
 	r_EnFastSeek = m_EnFastSeek;
@@ -195,6 +201,7 @@ void CDlgProperty::EnableCtrl() {
 	GetDlgItem(IDC_PROP_INTELCPU)->EnableWindow(TRUE);
 	//
 	GetDlgItem(IDC_PROP_SIMD)->EnableWindow(FALSE);
+	GetDlgItem(IDC_PROP_AVX2)->EnableWindow(FALSE);
 	GetDlgItem(IDC_PROP_NCPU)->EnableWindow(FALSE);
 	GetDlgItem(IDC_PROP_NGPU)->EnableWindow(FALSE);
 	GetDlgItem(IDC_PROP_CUDANBLOCK)->EnableWindow(FALSE);
@@ -206,7 +213,10 @@ void CDlgProperty::EnableCtrl() {
 	if (iATIstream) GetDlgItem(IDC_PROP_ATISTREAM)->EnableWindow(TRUE);
 	switch (m_ProcessorType) {
 		case CDLGPROPERTY_PROCTYPE_INTEL: {
-			if (bSIMD) GetDlgItem(IDC_PROP_SIMD)->EnableWindow(TRUE);
+			if (bSIMD) {
+				GetDlgItem(IDC_PROP_SIMD)->EnableWindow(TRUE);
+				if (bAVX2 && bEnableSIMD) GetDlgItem(IDC_PROP_AVX2)->EnableWindow(TRUE);
+			}
 			GetDlgItem(IDC_PROP_NCPU)->EnableWindow(TRUE);
 			break;}
 		case CDLGPROPERTY_PROCTYPE_CUDA: {
@@ -276,6 +286,7 @@ void CDlgProperty::OnCancel()
 	m_ProcessorType = r_ProcessorType;
 	iCPU = rCPU;
 	bEnableSIMD = rEnableSIMD;
+	m_bEnableAVX2 = rEnableAVX2;
 	iCUDA = rCUDA;
 	iCUDAnblock = rCUDAnblock;
 	bUseCUDAFFT = r_UseCUDAFFT;
@@ -287,3 +298,10 @@ void CDlgProperty::OnCancel()
 	CDialog::OnCancel();
 }
 
+
+
+void CDlgProperty::OnBnClickedPropSimd()
+{
+	UpdateData();
+	EnableCtrl();
+}

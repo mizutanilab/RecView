@@ -2029,7 +2029,6 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 		CFft fft;
 		fft.Init1(ndimp, -1);
 		memset(igp, 0, sizeof(int) * igpdim);
-		//if (pApp->dlgProperty.bEnableSIMD) param[7] |= 0x0001;
 		const int iProgStep = ri->iLenSinogr / PROGRESS_BAR_UNIT;
 		int iCurrStep = 0;
 		CGazoDoc* pd = (CGazoDoc*)(ri->pDoc);
@@ -2048,6 +2047,8 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 		param[5] = (DWORD_PTR) ri->iReconst;//ifp;
 		param[6] = iparam6;
 		param[7] = 0;
+		if (pApp->dlgProperty.m_bEnableAVX2) param[7] |= 0x0001;
+		//if (pApp->dlgProperty.bEnableSIMD) param[7] |= 0x0001;
 		BOOL bUseSIMD = pApp->dlgProperty.bEnableSIMD;
 		for (int i=(ri->iStartSino); i<(ri->iLenSinogr-1); i+=(ri->iStepSino)) {
 			if (bReport) {
@@ -2173,7 +2174,7 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 		int* igp = NULL;
 		const int imargin = ixdimp;
 		const int igpdim = (ixdimp + imargin * 2) * DBPT_GINTP;
-		try{
+		try {
 			p = new CCmplx[ndim];
 			igp = new int[igpdim];
 		}
@@ -2207,6 +2208,7 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 		param[5] = (DWORD_PTR) ri->iReconst;//ifp;
 		param[6] = iparam6;
 		param[7] = 0;
+		if (pApp->dlgProperty.m_bEnableAVX2) param[7] |= 0x0001;
 		BOOL bUseSIMD = pApp->dlgProperty.bEnableSIMD;
 		for (int i=(ri->iStartSino); i<(ri->iLenSinogr-1); i+=(ri->iStepSino)) {
 			if (bReport) {

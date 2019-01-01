@@ -1699,6 +1699,14 @@ void CGazoDoc::ShowTomogram(RECONST_QUEUE* rq, int iy, double fc) {//, int ifilt
 	if ( err = GenerateSinogram(rq, iy, fc, 0, iMultiplex) ) {error.Log(err); CString line; line.Format("%d", err); AfxMessageBox(line); return;}
 	double tcpu = 0; float pixelBase = 0, pixelDiv = 1;
 	err = DeconvBackProj(rq, fc, iMultiplex, iOffset, &numOfSampleSinogr, &tcpu, &pixelBase, &pixelDiv);
+//int ipx = 34207;
+//while (ipx == 34207) {
+//	err = DeconvBackProj(rq, fc, iMultiplex, iOffset, &numOfSampleSinogr, &tcpu, &pixelBase, &pixelDiv);
+//	ipx = iReconst[nReconst * 1001 + 999];
+//}
+//181223
+//CString msg; msg.Format("%d", iReconst[nReconst * 1001 + 999]); AfxMessageBox(msg);
+//
 	//delete GPU memory if any
 	CGazoApp* pApp = (CGazoApp*) AfxGetApp();
 	if (pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_CUDA) {
@@ -3373,6 +3381,10 @@ TErr CGazoDoc::SetFilter(RECONST_QUEUE* rq, int ndim) {
 				fFilter[i] = 0.5f * revndim * i * (float)(1 + cos(__PI * frac));
 			}
 			for (int i=ndimh; i<ndim; i++) {fFilter[i] = 0;}
+			//181223 for (int i = ndimh; i < ndim; i++) {//this gives the same results
+			//	const float frac = (float)(ndim-i) / ndimh;
+			//	fFilter[i] = 0.5f * revndim * (ndim-i) * (float)(1 + cos(__PI * frac));
+			//}
 			break;}
 		case CDLGRECONST_FILT_HAM: {
 			for (int i=0; i<ndimh; i++) {
@@ -3437,17 +3449,6 @@ TErr CGazoDoc::DeconvBackProj(RECONST_QUEUE* rq, double center, int iMultiplex, 
 		if (!bCmdLine) AfxMessageBox("Too fine interpolation or lengthy image width");
 		return 21022;
 	}
-	/*/120720
-	int** pptest = new int*[ixdim2 * 5];
-	for (int i=0; i<ixdim2 * 5; i++) {
-		try {pptest[i] = new int[ixdim2];}
-		catch(CException* e) {
-			e->Delete();
-			AfxMessageBox("120720 OOM");
-			break;
-		}
-	}
-	///*///120720
 	if (maxReconst < ixdim2) {
 		int* irct = iReconst;
 		try {iReconst = new int[ixdim2];}
