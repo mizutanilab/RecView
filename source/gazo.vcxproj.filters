@@ -252,9 +252,6 @@
     </Image>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <CustomBuild Include="projx64.asm">
       <Filter>Source Files</Filter>
     </CustomBuild>
