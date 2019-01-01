@@ -136,7 +136,7 @@ frame#      time(msec)     angle(deg) 0=flatfield/1=sample
       </LI>
     </UL><br>
   <LI><b>RecView returns an error when processing offset-CT data taken at SPring-8.</b></LI>
-    In the offset CT, the sample should be rotated by 360 degrees. But start and stop angles vary depending on your setup, such as -180 to 180 deg or 0 to 360 deg. If the 'stop angle' was not 360 deg in your offset-CT experiment, 'conv.bat' file seems to have incorrect contents. You have to edit it manually before the reconstruction calculation. Or you can find examples of conv.bat and output.log files in the 'docs' folder. <br><br>
+    In the offset CT, the sample is rotated by 360 degrees. Start and stop angles of the sample rotation vary depending on your setup, such as -180 to 180 deg or 0 to 360 deg. If the 'stop angle' was not 360 deg in your offset-CT experiment, 'conv.bat' file seems to have incorrect contents. You have to edit it manually before the reconstruction calculation. Or you can find examples of conv.bat and output.log files in the 'docs' folder. <br><br>
   <LI><b>How to try the test dataset.</b></LI>
     <UL>
       <LI>Extract all files in the archived test dataset.</LI>
@@ -147,20 +147,18 @@ frame#      time(msec)     angle(deg) 0=flatfield/1=sample
       <LI>Click 'Show image' button. In seconds, a cross section of an aluminum wire with a square-wave pattern carved on its surface will be shown.</LI>
     </UL><br>
   <LI><b>Does RecView make network connections?</b></LI>
-      No, never. However, remote folders such as workgroup PCs are searched when you open files. It's probably one of default functions of Windows depending on your environment.
-  <LI><b>My samples showed drifts in the reconsturcted images. How can I prepare biological samples for the synchrotron radiation experiment? </b></LI>
-      Please see the following: <BR><BR>
-R. Saiga and R. Mizutani (2018). Preparation of soft tissue samples for synchrotron radiation microtomography and nanotomography. <I>Protocol Exchange</I> DOI: 10.1038/protex.2018.085. 
- <A href="https://www.nature.com/protocolexchange/protocols/6905">web</A>
- <A href="http://dx.doi.org/10.1038/protex.2018.085">DOI</A></li><br><br>
+      No, never. However, remote folders such as workgroup PCs are searched when you open files. It's probably one of default functions of Windows depending on your environment.<br>
+  <LI><b>My samples showed drifts in the reconsturcted images. How can I prepare biological samples best suited for the synchrotron radiation experiment? </b></LI>
+      Please see the following:
+      R. Saiga and R. Mizutani (2018). Preparation of soft tissue samples for synchrotron radiation microtomography and nanotomography. <I>Protocol Exchange</I> DOI: 10.1038/protex.2018.085. <A href="https://www.nature.com/protocolexchange/protocols/6905">web</A> <A href="http://dx.doi.org/10.1038/protex.2018.085">DOI</A></li><br><br>
   <LI><b>How to prepare a development environment for RecView.</b></LI>
-You need Visual Studio 2017 and CUDA Toolkit 10.0 to compile the source code. The 'Desktop Environment with C++' package and 'Visual C++ MFC' component should be installed. You may also need to update the GPU driver to the latest one to run the executable.
+      You need Visual Studio 2017 and CUDA Toolkit 10.0 to compile the source code. The 'Desktop Environment with C++' package and 'Visual C++ MFC' component should be installed. You may also need to update the GPU driver to the latest one to run the executable.
       <UL>
         <LI>Install 'Visual Studio Comunity 2017' from the <a href="https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=Community">Microsoft site</a>. Choose 'Desktop Development with C++' and include the 'Visual C++ MFC' component. We recommend to include language packs of English(US) and Japanese. </LI>
         <LI>Download 'CUDA Toolkit 10.0' from the <a href="https://developer.nvidia.com/cuda-toolkit-archive">NVIDIA Toolkit site</a> and istall. The installation will associate the toolkit with Visual Studio.</LI>
         <LI>Download the latest GPU driver from the <a href="https://www.nvidia.co.jp/Download/index.aspx">NVIDIA driver site</a> and install. It is not recommended to update the driver from Device Manager of WIndows Control Panel.</LI>
-        <LI>Open the Visual Studio solution file 'gazo.sln'. Choose appropriate platform (x64 or Win32) and build version (Release or CUDA_Release) in the toolbar fields and invoke the compilation from the 'Build' menu..You can find a resultant executable in the "x64" or "Win32" folder. </LI>
-    </UL><br>
+        <LI>Open the Visual Studio solution file 'gazo.sln'. Choose your platform (x64 or Win32) and build version (Release or CUDA_Release) from the toolbar and invoke the compilation from the 'Build' menu. You can find a resultant executable under the "x64" or "Win32" folder. </LI>
+      </UL><br>
 </OL>
 
 ## Contact
