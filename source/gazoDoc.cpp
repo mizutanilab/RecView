@@ -29,6 +29,13 @@
 
 //CUDA declaration
 #include "cudaReconst.h"
+#ifdef _WIN64
+#include <cuda_runtime.h>
+#else
+extern "C" cudaError_t cudaFreeHost(void* ptr);//190110
+extern "C" cudaError_t cudaHostAlloc(void** ptr, size_t size, unsigned int flags);//190110
+extern "C" cudaError_t cudaMallocHost(int** ptr, size_t size);
+#endif
 //OpenCL
 #include "clReconst.h"
 
@@ -202,6 +209,8 @@ void CGazoDoc::InitAll() {
 		ri[i].max_d_ifp = 0;
 		ri[i].d_p = NULL;
 		ri[i].max_d_p = 0;
+		ri[i].d_px = NULL;
+		ri[i].max_d_px = 0;
 		ri[i].d_filt = NULL;
 		ri[i].max_d_filt = 0;
 		ri[i].d_strip = NULL;
@@ -210,6 +219,9 @@ void CGazoDoc::InitAll() {
 		ri[i].max_d_igp = 0;
 		ri[i].fftplan = NULL;
 		ri[i].ifftdim = 0;
+//		ri[i].d_fcos = NULL;
+//		ri[i].d_fsin = NULL;
+//		ri[i].max_d_fcos = 0;
 	}
 	ri[0].bMaster = true;
 }
@@ -249,6 +261,16 @@ void CGazoDoc::DeleteAll()
 	//for (int i=0; i<MAX_CPU; i++) {
 	//	CudaReconstMemFree(&(ri[i]));
 	//}
+	//190107
+	CGazoApp* pApp = (CGazoApp*)AfxGetApp();
+	if (pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_CUDA) {
+		int nCPU = (int)(pApp->dlgProperty.iCUDA);
+		for (int i = 0; i < nCPU; i++) { CudaReconstMemFree(&(ri[i])); }
+	}
+	else if (pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_ATISTREAM) {
+		int nCPU = (int)(pApp->dlgProperty.iATIstream);
+		for (int i = 0; i < nCPU; i++) { CLReconstMemFree(&(ri[i])); }
+	}
 }
 
 BOOL CGazoDoc::OnNewDocument()
@@ -1689,7 +1711,7 @@ TErr CGazoDoc::BatchReconst(RECONST_QUEUE* rq) {
 	return err;
 }
 
-void CGazoDoc::ShowTomogram(RECONST_QUEUE* rq, int iy, double fc) {//, int ifilter, int iInterpolation, CString fsuffix) {
+void CGazoDoc::ShowTomogram(RECONST_QUEUE* rq, int iy, double fc, CGazoDoc* pdTarget) {//, int ifilter, int iInterpolation, CString fsuffix) {
 	TErr err = 0;
 	const int iMultiplex = 1; const int iOffset = 0;
 	const int ifilter = rq->iFilter;
@@ -1708,43 +1730,68 @@ void CGazoDoc::ShowTomogram(RECONST_QUEUE* rq, int iy, double fc) {//, int ifilt
 //CString msg; msg.Format("%d", iReconst[nReconst * 1001 + 999]); AfxMessageBox(msg);
 //
 	//delete GPU memory if any
-	CGazoApp* pApp = (CGazoApp*) AfxGetApp();
-	if (pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_CUDA) {
-		int nCPU = (int)(pApp->dlgProperty.iCUDA);
-		for (int i=0; i<nCPU; i++) {CudaReconstMemFree(&(ri[i]));}
-	} else if (pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_ATISTREAM) {
-		int nCPU = (int)(pApp->dlgProperty.iATIstream);
-		for (int i=0; i<nCPU; i++) {CLReconstMemFree(&(ri[i]));}
-	}
+	//190107 moved to CDlgReconst::OnCancel()
+//	CGazoApp* pApp = (CGazoApp*) AfxGetApp();
+//	if (pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_CUDA) {
+//		int nCPU = (int)(pApp->dlgProperty.iCUDA);
+//		for (int i=0; i<nCPU; i++) {CudaReconstMemFree(&(ri[i]));}
+//	} else if (pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_ATISTREAM) {
+//		int nCPU = (int)(pApp->dlgProperty.iATIstream);
+//		for (int i=0; i<nCPU; i++) {CLReconstMemFree(&(ri[i]));}
+//	}
 	if (err) {error.Log(err); return;}
 	if (dlgReconst.iStatus == CDLGRECONST_STOP) return;
 	//Generate View
-	CGazoView* pcv = (CGazoView*)( ((CGazoApp*)AfxGetApp())->RequestNew() );
-	CGazoDoc* pcd = pcv->GetDocument();
-	const int ixdimp = nReconst;
-	const int ixdim2 = ixdimp * ixdimp;
-	if ((pcd->pPixel = new int[ixdim2]) == NULL) return;
-	pcd->maxPixel = ixdim2;
-	pcd->ixdim = ixdimp;
-	pcd->iydim = ixdimp;
-	pcd->parentDoc = this;
-	pcd->SetModifiedFlag(TRUE);
-	pcd->pixBase = pixelBase;
-	pcd->pixDiv = pixelDiv;
-	pcd->fCenter = (float)(-fc);
-	for (int i=0; i<ixdim2; i++) {pcd->pPixel[i] = iReconst[i];}
-	pcd->UpdateView(/*bInit=*/true);
-	CString title, fn;
-	fn.Format("%09d", iy);
-	//161113 fn = fsuffix + fn.Right((int)(log10((double)iLenSinogr)) + 1);
-	fn = fsuffix + fn.Right((int)(log10((double)rq->iYdim)) + 1);
-	title.Format("%s reconstructed (y=%d center=%.1f) from %s / %.2f sec",
-										fn, iy, fc, rq->dataPath, tcpu);
-	pcd->SetTitle(title);
-	pcd->dataPath = rq->dataPath;
-	pcd->dataPrefix = rq->itexFilePrefix;
-	pcd->dataSuffix = rq->itexFileSuffix;
-	//pcd->dlgReconst = this->dlgReconst;
+	bool bReuseView = false;
+	if (pdTarget) {
+		if (pdTarget->ixdim == nReconst) bReuseView = true;
+	}
+	if (bReuseView) {
+		CGazoDoc* pcd = pdTarget;
+		const int ixdimp = nReconst;
+		const int ixdim2 = ixdimp * ixdimp;
+		//if ((pcd->pPixel = new int[ixdim2]) == NULL) return;
+		pcd->SetModifiedFlag(TRUE);
+		pcd->pixBase = pixelBase;
+		pcd->pixDiv = pixelDiv;
+		pcd->fCenter = (float)(-fc);
+		for (int i = 0; i < ixdim2; i++) { pcd->pPixel[i] = iReconst[i]; }
+		pcd->UpdateView();
+		CString title, fn;
+		fn.Format("%09d", iy);
+		fn = fsuffix + fn.Right((int)(log10((double)rq->iYdim)) + 1);
+		title.Format("%s reconstructed (y=%d center=%.1f) from %s / %.2f sec",
+			fn, iy, fc, rq->dataPath, tcpu);
+		pcd->SetTitle(title);
+	} else {
+		CGazoView* pcv = (CGazoView*)( ((CGazoApp*)AfxGetApp())->RequestNew() );
+		CGazoDoc* pcd = pcv->GetDocument();
+		const int ixdimp = nReconst;
+		const int ixdim2 = ixdimp * ixdimp;
+		if ((pcd->pPixel = new int[ixdim2]) == NULL) return;
+		pcd->maxPixel = ixdim2;
+		pcd->ixdim = ixdimp;
+		pcd->iydim = ixdimp;
+		pcd->parentDoc = this;
+		pcd->SetModifiedFlag(TRUE);
+		pcd->pixBase = pixelBase;
+		pcd->pixDiv = pixelDiv;
+		pcd->fCenter = (float)(-fc);
+		for (int i=0; i<ixdim2; i++) {pcd->pPixel[i] = iReconst[i];}
+		pcd->UpdateView(/*bInit=*/true);
+		CString title, fn;
+		fn.Format("%09d", iy);
+		//161113 fn = fsuffix + fn.Right((int)(log10((double)iLenSinogr)) + 1);
+		fn = fsuffix + fn.Right((int)(log10((double)rq->iYdim)) + 1);
+		title.Format("%s reconstructed (y=%d center=%.1f) from %s / %.2f sec",
+											fn, iy, fc, rq->dataPath, tcpu);
+		pcd->SetTitle(title);
+		pcd->dataPath = rq->dataPath;
+		pcd->dataPrefix = rq->itexFilePrefix;
+		pcd->dataSuffix = rq->itexFileSuffix;
+		pcd->dlgReconst.iContext = this->dlgReconst.iContext;
+		//CString line; line.Format("%d", pcd->dlgReconst.iContext); AfxMessageBox(line);
+	}
 	return;
 }
 
@@ -2536,10 +2583,12 @@ TErr CGazoDoc::GenerateSinogram(RECONST_QUEUE* rq, int iLayer, double center, do
 	const int iTrim = rq->iTrimWidth;
 	const int iProgStep = isino / PROGRESS_BAR_UNIT + 1;
 	const int iBinning = (rq->iInterpolation == 0) ? 4 : ((rq->iInterpolation == 1) ? 2 : 1);
+	rq->dReconFlags &= ~RQFLAGS_SINOGRAMKEPT;//190101
 	if ((iLayer == iCurrSinogr)&&(iTrim == iCurrTrim)&&(iMultiplex == 1)&&(rq->bReconOptionUpdated == false)) {
 		for (int i=0; i<isino; i++) {
 			if ((i % iProgStep == 0)&&(dlgReconst.m_hWnd)) dlgReconst.m_Progress.StepIt();
 		}
+		rq->dReconFlags |= RQFLAGS_SINOGRAMKEPT;//190101
 		return 0;
 	}
 	const int ixFrm = rq->iRawSinoXdim;
@@ -3422,6 +3471,11 @@ TErr CGazoDoc::SetFilter(RECONST_QUEUE* rq, int ndim) {
 	return 0;
 }
 
+#ifndef _WIN64
+#define CGAZODOC_DBP_MAX_IXDIMP 32767
+#else
+#define CGAZODOC_DBP_MAX_IXDIMP 1048575
+#endif
 TErr CGazoDoc::DeconvBackProj(RECONST_QUEUE* rq, double center, int iMultiplex, int iOffset,
 								int* nSinogr, double* tcpu, float* pixelBase, float* pixelDiv) {
 	const int iInterpolation = rq->iInterpolation;
@@ -3441,11 +3495,7 @@ TErr CGazoDoc::DeconvBackProj(RECONST_QUEUE* rq, double center, int iMultiplex, 
 			center = rq->iRawSinoXdim + center;//100213
 		}
 	}
-#ifndef _WIN64
-	if (ixdimp > 32767) {
-#else
-	if (ixdimp > 1048575) {
-#endif
+	if (ixdimp > CGAZODOC_DBP_MAX_IXDIMP) {
 		if (!bCmdLine) AfxMessageBox("Too fine interpolation or lengthy image width");
 		return 21022;
 	}
@@ -3493,22 +3543,40 @@ TErr CGazoDoc::DeconvBackProj(RECONST_QUEUE* rq, double center, int iMultiplex, 
 		return 21022;
 	}
 	int** ppiReconst = NULL;
-	try {
-		if (nCPU > 1) {
-			ppiReconst = new int*[nCPU - 1];
-			for (int i = 0; i < nCPU - 1; i++) {
-				ppiReconst[i] = new int[maxReconst];
-				memset(ppiReconst[i], 0, sizeof(int) * maxReconst);
+	if (nCPU > 1) {
+		if (pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_CUDA) {
+			try {
+				ppiReconst = new int*[nCPU - 1];
+				for (int i = 0; i < nCPU - 1; i++) {
+					if (cudaMallocHost(&(ppiReconst[i]), maxReconst * sizeof(int)) != cudaSuccess) AfxThrowMemoryException();
+					memset(ppiReconst[i], 0, sizeof(int) * maxReconst);
+				}
+			}
+			catch (CException* e) {
+				e->Delete();
+				if (ppiReconst) {
+					for (int i = 0; i < nCPU - 1; i++) { if (ppiReconst[i]) cudaFreeHost(ppiReconst[i]); }
+					delete[] ppiReconst;
+				}
+				return 21023;
+			}
+		} else {//(pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_CUDA)
+			try {
+				ppiReconst = new int*[nCPU - 1];
+				for (int i = 0; i < nCPU - 1; i++) {
+					ppiReconst[i] = new int[maxReconst];
+					memset(ppiReconst[i], 0, sizeof(int) * maxReconst);
+				}
+			}
+			catch (CException* e) {
+				e->Delete();
+				if (ppiReconst) {
+					for (int i = 0; i < nCPU - 1; i++) { if (ppiReconst[i]) delete[] ppiReconst[i]; }
+					delete[] ppiReconst;
+				}
+				return 21023;
 			}
 		}
-	}
-	catch (CException* e) {
-		e->Delete();
-		if (ppiReconst) {
-			for (int i = 0; i < nCPU - 1; i++) {if (ppiReconst[i]) delete[] ppiReconst[i];}
-			delete[] ppiReconst;
-		}
-		return 21023;
 	}
 	for (int i=nCPU-1; i>=0; i--) {
 		ri[i].hThread = NULL;
@@ -3560,7 +3628,8 @@ TErr CGazoDoc::DeconvBackProj(RECONST_QUEUE* rq, double center, int iMultiplex, 
 		if ((i >= 1) && ppiReconst) {
 			if (ppiReconst[i-1]) {
 				for (int j = 0; j < maxReconst; j++) { iReconst[j] += (ppiReconst[i-1])[j]; }
-				delete[] ppiReconst[i-1];
+				if (pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_CUDA) cudaFreeHost(ppiReconst[i-1]);
+				else delete[] ppiReconst[i - 1];
 			}
 		}
 	}

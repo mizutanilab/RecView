@@ -20,8 +20,8 @@ extern "C" void CudaSinogramHost(RECONST_INFO* ri, int idev, bool bReport) {
 
 extern "C" void CudaReconstHost(RECONST_INFO* ri, int idev, bool bReport) {
 }
-//extern "C" void CudaReconstHostLong(RECONST_INFO* ri, int idev) {
-//}
+extern "C" void CudaReconstHost2(RECONST_INFO* ri, int idev, bool bReport) {
+}
 
 extern "C" void CudaLsqfitMemAlloc(short** d_ppRefPixel, short** d_ppQryPixel, 
 								   int* pMaxRefPixel, int* pMaxQryPixel, 
@@ -55,3 +55,12 @@ extern "C" int GetCudaDeviceName(int iDevice, char* pcName, int iszcName) {//181
 extern "C" int GetCudaDeviceComputingCapability(int iDevice, int* piMajor, int* piMinor) {//181226
 	return CUDA_ERROR_DEVICE_GETPROPERTY;
 }
+extern "C" int GetCudaNumberOfCores(int iDevice, int* piCores, int* piProcessors) {
+	return CUDA_ERROR_DEVICE_GETPROPERTY;
+}
+
+extern "C" cudaError_t cudaFreeHost(void* ptr) { return cudaSuccess; }//190108
+
+extern "C" cudaError_t cudaHostAlloc(void** ptr, size_t size, unsigned int flags) { return cudaSuccess; }//190108
+
+extern "C" cudaError_t cudaMallocHost(int** ptr, size_t size) { return cudaSuccess; }//190110

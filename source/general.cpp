@@ -2012,8 +2012,10 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 		//
 		CCmplx* p = NULL;
 		int* igp = NULL;
-		const int imargin = ixdimp;
-		const int igpdim = (ixdimp + imargin * 2) * DBPT_GINTP;
+		const int imargin = 0;//190108
+		const int igpdimy = ((ri->iLenSinogr - 1) - (ri->iStartSino) + (ri->iStepSino) - 1) / (ri->iStepSino);
+		const int igpdimx = (ixdimp + imargin * 2) * DBPT_GINTP;
+		const int igpdim = igpdimx * igpdimy;
 		try{
 			p = new CCmplx[ndim];
 			igp = new int[igpdim];
@@ -2029,14 +2031,11 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 		CFft fft;
 		fft.Init1(ndimp, -1);
 		memset(igp, 0, sizeof(int) * igpdim);
-		const int iProgStep = ri->iLenSinogr / PROGRESS_BAR_UNIT;
-		int iCurrStep = 0;
 		CGazoDoc* pd = (CGazoDoc*)(ri->pDoc);
 		CMainFrame* pf = (CMainFrame*) AfxGetMainWnd();
-		const BOOL bReport = pApp->dlgProperty.m_EnReport;
 		float fcos, fsin, foffset;
-		__int64 iparam6 = ((DWORD_PTR) igp) + imargin * sizeof(int) * DBPT_GINTP;
-		int* ipgp = (int*)(iparam6);
+		//190109 __int64 iparam6 = ((DWORD_PTR) igp) + imargin * sizeof(int) * DBPT_GINTP;
+		//190109 int* ipgp = (int*)(iparam6);
 		int* ifp = ri->iReconst;
 		__int64 param[8];
 		param[0] = (DWORD_PTR)(&fcos);
@@ -2044,13 +2043,17 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 		param[2] = (DWORD_PTR)(&foffset);
 		param[3] = ixdimpg;
 		param[4] = ixdimp;
-		param[5] = (DWORD_PTR) ri->iReconst;//ifp;
-		param[6] = iparam6;
+		param[5] = (DWORD_PTR)ri->iReconst;//ifp;
+		//190109 param[6] = iparam6;
 		param[7] = 0;
 		if (pApp->dlgProperty.m_bEnableAVX2) param[7] |= 0x0001;
 		//if (pApp->dlgProperty.bEnableSIMD) param[7] |= 0x0001;
 		BOOL bUseSIMD = pApp->dlgProperty.bEnableSIMD;
-		for (int i=(ri->iStartSino); i<(ri->iLenSinogr-1); i+=(ri->iStepSino)) {
+		const BOOL bReport = pApp->dlgProperty.m_EnReport;
+		const int iProgStep = ri->iLenSinogr / PROGRESS_BAR_UNIT;
+		int iCurrStep = 0;
+		for (int i = (ri->iStartSino); i < (ri->iLenSinogr - 1); i += (ri->iStepSino)) {
+			int isino = (i - (ri->iStartSino)) / (ri->iStepSino);
 			if (bReport) {
 				if (DBProjDlgCtrl(ri, iProgStep, i, &iCurrStep)) break;
 			}
@@ -2063,44 +2066,52 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 			if (ri->dReconFlags & (RQFLAGS_USEONLYEVENFRAMES | RQFLAGS_USEONLYODDFRAMES)) {
 				if (i & 1) {
 					if (ri->dReconFlags & RQFLAGS_USEONLYEVENFRAMES) continue;
-				} else {
+				}
+				else {
 					if (ri->dReconFlags & RQFLAGS_USEONLYODDFRAMES) continue;
 				}
 			}
 			//
 			memset(p, 0, sizeof(CCmplx) * ndim);//111206
 			const int idx0 = (0 - (int)center) * iIntpDim + (ndim / 2 - 1);
-			const int idx1 = (ixdim-1 - (int)center) * iIntpDim + (ndim / 2 - 1) + 1;
-			for (int m=0; m<idx0; m++) {p[m].re = iStrip[0];}
-			for (int m=idx1; m<ndim; m++) {p[m].re = iStrip[ixdim-1];}
+			const int idx1 = (ixdim - 1 - (int)center) * iIntpDim + (ndim / 2 - 1) + 1;
+			for (int m = 0; m < idx0; m++) { p[m].re = iStrip[0]; }
+			for (int m = idx1; m < ndim; m++) { p[m].re = iStrip[ixdim - 1]; }
 			//111206
-			for (int k=0; k<ixdim; k++) {
+			for (int k = 0; k < ixdim; k++) {
 				int idx = (k - (int)center) * iIntpDim + (ndim / 2 - 1);
 				if (idx < 0) continue;
 				if (idx >= ndim) break;
 				p[idx].re = iStrip[k];
 				//interpolation
 				if (k == ixdim - 1) break;
-				for (int j=1; j<iIntpDim; j++) {
-					p[idx+j].re = (TCmpElmnt)
-						(iStrip[k] * (iIntpDim - j) / iIntpDim + iStrip[k+1] * j / iIntpDim);
+				for (int j = 1; j < iIntpDim; j++) {
+					p[idx + j].re = (TCmpElmnt)
+						(iStrip[k] * (iIntpDim - j) / iIntpDim + iStrip[k + 1] * j / iIntpDim);
 				}
 			}
-			fft.FFT1Rev(p);	
-			for (int k=0; k<ndim; k++) {p[k] *= ri->fFilter[k];}
+			fft.FFT1Rev(p);
+			for (int k = 0; k < ndim; k++) { p[k] *= ri->fFilter[k]; }
 			fft.FFT1(p);
 			//
-			for (int j=0; j<ixdimp; j++) {
+			for (int j = 0; j < ixdimp; j++) {
 				const TCmpElmnt p0 = p[j + ihoffset].re * BACKPROJ_SCALE;
-				const TCmpElmnt p1p0 = (j == ixdimp -1)? 
+				const TCmpElmnt p1p0 = (j == ixdimp - 1) ?
 					0.0f : (p[j + ihoffset + 1].re - p[j + ihoffset].re) / DBPT_GINTP * BACKPROJ_SCALE;
-				const int gidx = (j + imargin) * DBPT_GINTP;
-				for (int k=0; k<DBPT_GINTP; k++) {igp[gidx + k] = (int)(p0 + p1p0 * k);}
+				//190108 const int gidx = (j + imargin) * DBPT_GINTP;
+				const int gidx = (j + imargin) * DBPT_GINTP + isino * igpdimx;//190109
+				for (int k = 0; k < DBPT_GINTP; k++) { igp[gidx + k] = (int)(p0 + p1p0 * k); }
 			}
+			//The filtering calc above takes only about 0.1-0.2 sec on Core i5 4670.
+			//So the calc is not separated and its result igp is not kept. 
+			//Following projection calc takes most of eclipsed time 3.5 sec.
 			const double th = (ri->fdeg[i] + ri->fTiltAngle) * DEG_TO_RAD;
 			fcos = (float)(cos(th) * DBPT_GINTP);
 			fsin = (float)(-sin(th) * DBPT_GINTP);
 			foffset = fcenter - ixdimh * (fcos + fsin);
+			__int64 iparam6 = ((DWORD_PTR)igp) + imargin * sizeof(int) * DBPT_GINTP + isino * igpdimx * sizeof(int);//190109
+			param[6] = iparam6;
+			int* ipgp = (int*)(iparam6);
 			if (bUseSIMD) {
 				projx64((__int64)param);
 			} else {
@@ -2130,7 +2141,7 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 			//CudaReconstHostLong(ri, ri->iStartSino);
 		} else {
 			//kernel 4/8 with my FFT
-			CudaReconstHost(ri, ri->iStartSino, (pApp->dlgProperty.m_EnReport)? TRUE : FALSE);
+			CudaReconstHost2(ri, ri->iStartSino, (pApp->dlgProperty.m_EnReport)? TRUE : FALSE);
 		}
 	} else if (pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_ATISTREAM) {
 		CLReconstHost(ri, ri->iStartSino, (pApp->dlgProperty.m_EnReport)? TRUE : FALSE);
@@ -2705,8 +2716,10 @@ unsigned __stdcall LsqfitThread(void* pArg) {
 	short** ppQryPixel = ri->ppQry;
 	ri->i64result = 0;//__int64
 	ri->i64sum = 0;//__int64
-	const int nRefFiles = ri->max_d_ifp;
-	const int nQryFiles = ri->max_d_igp;
+	//190102 const int nRefFiles = ri->max_d_ifp;
+	//190102 const int nQryFiles = ri->max_d_igp;
+	const int nRefFiles = ri->uiMaxRef;
+	const int nQryFiles = ri->uiMaxQry;
 	const int iz = ri->drEnd;
 	//
 	for (int jrz=0; jrz<nRefFiles; jrz++) {

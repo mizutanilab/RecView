@@ -918,8 +918,35 @@ BOOL CGazoView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 	CGazoDoc* pd = GetDocument();
 	if ((pApp->bWheelToGo) || (GetKeyState(VK_SHIFT) < 0)) {
 		if (pd) {
-			if (zDelta < 0) pd->ProceedImage(1);
-			else if (zDelta > 0) pd->ProceedImage(-1);
+			if (pd->parentDoc) {
+				if (pd->parentDoc->dlgReconst.m_hWnd) {
+					const int iTrimWidth = pd->parentDoc->dlgReconst.m_Trim;
+					int iXdim = 0, iYdim = 0;
+					pd->parentDoc->GetDimension(&iXdim, &iYdim);
+					if (pd->parentDoc->dlgReconst.m_bOffsetCT) iXdim *= 2;
+					iXdim -= iTrimWidth * 2;
+					const int iInterpolation = pd->parentDoc->dlgReconst.m_Interpolation;
+					const int iZooming = (iInterpolation > CDLGRECONST_OPT_ZOOMING_NONE) ? (iInterpolation - CDLGRECONST_OPT_ZOOMING_NONE) : 0;
+					const int iBinning = (iInterpolation == 0) ? 4 : ((iInterpolation == 1) ? 2 : 1);
+					const int ixlen = iXdim / iBinning;
+					const int ipintp = (int)pow((double)2, iZooming);
+					const int iTargetdim = ixlen * ipintp;
+					if (pd->ixdim == iTargetdim) {
+						//if (pd->parentDoc->dlgReconst.iContext & CDLGRECONST_CONTEXT_TOMO1) {
+						if (pd->dlgReconst.iContext & CDLGRECONST_CONTEXT_TOMO1) {
+							pd->parentDoc->dlgReconst.IncDecCenter(1, -zDelta);
+							pd->parentDoc->dlgReconst.CalcTomogram(1, pd);
+						//} else if (pd->parentDoc->dlgReconst.iContext & CDLGRECONST_CONTEXT_TOMO2) {
+						} else if (pd->dlgReconst.iContext & CDLGRECONST_CONTEXT_TOMO2) {
+							pd->parentDoc->dlgReconst.IncDecCenter(2, -zDelta);
+							pd->parentDoc->dlgReconst.CalcTomogram(2, pd);
+						}
+					}
+				}
+			} else {
+				if (zDelta < 0) pd->ProceedImage(1);
+				else if (zDelta > 0) pd->ProceedImage(-1);
+			}
 		}
 	} else if (!bLButtonDown) {
 		/*150101

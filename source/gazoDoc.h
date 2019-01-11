@@ -100,7 +100,7 @@ public:
 	TErr SetConvList(CString sDataPath, CString sFilePrefix, CString sFileSuffix, 
 						int iDatasetSel, CMainFrame* pf = NULL);
 	int CountFrameFromConvBat(CString sDataPath = "");
-	void ShowTomogram(RECONST_QUEUE* rq, int iy, double fc);
+	void ShowTomogram(RECONST_QUEUE* rq, int iy, double fc, CGazoDoc* pdTarget = NULL);
 	void ShowSinogram(RECONST_QUEUE* rq, int iy, double fc);
 	TErr BatchReconst(RECONST_QUEUE* rq);
 	void EnableSystemMenu(bool bEnable);

@@ -26,7 +26,7 @@ CDlgLsqfit::CDlgLsqfit(CWnd* pParent /*=NULL*/)
 	, m_YHigh(10)
 	, m_ZLow(-5)
 	, m_ZHigh(5)
-	, m_bMaxDiameter(FALSE)
+	, m_bMaxDiameter(TRUE)
 {
 	nRefFiles = 0;
 	nQryFiles = 0;

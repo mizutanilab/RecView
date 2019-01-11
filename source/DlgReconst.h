@@ -26,6 +26,11 @@
 #define CDLGRECONST_FRAME_ODD 1
 #define CDLGRECONST_FRAME_EVEN 2
 
+#define CDLGRECONST_CONTEXT_NONE 0
+#define CDLGRECONST_CONTEXT_TOMO1 1
+#define CDLGRECONST_CONTEXT_TOMO2 2
+#define CDLGRECONST_CONTEXT_SINO 4
+
 class CGazoDoc;
 
 /////////////////////////////////////////////////////////////////////////////
@@ -47,6 +52,8 @@ public:
 	int GetOffsetCTaxis();
 	void ParamCopyFrom(const CDlgReconst& a);
 	void AdjustSliceWithBinning();
+	void CalcTomogram(int iParams, CGazoDoc* pdTarget = NULL);
+	void IncDecCenter(int iParams, int iDirection);
 
 // ダイアログ データ
 	//{{AFX_DATA(CDlgReconst)
@@ -66,6 +73,7 @@ public:
 	int iSliceMax;
 	int iImageWidth;
 	int iStatus;
+	int iContext;
 	bool m_AngularIntp;
 	bool m_Zernike;
 	float m_TiltAngle;

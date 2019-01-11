@@ -16,6 +16,7 @@
 #include "DlgQueue.h"
 #include "cxyz.h"//181213
 //#include <cutil_inline.h>
+#include "DlgMessage.h"
 
 #include "cudaReconst.h"
 #include "clReconst.h"
@@ -73,6 +74,7 @@ CError error;
 //int iThreadStatus;
 //CGazoDoc* pDocThread;
 
+#define CGAZOAPP_CUDA_ARCH 300
 CGazoApp::CGazoApp()
  : m_mutex(FALSE, _T("RecView4"), NULL)//131013
 {
@@ -80,14 +82,16 @@ CGazoApp::CGazoApp()
 	// ここに InitInstance 中の重要な初期化処理をすべて記述してください。
 	iStatus = 0;
 	sProgVersion = "RecView ";
-	//sProgVersion = "RecView v5.4.0";
 #ifdef _WIN64
-	sProgVersion += "x64\r\n";
+	sProgVersion += "x64";
 #endif
 #ifndef _WIN64
-	sProgVersion += "x86\r\n";
+	sProgVersion += "x86";
 #endif
-	sProgVersion += "Build: ";
+#ifdef CUDAFFT
+	sProgVersion += " with CUDA-FFT";
+#endif
+	sProgVersion += "\r\nBuild: ";
 	sProgVersion += __DATE__;
 	sProgVersion += " / ";
 	sProgVersion += __TIME__;
@@ -123,27 +127,65 @@ CGazoApp::CGazoApp()
 	iAvailableCPU = ::GetProcessorCoreCount();
 	if (iAvailableCPU <= 0) iAvailableCPU = iLogicalProcessorCount > 1 ? iLogicalProcessorCount : 1;
 	//===>131019
-	//
-	int iCUDAcount = GetCudaDeviceCount(300);
+	CString msg = "", line;
+	line.Format("x86/x64 CPU\r\n Number of cores: %d\r\n", iAvailableCPU); msg += line;
+	if (bSIMD) msg += " MMX+SSE+SSE2: detected\r\n";
+	else msg += " MMX+SSE+SSE2: not detected\r\n";
+	if (bAVX2) msg += " AVX2: detected\r\n";
+	else msg += " AVX2: not detected\r\n";
+	//memory
+	MEMORYSTATUSEX memory;
+	memory.dwLength = sizeof(memory);
+	GlobalMemoryStatusEx(&memory);
+	double dmem = (double)(memory.ullTotalPhys >> 20);//memory in Mbytes
+	line.Format(" Memory: %.2fGB", dmem / 1024.); msg += line;
+	error.Log(1, msg);
+	//CUDA GPUs
+	int iCUDAtotalcount = GetCudaDeviceCount(0);
+	iCUDAtotalcount &= CUDA_ERROR_DEVICEINFO_MASK;
+	char pcDeviceName[256];
+	msg.Empty();
+	for (int i = 0; i < iCUDAtotalcount; i++) {
+		if (GetCudaDeviceName(i, pcDeviceName, 256) == 0) {
+			int iMajor = 1, iMinor = 0, iCores = 0, iProcessors = 0;
+			GetCudaDeviceComputingCapability(i, &iMajor, &iMinor);
+			GetCudaNumberOfCores(i, &iCores, &iProcessors);
+			line.Format("GPU%d: %s\r\n Compute capability: %d.%d\r\n Processors x cores: %d (%dx%d)\r\n",
+				i, pcDeviceName, iMajor, iMinor, iProcessors * iCores, iProcessors, iCores);
+		}
+		else {
+			line.Format("GPU%d: Unknown\r\n", i);
+		}
+		msg += line;
+	}
+	if (!msg.IsEmpty()) error.Log(1, msg);
 	//The compute capability number is set in the Project-Property-CUDA C/C++ page
 	//minimum number for CUDA Tk 10.0 is compute_30 (__CUDA_ARCH__ = 300)
-	char pcDeviceName[256];
-	if (iCUDAcount & CUDA_ERROR_INSUFFICIENT_DRIVER) {
-		AfxMessageBox("INSUFFICIENT CUDA DRIVER\r\nNo cuda GPU is available.");//131022
-	} else if (iCUDAcount & CUDA_ERROR_DEVICE_GETCOUNT) {
-		AfxMessageBox("ERROR IN DEVICE DETECTION\r\nNo cuda GPU is available.");
-	} else if (iCUDAcount & CUDA_ERROR_DEVICE_GETPROPERTY) {
-		CString msg = "ERROR IN DEVICE PROPERTY INQUIRY";
-		if (GetCudaDeviceName(iCUDAcount & CUDA_ERROR_DEVICEINFO_MASK, pcDeviceName, 256) == 0) msg.Format("ERROR IN DEVICE PROPERTY INQUIRY\r\n%s", pcDeviceName);
-		AfxMessageBox(msg);
-	} else if (iCUDAcount & CUDA_ERROR_INSUFFICIENT_COMPUTE_CAPABILITY) {
-		CString msg = "INSUFFICIENT COMPUTE CAPABILITY";
-		if (GetCudaDeviceName(iCUDAcount & CUDA_ERROR_DEVICEINFO_MASK, pcDeviceName, 256) == 0) msg.Format("INSUFFICIENT COMPUTE CAPABILITY\r\n%s", pcDeviceName);
-		AfxMessageBox(msg);
+	//though this directive seems "undefined".
+	int iCUDAcount = GetCudaDeviceCount(CGAZOAPP_CUDA_ARCH);
+	msg.Empty();
+#ifdef _WIN64
+	if ((iCUDAcount & CUDA_ERROR_DEVICEINFO_MASK) == 0) msg = "NO CUDA DEVICE FOUND\r\n";
+	if (iCUDAcount & CUDA_ERROR_INSUFFICIENT_DRIVER) msg += "INSUFFICIENT CUDA DRIVER\r\n";
+	else if (iCUDAcount & CUDA_ERROR_DEVICE_GETCOUNT) msg += "ERROR IN DEVICE DETECTION\r\n";
+	for (int i = 0; i < iCUDAtotalcount; i++) {
+		int iMajor = 1, iMinor = 0;
+		pcDeviceName[0] = 0;
+		GetCudaDeviceName(i, pcDeviceName, 256);
+		if (GetCudaDeviceComputingCapability(i, &iMajor, &iMinor) == CUDA_ERROR_DEVICE_GETPROPERTY) {
+			line.Format("ERROR IN DEVICE PROPERTY INQUIRY: GPU%d\r\n", i);
+			msg += line;
+		} else if (iMajor * 100 + iMinor * 10 < CGAZOAPP_CUDA_ARCH) {
+			line.Format("LOW COMPUTE CAPABILITY: GPU%d(%s) CC=%d.%d\r\n", i, pcDeviceName, iMajor, iMinor);
+			msg += line;
+		}
 	}
+	if (!msg.IsEmpty()) error.Log(1, msg);
+#endif
 	iCUDAcount &= CUDA_ERROR_DEVICEINFO_MASK;
-	int iCUDAblock = GetCudaMaxThreadsPerBlock(iCUDAcount);
-	int iCUDAwarp = GetCudaWarpSize(iCUDAcount);
+	int iCUDAblock = iCUDAcount ? GetCudaMaxThreadsPerBlock(iCUDAcount) : 512;
+	int iCUDAwarp = iCUDAcount ? GetCudaWarpSize(iCUDAcount): 32;
+	//msg.Format("%d %d %d", iCUDAcount, iCUDAblock, iCUDAwarp); error.Log(1, msg);
 	int iATIcount, iATImaxwork, iATIunitwork;
 	CLInitATIstreamDeviceInfo(&iATIcount, &iATImaxwork, &iATIunitwork);//DO NOT call this func twice
 	//
@@ -625,8 +667,10 @@ void CGazoApp::OnTomoRenumfiles()
 void CGazoApp::OnViewError()
 {
 	// TODO: ここにコマンド ハンドラ コードを追加します。
-	if (error.Report().IsEmpty()) AfxMessageBox("No error.");
-	else AfxMessageBox("Errors:\r\n" + error.Report());//120720
+	CDlgMessage dlg;
+	if (error.Report().IsEmpty()) dlg.m_Msg = "No errors.";
+	else dlg.m_Msg = error.Report();//120720
+	dlg.DoModal();
 }
 
 int GazoAppLsqFitCompare( const void *arg1, const void *arg2 ) {
@@ -926,8 +970,10 @@ CString CGazoApp::Lsqfit(LSQFIT_QUEUE* lq, CDlgLsqfit* dlg, CDlgQueue* dqueue) {
 						ri[i].i64sum = 0;//int
 						if (iz + i > lq->m_ZHigh) continue;
 						ri[i].iStatus = RECONST_INFO_BUSY;
-						ri[i].max_d_ifp = lq->nRefFiles;
-						ri[i].max_d_igp = lq->nQryFiles;
+						//190102 ri[i].max_d_ifp = lq->nRefFiles;
+						//190102 ri[i].max_d_igp = lq->nQryFiles;
+						ri[i].uiMaxRef = lq->nRefFiles;
+						ri[i].uiMaxQry = lq->nQryFiles;
 						ri[i].ixdim = ix;
 						ri[i].iInterpolation = iy;
 						ri[i].iLenSinogr = ixref;
@@ -1557,10 +1603,12 @@ unsigned __stdcall GetImageDiffThread(void* pArg) {
 	//
 	short* psBinRefPixel = *(ri->ppRef);
 	short* psBinQryPixel = *(ri->ppQry);
-	int ibin = ri->max_d_ifp;
+	//190102 int ibin = ri->max_d_ifp;
+	int ibin = ri->iLsqBin;
 	CXyz cDelta = *(ri->pcxyz1);
 	CXyz cDisp = *(ri->pcxyz2);
-	int ibxref = ri->max_d_igp;
+	//190102 int ibxref = ri->max_d_igp;
+	int ibxref = ri->iLsqBxref;
 	int ibyref = ri->ixdim;
 	int ibyref0 = ri->drStart;
 	int ibyref1 = ri->drEnd;
@@ -1652,8 +1700,10 @@ double CGazoApp::GetImageDiff(short* psBinRefPixel, short* psBinQryPixel, int ib
 		ri[i].iStartSino = i;
 		if (i) ri[i].bMaster = false; else ri[i].bMaster = true;
 		ri[i].iStatus = RECONST_INFO_BUSY;
-		ri[i].max_d_ifp = ibin;
-		ri[i].max_d_igp = ibxref;
+		//190102 ri[i].max_d_ifp = ibin;
+		//190102 ri[i].max_d_igp = ibxref;
+		ri[i].iLsqBin = ibin;
+		ri[i].iLsqBxref = ibxref;
 		ri[i].ixdim = ibyref;
 		ri[i].drStart = (ibyref / nCPU) * i;
 		ri[i].drEnd = (i == nCPU-1) ? ibyref : (ibyref / nCPU) * (i+1);

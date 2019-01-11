@@ -9,8 +9,8 @@ Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		CUDA_Release|Win32 = CUDA_Release|Win32
 		CUDA_Release|x64 = CUDA_Release|x64
-		CUDAemu_Release|Win32 = CUDAemu_Release|Win32
-		CUDAemu_Release|x64 = CUDAemu_Release|x64
+		CUDAFFT_Release|Win32 = CUDAFFT_Release|Win32
+		CUDAFFT_Release|x64 = CUDAFFT_Release|x64
 		Debug|Win32 = Debug|Win32
 		Debug|x64 = Debug|x64
 		OpenCL_Release|Win32 = OpenCL_Release|Win32
@@ -19,14 +19,12 @@ Global
 		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{69E97353-E324-499E-9DDC-AB252A7BB6A5}.CUDA_Release|Win32.ActiveCfg = CUDA_Release|Win32
-		{69E97353-E324-499E-9DDC-AB252A7BB6A5}.CUDA_Release|Win32.Build.0 = CUDA_Release|Win32
+		{69E97353-E324-499E-9DDC-AB252A7BB6A5}.CUDA_Release|Win32.ActiveCfg = CUDA_Release|x64
 		{69E97353-E324-499E-9DDC-AB252A7BB6A5}.CUDA_Release|x64.ActiveCfg = CUDA_Release|x64
 		{69E97353-E324-499E-9DDC-AB252A7BB6A5}.CUDA_Release|x64.Build.0 = CUDA_Release|x64
-		{69E97353-E324-499E-9DDC-AB252A7BB6A5}.CUDAemu_Release|Win32.ActiveCfg = CUDAemu_Release|Win32
-		{69E97353-E324-499E-9DDC-AB252A7BB6A5}.CUDAemu_Release|Win32.Build.0 = CUDAemu_Release|Win32
-		{69E97353-E324-499E-9DDC-AB252A7BB6A5}.CUDAemu_Release|x64.ActiveCfg = CUDAemu_Release|x64
-		{69E97353-E324-499E-9DDC-AB252A7BB6A5}.CUDAemu_Release|x64.Build.0 = CUDAemu_Release|x64
+		{69E97353-E324-499E-9DDC-AB252A7BB6A5}.CUDAFFT_Release|Win32.ActiveCfg = CUDAFFT_Release|x64
+		{69E97353-E324-499E-9DDC-AB252A7BB6A5}.CUDAFFT_Release|x64.ActiveCfg = CUDAFFT_Release|x64
+		{69E97353-E324-499E-9DDC-AB252A7BB6A5}.CUDAFFT_Release|x64.Build.0 = CUDAFFT_Release|x64
 		{69E97353-E324-499E-9DDC-AB252A7BB6A5}.Debug|Win32.ActiveCfg = Debug|Win32
 		{69E97353-E324-499E-9DDC-AB252A7BB6A5}.Debug|Win32.Build.0 = Debug|Win32
 		{69E97353-E324-499E-9DDC-AB252A7BB6A5}.Debug|x64.ActiveCfg = Debug|x64

@@ -160,7 +160,7 @@ BEGIN
     BEGIN
         MENUITEM "&Toolbar",                    ID_VIEW_TOOLBAR
         MENUITEM "Status Bar",                  ID_VIEW_STATUS_BAR
-        MENUITEM "Error...",                    32807
+        MENUITEM "Error/info...",               32807
         MENUITEM "Drag scroll",                 IDM_VIEW_DRAGSCROLL
         MENUITEM "Box axis label",              IDM_VIEW_BOXAXISLABEL
         MENUITEM "Wheel to go",                 IDM_VIEW_WHEELTOGO
@@ -234,7 +234,7 @@ BEGIN
     BEGIN
         MENUITEM "&Toolbar",                    ID_VIEW_TOOLBAR
         MENUITEM "Status Bar",                  ID_VIEW_STATUS_BAR
-        MENUITEM "Error...",                    IDM_VIEW_ERROR
+        MENUITEM "Error/info...",               IDM_VIEW_ERROR
         MENUITEM "Drag scroll",                 IDM_VIEW_DRAGSCROLL
         MENUITEM "Box axis label",              IDM_VIEW_BOXAXISLABEL
         MENUITEM "Wheel to go",                 IDM_VIEW_WHEELTOGO
@@ -414,7 +414,7 @@ END
 
 IDD_MESSAGE DIALOGEX 0, 0, 187, 163
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "Message"
+CAPTION "Output"
 FONT 9, "MS Sans Serif", 0, 0, 0x0
 BEGIN
     DEFPUSHBUTTON   "OK",IDOK,157,142,23,14
@@ -500,8 +500,8 @@ BEGIN
     CONTROL         "Even frames only",IDC_RECONST_FRAMEEVEN,"Button",BS_AUTORADIOBUTTON,41,138,67,10
     CONTROL         "Skip initial flat images in HDF5",IDC_RECONST_SKIPINITIALFLATSINHDF5,
                     "Button",BS_AUTOCHECKBOX | WS_DISABLED | WS_TABSTOP,12,150,97,10
-    EDITTEXT        IDC_RECONST_AXISINC,198,140,23,12,ES_AUTOHSCROLL
-    LTEXT           "Axis scan increment",IDC_STATIC,126,142,69,8
+    EDITTEXT        IDC_RECONST_AXISINC,194,140,23,12,ES_AUTOHSCROLL
+    LTEXT           "Rotation center step",IDC_STATIC,126,142,65,8
 END
 
 IDD_HISTO_OPT DIALOGEX 0, 0, 107, 124
@@ -565,7 +565,7 @@ BEGIN
     EDITTEXT        IDC_LSQFIT_QRYLIST,7,95,302,52,ES_MULTILINE | ES_AUTOHSCROLL | ES_READONLY | WS_VSCROLL | WS_HSCROLL
     LTEXT           "Query image set: 0",IDC_LSQFIT_QRYMSG,7,82,97,8
     PUSHBUTTON      "Select...",IDC_LSQFIT_QRYSET,105,79,48,13
-    LTEXT           "Scan range",IDC_STATIC,234,153,37,8
+    LTEXT           "Scan",IDC_STATIC,234,153,16,8
     LTEXT           "x",IDC_STATIC,235,166,8,8
     LTEXT           "y",IDC_STATIC,235,180,8,8
     LTEXT           "z",IDC_STATIC,235,195,8,8
@@ -580,7 +580,7 @@ BEGIN
     EDITTEXT        IDC_LSQFIT_ZHIGH,284,195,25,12,ES_AUTOHSCROLL
     PUSHBUTTON      "Stop",IDC_LSQFIT_STOP,280,212,29,14
     PUSHBUTTON      "Queue",IDC_LSQFIT_QUEUE,245,232,29,14
-    CONTROL         "diam.",IDC_LSQFIT_MAXDIA,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,276,153,33,10
+    CONTROL         "diameter",IDC_LSQFIT_MINDIA,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,268,152,38,10
 END
 
 IDD_HORIZCENTER DIALOGEX 0, 0, 187, 190
@@ -1032,6 +1032,21 @@ BEGIN
 END
 
 IDD_ABOUTBOX AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_RECON_OPT AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_MESSAGE AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_LSQFIT AFX_DIALOG_LAYOUT
 BEGIN
     0
 END

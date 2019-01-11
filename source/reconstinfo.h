@@ -11,6 +11,11 @@
 
 class CXyz;
 
+//followings are defined in general.h
+//#define READTIF16bit 1
+//#define READTIF8bit 2
+#define RIFLAG_KEEPSINOGRAM 4
+
 #if !defined( _RECONSTINFO_H_ )
 #define _RECONSTINFO_H_
 struct RECONST_INFO {
@@ -19,6 +24,7 @@ struct RECONST_INFO {
 	//int iRecDim;
 	int iInterpolation;
 	double center;
+	int iSinoCenter;//190107
 	int iLenSinogr;
 	int* iReconst;
 	int iStartSino;
@@ -66,6 +72,11 @@ struct RECONST_INFO {
 	unsigned int max_d_strip;
 	float2* d_p;
 	unsigned int max_d_p;
+	float* d_px;
+	unsigned int max_d_px;
+	//	float* d_fcos;
+//	float* d_fsin;
+//	unsigned int max_d_fcos;
 
 	cufftHandle fftplan;
 	unsigned int ifftdim;
@@ -75,8 +86,12 @@ struct RECONST_INFO {
 	unsigned __int64 i64sum;
 	short** ppRef;
 	short** ppQry;
+	unsigned int uiMaxRef;
+	unsigned int uiMaxQry;
 	CXyz* pcxyz1;
 	CXyz* pcxyz2;
+	int iLsqBin;
+	int iLsqBxref;
 	//drift list
 	int* piDrift;
 	int iFlag;

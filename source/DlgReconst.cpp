@@ -54,6 +54,7 @@ CDlgReconst::CDlgReconst(CWnd* pParent /*=NULL*/)
 	iImageWidth = 0;
 	pd = NULL;
 	iStatus = CDLGRECONST_IDLE;
+	iContext = CDLGRECONST_CONTEXT_NONE;
 	m_drStart = 0;
 	m_drEnd = 0;
 	m_drX = 0;
@@ -311,15 +312,19 @@ void CDlgReconst::OnReconstQueue()
 	//
 	ShowWindow(SW_HIDE);
 	DestroyWindow();
+	iContext = CDLGRECONST_CONTEXT_NONE;
 	iStatus = CDLGRECONST_IDLE;
+	//delete GPU memory if any 190107
+	if (pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_CUDA) {
+		int nCPU = (int)(pApp->dlgProperty.iCUDA);
+		for (int i = 0; i < nCPU; i++) { CudaReconstMemFree(&(pd->ri[i])); }
+	}
+	else if (pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_ATISTREAM) {
+		int nCPU = (int)(pApp->dlgProperty.iATIstream);
+		for (int i = 0; i < nCPU; i++) { CLReconstMemFree(&(pd->ri[i])); }
+	}
 //AfxMessageBox(rq.dataPath + rq.itexFilePrefix + rq.itexFileSuffix);
 }
-
-/*void CDlgReconst::OnReconstBatch() 
-{
-	UpdateData();
-	EnableCtrl();
-}*/
 
 bool CDlgReconst::CheckParams(int idx) {
 	int ixd, iyd;
@@ -444,6 +449,17 @@ void CDlgReconst::OnCancel()
 	ShowWindow(SW_HIDE);
 	DestroyWindow();
 	iStatus = CDLGRECONST_IDLE;
+	iContext = CDLGRECONST_CONTEXT_NONE;
+	//delete GPU memory if any 190107
+	CGazoApp* pApp = (CGazoApp*)AfxGetApp();
+	if (pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_CUDA) {
+		int nCPU = (int)(pApp->dlgProperty.iCUDA);
+		for (int i = 0; i < nCPU; i++) { CudaReconstMemFree(&(pd->ri[i])); }
+	}
+	else if (pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_ATISTREAM) {
+		int nCPU = (int)(pApp->dlgProperty.iATIstream);
+		for (int i = 0; i < nCPU; i++) { CLReconstMemFree(&(pd->ri[i])); }
+	}
 	//CDialog::OnCancel();
 }
 
@@ -515,15 +531,58 @@ void CDlgReconst::OnReconstAuto2()
 	}
 }
 
-void CDlgReconst::OnReconstShow1() 
-{
-	UpdateData();
-	if ((m_Slice1 >= 0)&&(m_Slice1 < iSliceMax)) {
-		//151110 if (atof(m_Center1) <= 0) OnReconstAuto1();
-		if (m_iDataseForCenter1 != m_iDatasetSel) OnReconstAuto1();
+void CDlgReconst::IncDecCenter(int iParams, int iDirection) {
+	if (iParams == 1) {
+		UpdateData();
+		double dCenter = atof(m_Center1);
+		dCenter += (iDirection > 0 ? 1 : -1) * m_dAxisInc;
+		m_Center1.Format("%.2f", dCenter);
+		UpdateData(FALSE);
+		if (m_bOffsetCT && pd) pd->ResetSinogram();
+		m_iDataseForCenter1 = m_iDatasetSel;
+	} else if (iParams == 2) {
+		UpdateData();
+		double dCenter = atof(m_Center2);
+		dCenter += (iDirection > 0 ? 1 : -1) * m_dAxisInc;
+		m_Center2.Format("%.2f", dCenter);
+		UpdateData(FALSE);
+		if (m_bOffsetCT && pd) pd->ResetSinogram();
+		m_iDataseForCenter2 = m_iDatasetSel;
+	} else {
+		return;
 	}
-	if (CheckParams(1)) {AfxMessageBox("Parameter error"); return;}
+}
+
+void CDlgReconst::OnReconstShow1() {CalcTomogram(1);}
+void CDlgReconst::OnReconstShow2() { CalcTomogram(2); }
+
+void CDlgReconst::CalcTomogram(int iParams, CGazoDoc* pdTarget) {
+	UpdateData();
+	int iSlice = 0;
+	double dCenter = 1000;
+	int iRtnContext = CDLGRECONST_CONTEXT_NONE;
+	if (iParams == 1) {
+		iSlice = m_Slice1;
+		if ((m_Slice1 >= 0) && (m_Slice1 < iSliceMax)) {
+			if (m_iDataseForCenter1 != m_iDatasetSel) OnReconstAuto1();
+		}
+		if (CheckParams(1)) { AfxMessageBox("Parameter error"); return; }
+		dCenter = atof(m_Center1) - m_Trim;
+		iRtnContext = CDLGRECONST_CONTEXT_TOMO1;
+	} else if (iParams == 2) {
+		iSlice = m_Slice2;
+		if ((m_Slice2 >= 0) && (m_Slice2 < iSliceMax)) {
+			if (m_iDataseForCenter2 != m_iDatasetSel) OnReconstAuto2();
+		}
+		if (CheckParams(2)) { AfxMessageBox("Parameter error"); return; }
+		dCenter = atof(m_Center2) - m_Trim;
+		iRtnContext = CDLGRECONST_CONTEXT_TOMO2;
+	} else {
+		AfxMessageBox("Unknown params");
+		return;
+	}
 	//CDialog::OnCancel();
+	iContext = iRtnContext;
 	iStatus = CDLGRECONST_SHOWIMAGE;
 	CGazoApp* pApp = (CGazoApp*) AfxGetApp();
 	pApp->SetBusy();
@@ -582,7 +641,7 @@ void CDlgReconst::OnReconstShow1()
 		//CString msg; msg.Format("%d", rq.iLossFrameSet); AfxMessageBox(msg);
 		rq.bReconOptionUpdated = bOptionUpdated;
 		//
-		pd->ShowTomogram(&rq, m_Slice1, rq.dCenter1);//, m_Filter, m_Interpolation, m_Suffix);
+		pd->ShowTomogram(&rq, iSlice, dCenter, pdTarget);//, m_Filter, m_Interpolation, m_Suffix);
 		bOptionUpdated = false;
 		pd->EnableSystemMenu(true);
 	}
@@ -592,6 +651,7 @@ void CDlgReconst::OnReconstShow1()
 	EnableCtrl();
 }
 
+/*190107
 void CDlgReconst::OnReconstShow2() 
 {
 	UpdateData();
@@ -664,9 +724,9 @@ void CDlgReconst::OnReconstShow2()
 	m_Progress.SetPos(PROGRESS_BAR_UNIT * 2);
 	pApp->SetIdle();
 	iStatus = CDLGRECONST_IDLE;
+	iContext = CDLGRECONST_CONTEXT_TOMO2;
 	EnableCtrl();
-}
-
+}*/
 
 void CDlgReconst::OnBnClickedReconstSino1()
 {
@@ -735,6 +795,7 @@ void CDlgReconst::OnBnClickedReconstSino1()
 	m_Progress.SetPos(PROGRESS_BAR_UNIT);
 	pApp->SetIdle();
 	iStatus = CDLGRECONST_IDLE;
+	iContext = CDLGRECONST_CONTEXT_SINO;
 	EnableCtrl();
 }
 

@@ -126,6 +126,7 @@ BOOL CDlgProperty::OnInitDialog()
 		caption.Format("%3d", i+1);
 		m_CPU.InsertString(i, caption);
 	}
+	i = pApp->iAvailableCPU;
 	if (iCPU > i) {
 		m_CPU.SetCurSel(i-1);
 		iCPU = i;
@@ -139,6 +140,7 @@ BOOL CDlgProperty::OnInitDialog()
 		caption.Format("%3d", i+1);
 		m_CUDA.InsertString(i, caption);
 	}
+	i = maxCUDA;
 	if (iCUDA > i) {
 		m_CUDA.SetCurSel(i-1);
 		iCUDA = i;
@@ -171,6 +173,7 @@ BOOL CDlgProperty::OnInitDialog()
 		caption.Format("%3d", i+1);
 		m_ATIstream.InsertString(i, caption);
 	}
+	i = maxATIstream;
 	if (iATIstream > i) {
 		m_ATIstream.SetCurSel(i-1);
 		iATIstream = i;
@@ -222,7 +225,9 @@ void CDlgProperty::EnableCtrl() {
 		case CDLGPROPERTY_PROCTYPE_CUDA: {
 			GetDlgItem(IDC_PROP_NGPU)->EnableWindow(TRUE);
 			GetDlgItem(IDC_PROP_CUDANBLOCK)->EnableWindow(TRUE);
+#ifdef CUDAFFT
 			GetDlgItem(IDC_PROP_CUDAFFT)->EnableWindow(TRUE);
+#endif
 			break;}
 		case CDLGPROPERTY_PROCTYPE_ATISTREAM: {
 			GetDlgItem(IDC_PROP_NATISTREAM)->EnableWindow(TRUE);
