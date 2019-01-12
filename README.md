@@ -103,7 +103,7 @@ From the menu bar, select 'File'-'Open' and choose an image file.
 <B>Computing environment</B>  
 The GPU/CPU processors and memory usage can be specified in the 'Tomography'-'Computing config' dialog.
 
-<B>Reconstruction</B>
+<B>Reconstruction</B>  
 Open 'Tomography'-'Reconstruction' dialog. Enter slice position in the 'From' or 'To' field. Tomographic sections can be generated with 'Show image' buttons. You can adjust the sample axis position using the 'Rotation center' field. 'Batch' invokes the reconstruction calculations through the 'From' to 'To' sections. Several options are also available, such as the 'Offset CT' checkbox to switch the reconstruction kernel to the offset-CT mode. Many other options including the zooming reconstruction can be found in the 'Options' dialog. 
 
 <B>Trimming or reformatting images</B>  
@@ -160,8 +160,8 @@ frame#      time(msec)     angle(deg) 0=flatfield/1=sample
         <LI>Install 'Visual Studio Comunity 2017' from the <a href="https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=Community">Microsoft site</a>. Choose 'Desktop Development with C++' and include the 'Visual C++ MFC' component. We recommend to include language packs of English(US) and Japanese. </LI>
         <LI>Download 'CUDA Toolkit 10.0' from the <a href="https://developer.nvidia.com/cuda-toolkit-archive">NVIDIA Toolkit site</a> and istall. The installation will associate the toolkit with Visual Studio.</LI>
         <LI>Download the latest GPU driver from the <a href="https://www.nvidia.co.jp/Download/index.aspx">NVIDIA driver site</a> and install. It is not recommended to update the driver from Device Manager of Windows Control Panel.</LI>
-        <LI>Open Visual Studio solution file 'gazo.sln'. Choose your platform (x64 or Win32) and build configuration (Release or CUDA_Release) from the toolbar and generate executable from the 'Build' menu. You can find an .exe file under the "x64" or "Win32" folder. The recent CUDA Toolkit seems not support x86 platforms.</LI>
-        <LI>Another build configuration 'CUDAFFT_Release' is also available. In this configuration, Fourier transform calculations in the deconvolution step can be executed on the GPU, though its eclipsed time is comparable to that of the x86/x64 CPU. Dynamic link libraries ('cudart64_100.dll' and 'cufft64_100.dll') must be placed in the folder where the CUDAFFT executable is located. The library files are available as part of the CUDA Toolkit.</LI>
+        <LI>Open Visual Studio solution file 'gazo.sln'. Choose your platform (x64 or Win32) and build configuration (Release or CUDA_Release) from the toolbar and generate executable from the 'Build' menu. You can find an .exe file under the "x64" or "Win32" folder. The recent CUDA Toolkit seems not compatible with the "Win32" (x86) platform.</LI>
+        <LI>Another configuration 'CUDAFFT_Release' is also prepared. In this configuration, Fourier transform calculations in the deconvolution step can be executed on the GPU, though its eclipsed time is comparable to that of the x86/x64 CPU. Dynamic link libraries ('cudart64_100.dll' and 'cufft64_100.dll') must be placed in the folder where the CUDAFFT executable is built. The library files are available as part of the CUDA Toolkit.</LI>
       </UL><br>
 </OL>
 
