@@ -142,8 +142,6 @@ BEGIN
         MENUITEM "Load queue...",               IDM_FILE_LOADQUEUE
         MENUITEM "Save queue...",               IDM_FILE_SAVEQUEUE
         MENUITEM SEPARATOR
-        MENUITEM "Print Setup...",              ID_FILE_PRINT_SETUP
-        MENUITEM SEPARATOR
         MENUITEM "Recent File",                 ID_FILE_MRU_FILE1
         MENUITEM SEPARATOR
         MENUITEM "Exit",                        ID_APP_EXIT
@@ -186,21 +184,9 @@ BEGIN
         MENUITEM "Load queue...",               IDM_FILE_LOADQUEUE
         MENUITEM "Save queue...",               IDM_FILE_SAVEQUEUE
         MENUITEM SEPARATOR
-        MENUITEM "Print...\tCtrl+P",            ID_FILE_PRINT
-        MENUITEM "Print Preview",               ID_FILE_PRINT_PREVIEW
-        MENUITEM "Print Setup...",              ID_FILE_PRINT_SETUP
-        MENUITEM SEPARATOR
         MENUITEM "Recent File",                 ID_FILE_MRU_FILE1
         MENUITEM SEPARATOR
         MENUITEM "Exit",                        ID_APP_EXIT
-    END
-    POPUP "&Edit"
-    BEGIN
-        MENUITEM "Undo\tCtrl+Z",                ID_EDIT_UNDO
-        MENUITEM SEPARATOR
-        MENUITEM "Cut\tCtrl+X",                 ID_EDIT_CUT
-        MENUITEM "Copy\tCtrl+C",                ID_EDIT_COPY
-        MENUITEM "Paste\tCtrl+V",               ID_EDIT_PASTE
     END
     POPUP "Tomography"
     BEGIN
@@ -250,6 +236,18 @@ BEGIN
     BEGIN
         MENUITEM "About RecView...",            ID_APP_ABOUT
         MENUITEM "Debug...",                    IDM_HLP_DEBUG
+    END
+    POPUP "x", INACTIVE
+    BEGIN
+        MENUITEM "Undo\tCtrl+Z",                ID_EDIT_UNDO
+        MENUITEM SEPARATOR
+        MENUITEM "Cut\tCtrl+X",                 ID_EDIT_CUT
+        MENUITEM "Copy\tCtrl+C",                ID_EDIT_COPY
+        MENUITEM "Paste\tCtrl+V",               ID_EDIT_PASTE
+        MENUITEM SEPARATOR
+        MENUITEM "Print...\tCtrl+P",            ID_FILE_PRINT
+        MENUITEM "Print Preview",               ID_FILE_PRINT_PREVIEW
+        MENUITEM "Print Setup...",              ID_FILE_PRINT_SETUP
     END
 END
 
@@ -357,7 +355,7 @@ BEGIN
     EDITTEXT        IDC_RECONST_SUFFIX3,97,8,27,12,ES_AUTOHSCROLL
     LTEXT           "Output",IDC_STATIC,69,10,25,8
     PUSHBUTTON      "Select frames",IDC_RECONST_SELECT,30,165,54,13
-    CTEXT           "Esc",IDC_STATIC,108,138,13,8,SS_CENTERIMAGE | WS_BORDER
+    CTEXT           "F1",IDC_STATIC,108,138,9,8,SS_CENTERIMAGE | WS_BORDER
     LTEXT           "Shift",IDC_STATIC,107,36,17,8,SS_CENTERIMAGE | WS_BORDER
     LTEXT           "Shift",IDC_STATIC,107,84,17,8,SS_CENTERIMAGE | WS_BORDER
 END

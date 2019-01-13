@@ -916,7 +916,7 @@ BOOL CGazoView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 	//CMainFrame* pf = (CMainFrame*) AfxGetMainWnd();
 	const CGazoApp* pApp = (CGazoApp*) AfxGetApp();
 	CGazoDoc* pd = GetDocument();
-	if ((pApp->bWheelToGo) || (GetKeyState(VK_SHIFT) < 0) || (GetKeyState(VK_ESCAPE) < 0)) {
+	if ((pApp->bWheelToGo) || (GetKeyState(VK_SHIFT) < 0) || (GetKeyState(VK_F1) < 0)) {
 		if (pd) {
 			if (pd->parentDoc) {
 				if (pd->parentDoc->dlgReconst.m_hWnd) {
@@ -933,8 +933,8 @@ BOOL CGazoView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 					const int iTargetdim = ixlen * ipintp;
 					if (pd->ixdim == iTargetdim) {
 						const int iTargetSlice = (pd->dlgReconst.iContext & CDLGRECONST_CONTEXT_TOMO1)? 1 : ((pd->dlgReconst.iContext & CDLGRECONST_CONTEXT_TOMO2)? 2 : 0);
-						if (GetKeyState(VK_SHIFT) < 0) pd->parentDoc->dlgReconst.IncDecCenter(iTargetSlice, zDelta);
-						else if (GetKeyState(VK_ESCAPE) < 0) pd->parentDoc->dlgReconst.IncDecTilt(zDelta > 0 ? 5 : -5);
+						if ((GetKeyState(VK_SHIFT) < 0)|| (pApp->bWheelToGo)) pd->parentDoc->dlgReconst.IncDecCenter(iTargetSlice, zDelta);
+						else if (GetKeyState(VK_F1) < 0) pd->parentDoc->dlgReconst.IncDecTilt(zDelta > 0 ? 5 : -5);
 						if (pd->parentDoc->dlgReconst.iStatus == CDLGRECONST_IDLE) pd->parentDoc->dlgReconst.CalcTomogram(iTargetSlice, pd);
 						else pd->parentDoc->dlgReconst.iStatus |= CDLGRECONST_WHEEL;
 					}
