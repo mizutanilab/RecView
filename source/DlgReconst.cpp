@@ -531,6 +531,17 @@ void CDlgReconst::OnReconstAuto2()
 	}
 }
 
+void CDlgReconst::IncDecTilt(int iStep) {
+	UpdateData();
+	m_TiltAngle += iStep;
+	//double dCenter = atof(m_Center1);
+	//dCenter += (iDirection > 0 ? 1 : -1) * m_dAxisInc;
+	//m_Center1.Format("%.2f", dCenter);
+	UpdateData(FALSE);
+	//if (m_bOffsetCT && pd) pd->ResetSinogram();
+	//m_iDataseForCenter1 = m_iDatasetSel;
+}
+
 void CDlgReconst::IncDecCenter(int iParams, int iDirection) {
 	if (iParams == 1) {
 		UpdateData();
@@ -559,15 +570,15 @@ void CDlgReconst::OnReconstShow2() { CalcTomogram(2); }
 void CDlgReconst::CalcTomogram(int iParams, CGazoDoc* pdTarget) {
 	UpdateData();
 	int iSlice = 0;
-	double dCenter = 1000;
 	int iRtnContext = CDLGRECONST_CONTEXT_NONE;
+	CGazoApp* pApp = (CGazoApp*) AfxGetApp();
+	if (!pd) {AfxMessageBox("Data not found"); return;}
 	if (iParams == 1) {
 		iSlice = m_Slice1;
 		if ((m_Slice1 >= 0) && (m_Slice1 < iSliceMax)) {
 			if (m_iDataseForCenter1 != m_iDatasetSel) OnReconstAuto1();
 		}
 		if (CheckParams(1)) { AfxMessageBox("Parameter error"); return; }
-		dCenter = atof(m_Center1) - m_Trim;
 		iRtnContext = CDLGRECONST_CONTEXT_TOMO1;
 	} else if (iParams == 2) {
 		iSlice = m_Slice2;
@@ -575,29 +586,28 @@ void CDlgReconst::CalcTomogram(int iParams, CGazoDoc* pdTarget) {
 			if (m_iDataseForCenter2 != m_iDatasetSel) OnReconstAuto2();
 		}
 		if (CheckParams(2)) { AfxMessageBox("Parameter error"); return; }
-		dCenter = atof(m_Center2) - m_Trim;
 		iRtnContext = CDLGRECONST_CONTEXT_TOMO2;
 	} else {
 		AfxMessageBox("Unknown params");
 		return;
 	}
-	//CDialog::OnCancel();
 	iContext = iRtnContext;
-	iStatus = CDLGRECONST_SHOWIMAGE;
-	CGazoApp* pApp = (CGazoApp*) AfxGetApp();
 	pApp->SetBusy();
+	iStatus = CDLGRECONST_SHOWIMAGE;
 	EnableCtrl();
+	pd->EnableSystemMenu(false);
 	m_Progress.SetRange32(0, PROGRESS_BAR_UNIT * 2);
-	m_Progress.SetPos(0);
 	m_Progress.SetStep(1);
-	if (pd) {
-		pd->EnableSystemMenu(false);
+	do {
+		iStatus = CDLGRECONST_SHOWIMAGE;
+		m_Progress.SetPos(0);
 		RECONST_QUEUE rq;
 		rq.iTrimWidth = m_Trim;
 		rq.iLayer1 = m_Slice1;
 		rq.iLayer2 = m_Slice2;
 		rq.dCenter1 = atof(m_Center1) - rq.iTrimWidth;
 		rq.dCenter2 = atof(m_Center2) - rq.iTrimWidth;
+		const double dCenter = (iParams == 1) ? rq.dCenter1 : rq.dCenter2;
 		rq.dPixelWidth = m_PixelWidth;
 		rq.iFilter = m_Filter;
 		rq.dCutoff = m_Cutoff;
@@ -610,7 +620,7 @@ void CDlgReconst::CalcTomogram(int iParams, CGazoDoc* pdTarget) {
 		pd->GetDimension(&(rq.iXdim), &(rq.iYdim));
 		rq.iRawSinoXdim = rq.iXdim;
 		rq.iSinoYdim = pd->GetSinogramYdim(m_bOffsetCT);
-		if (m_bOffsetCT) {rq.iXdim *= 2; rq.bOffsetCT = true;}
+		if (m_bOffsetCT) { rq.iXdim *= 2; rq.bOffsetCT = true; }
 		else rq.bOffsetCT = false;
 		rq.iXdim -= rq.iTrimWidth * 2;
 		rq.dReconFlags = 0;
@@ -618,8 +628,8 @@ void CDlgReconst::CalcTomogram(int iParams, CGazoDoc* pdTarget) {
 		if (m_Zernike) rq.dReconFlags |= RQFLAGS_ZERNIKE;
 		if (m_bSkipInitialFlatsInHDF5) rq.dReconFlags |= RQFLAGS_SKIPINITIALFLATSINHDF5;
 		//140728
-		if (m_FrameUsage == CDLGRECONST_FRAME_ODD) rq.dReconFlags |=  RQFLAGS_USEONLYODDFRAMES;
-		else if (m_FrameUsage == CDLGRECONST_FRAME_EVEN) rq.dReconFlags |=  RQFLAGS_USEONLYEVENFRAMES;
+		if (m_FrameUsage == CDLGRECONST_FRAME_ODD) rq.dReconFlags |= RQFLAGS_USEONLYODDFRAMES;
+		else if (m_FrameUsage == CDLGRECONST_FRAME_EVEN) rq.dReconFlags |= RQFLAGS_USEONLYEVENFRAMES;
 		//110920 rq.bAngularIntp = m_AngularIntp;
 		rq.fTiltAngle = m_TiltAngle;
 		rq.logFileName = pd->GetLogPath();
@@ -642,9 +652,9 @@ void CDlgReconst::CalcTomogram(int iParams, CGazoDoc* pdTarget) {
 		rq.bReconOptionUpdated = bOptionUpdated;
 		//
 		pd->ShowTomogram(&rq, iSlice, dCenter, pdTarget);//, m_Filter, m_Interpolation, m_Suffix);
-		bOptionUpdated = false;
-		pd->EnableSystemMenu(true);
-	}
+	} while (iStatus & CDLGRECONST_WHEEL);
+	bOptionUpdated = false;
+	pd->EnableSystemMenu(true);
 	m_Progress.SetPos(PROGRESS_BAR_UNIT * 2);
 	pApp->SetIdle();
 	iStatus = CDLGRECONST_IDLE;

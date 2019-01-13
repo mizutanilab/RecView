@@ -224,7 +224,7 @@ void CudaReconstHostFFT(RECONST_INFO* ri, int idev, bool bReport) {
 	int iCurrStep = 0;
 	for (int i = (ri->iStartSino); i < (ri->iLenSinogr - 1); i += (ri->iStepSino)) {
 		int isino = (i - (ri->iStartSino)) / (ri->iStepSino);
-		if (bReport) {
+		if (bReport && (isino % 20 == 0)) {
 			if (DBProjDlgCtrl(ri, iProgStep, i, &iCurrStep)) break;
 		}
 		if (!(ri->bInc[i] & CGAZODOC_BINC_SAMPLE)) continue;
@@ -246,6 +246,7 @@ void CudaReconstHostFFT(RECONST_INFO* ri, int idev, bool bReport) {
 void CudaReconstHostFFT(RECONST_INFO* ri, int idev, bool bReport) {}
 #endif
 
+/*
 void CudaReconstHost(RECONST_INFO* ri, int idev, bool bReport) {
 	//AfxMessageBox("131014 CudaReconstHost");
 	if (cudaSuccess != cudaSetDevice( idev )) {
@@ -356,24 +357,6 @@ void CudaReconstHost(RECONST_INFO* ri, int idev, bool bReport) {
 		CudaBackProj(ixdim, iIntpDim, fCenter, 0, 
 							(ri->fdeg[i] + ri->fTiltAngle) * DEG_TO_RAD, 
 							ri->d_ifp, ri->d_igp);
-		/*/141205==>
-			float theta = (ri->fdeg[i] + ri->fTiltAngle) * (float)DEG_TO_RAD;
-			const float fcos = (float)(cos(theta) * DBPT_GINTP);
-			const float fsin = (float)(-sin(theta) * DBPT_GINTP);
-			const float fcenter = (float)((ixdimh + (ri->center) - (int)(ri->center)) * DBPT_GINTP);
-			const float foffset = fcenter - ixdimh * (fcos + fsin);
-			const int ixdimpg = ixdimp << DBPT_LOG2GINTP;
-//			int* ipgp = (int*)(((DWORD_PTR) igp) + imargin * sizeof(int) * DBPT_GINTP);
-			int* ifp = ri->iReconst;
-			for (int iy=0; iy<ixdimp; iy++) {
-				for (int ix=0; ix<ixdimp; ix++) {
-					int ix0 = (int)(ix * fcos + iy * fsin + foffset);
-					if (ix0 < 0) continue;
-					if (ix0 >= ixdimpg) continue;
-					ifp[ix + iy * ixdimp] += igpm[ix0];
-				}
-			}
-		//==>141205///*///
 	}
     // copy results from device to host
 	int* ifp = ri->iReconst;
@@ -393,10 +376,10 @@ void CudaReconstHost(RECONST_INFO* ri, int idev, bool bReport) {
 	if (igp) delete [] igp;
 	if (p) delete [] p;
 	//-----end of CUDA body-----//
-}
+}*/
 
 //190101
-void CudaReconstHost2(RECONST_INFO* ri, int idev, bool bReport) {
+void CudaReconstHost(RECONST_INFO* ri, int idev, bool bReport) {
 	//AfxMessageBox("131014 CudaReconstHost");
 	if (cudaSuccess != cudaSetDevice(idev)) {
 		AfxMessageBox("cudaSetDevice error"); return;
@@ -545,7 +528,7 @@ void CudaReconstHost2(RECONST_INFO* ri, int idev, bool bReport) {
 	int iCurrStep = 0;
 	for (int i = (ri->iStartSino); i < (ri->iLenSinogr - 1); i += (ri->iStepSino)) {
 		int isino = (i - (ri->iStartSino)) / (ri->iStepSino);
-		if (bReport) {
+		if (bReport && (isino % 20 == 0)) {
 			if (DBProjDlgCtrl(ri, iProgStep, i, &iCurrStep)) break;
 		}
 		if (!(ri->bInc[i] & CGAZODOC_BINC_SAMPLE)) continue;
@@ -555,6 +538,9 @@ void CudaReconstHost2(RECONST_INFO* ri, int idev, bool bReport) {
 			if (i & 1) { if (ri->dReconFlags & RQFLAGS_USEONLYEVENFRAMES) continue; }
 			else { if (ri->dReconFlags & RQFLAGS_USEONLYODDFRAMES) continue; }
 		}
+////////TODO190113: examine delay by the following line. if it's acceptable, enable bReport in CUDA. Add the same line in CUDA-FFT
+		if (isino % 20 == 0) cudaDeviceSynchronize();
+//////////////////////////////////
 		CudaBackProj( ixdim, iIntpDim, fCenter, intcenter - ri->iSinoCenter,
 			(ri->fdeg[i] + ri->fTiltAngle) * DEG_TO_RAD, ri->d_ifp, &(ri->d_igp[isino * igpdimx]) );
 		/*/141205==>

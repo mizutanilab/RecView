@@ -21,6 +21,7 @@
 #define CDLGRECONST_STOP 2
 #define CDLGRECONST_PAUSE 4
 #define CDLGRECONST_SHOWIMAGE 8
+#define CDLGRECONST_WHEEL 16
 
 #define CDLGRECONST_FRAME_ALL 0
 #define CDLGRECONST_FRAME_ODD 1
@@ -54,6 +55,7 @@ public:
 	void AdjustSliceWithBinning();
 	void CalcTomogram(int iParams, CGazoDoc* pdTarget = NULL);
 	void IncDecCenter(int iParams, int iDirection);
+	void IncDecTilt(int iStep);
 
 // ダイアログ データ
 	//{{AFX_DATA(CDlgReconst)

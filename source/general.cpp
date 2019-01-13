@@ -2054,7 +2054,7 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 		int iCurrStep = 0;
 		for (int i = (ri->iStartSino); i < (ri->iLenSinogr - 1); i += (ri->iStepSino)) {
 			int isino = (i - (ri->iStartSino)) / (ri->iStepSino);
-			if (bReport) {
+			if (bReport && (isino % 20 == 0)) {
 				if (DBProjDlgCtrl(ri, iProgStep, i, &iCurrStep)) break;
 			}
 			if (!(ri->bInc[i] & CGAZODOC_BINC_SAMPLE)) continue;
@@ -2141,7 +2141,7 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 			//CudaReconstHostLong(ri, ri->iStartSino);
 		} else {
 			//kernel 4/8 with my FFT
-			CudaReconstHost2(ri, ri->iStartSino, (pApp->dlgProperty.m_EnReport)? TRUE : FALSE);
+			CudaReconstHost(ri, ri->iStartSino, (pApp->dlgProperty.m_EnReport)? TRUE : FALSE);
 		}
 	} else if (pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_ATISTREAM) {
 		CLReconstHost(ri, ri->iStartSino, (pApp->dlgProperty.m_EnReport)? TRUE : FALSE);
@@ -2222,7 +2222,8 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 		if (pApp->dlgProperty.m_bEnableAVX2) param[7] |= 0x0001;
 		BOOL bUseSIMD = pApp->dlgProperty.bEnableSIMD;
 		for (int i=(ri->iStartSino); i<(ri->iLenSinogr-1); i+=(ri->iStepSino)) {
-			if (bReport) {
+			int isino = (i - (ri->iStartSino)) / (ri->iStepSino);
+			if (bReport && (isino % 20 == 0)) {
 				if (DBProjDlgCtrl(ri, iProgStep, i, &iCurrStep)) break;
 			}
 			if (!(ri->bInc[i] & CGAZODOC_BINC_SAMPLE)) continue;
@@ -2323,7 +2324,7 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 bool DBProjDlgCtrl(RECONST_INFO* ri, int iProgStep, int iSino, int* pCurrStep) {
 	CGazoDoc* pd = (CGazoDoc*)(ri->pDoc);
 	CMainFrame* pf = (CMainFrame*) AfxGetMainWnd();
-	if (pd->dlgReconst.iStatus == CDLGRECONST_STOP) return true;
+	if ((pd->dlgReconst.iStatus == CDLGRECONST_STOP) || (pd->dlgReconst.iStatus & CDLGRECONST_WHEEL)) return true;
 	if (!ri->bMaster) return false;
 	if (pd->dlgReconst.m_hWnd) {
 		if (iProgStep > 0) {//121013
@@ -2333,7 +2334,7 @@ bool DBProjDlgCtrl(RECONST_INFO* ri, int iProgStep, int iSino, int* pCurrStep) {
 			}
 		}
 	}
-	if ( ((iSino - ri->iStartSino) / ri->iStepSino) % 10 == 0) {
+	if ( ((iSino - ri->iStartSino) / ri->iStepSino) % 100 == 0) {
 		::ProcessMessage();
 		if (pf) {
 			CString line;

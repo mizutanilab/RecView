@@ -1740,7 +1740,7 @@ void CGazoDoc::ShowTomogram(RECONST_QUEUE* rq, int iy, double fc, CGazoDoc* pdTa
 //		for (int i=0; i<nCPU; i++) {CLReconstMemFree(&(ri[i]));}
 //	}
 	if (err) {error.Log(err); return;}
-	if (dlgReconst.iStatus == CDLGRECONST_STOP) return;
+	if ((dlgReconst.iStatus == CDLGRECONST_STOP)||(dlgReconst.iStatus & CDLGRECONST_WHEEL)) return;
 	//Generate View
 	bool bReuseView = false;
 	if (pdTarget) {
@@ -2708,7 +2708,7 @@ TErr CGazoDoc::GenerateSinogram(RECONST_QUEUE* rq, int iLayer, double center, do
 	for (int i=0; i<isino; i++) {
 		::ProcessMessage();
 		if ((i % iProgStep == 0)&&(dlgReconst.m_hWnd)) dlgReconst.m_Progress.StepIt();
-		if (dlgReconst.iStatus == CDLGRECONST_STOP) {
+		if ((dlgReconst.iStatus == CDLGRECONST_STOP)||(dlgReconst.iStatus & CDLGRECONST_WHEEL)) {
 			if (pf) pf->m_wndStatusBar.SetPaneText(0, "Aborted");
 			return 0;
 		}
@@ -3109,7 +3109,7 @@ if (bDebug) AfxMessageBox(msg + fmts);
 	//
 	if (pDriftList) delete [] pDriftList;//120501
 	if (pf) {
-		if (dlgReconst.iStatus == CDLGRECONST_STOP) {
+		if ((dlgReconst.iStatus == CDLGRECONST_STOP) || (dlgReconst.iStatus & CDLGRECONST_WHEEL)) {
 			pf->m_wndStatusBar.SetPaneText(0, "Aborted");
 			return 0;
 		}
@@ -3635,11 +3635,9 @@ TErr CGazoDoc::DeconvBackProj(RECONST_QUEUE* rq, double center, int iMultiplex, 
 	}
 	if (ppiReconst) delete[] ppiReconst;
 	//
-	if (pf) {
-		if (dlgReconst.iStatus == CDLGRECONST_STOP) {
-			pf->m_wndStatusBar.SetPaneText(0, "Aborted");
-			return 0;
-		}
+	if ((dlgReconst.iStatus == CDLGRECONST_STOP) || (dlgReconst.iStatus & CDLGRECONST_WHEEL)) {
+		if (pf) pf->m_wndStatusBar.SetPaneText(0, "Aborted");
+		return 0;
 	}
 	_ftime_s( &tstruct );
 	*tcpu = tstruct.time + tstruct.millitm * 0.001 - tm0;

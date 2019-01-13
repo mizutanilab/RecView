@@ -89,7 +89,7 @@ unsigned __stdcall RefracCorrThread(void* pArg);
 unsigned __stdcall LsqfitThread(void* pArg);
 
 #ifdef _WIN64
-void Projection(unsigned _int64 pParam);
+//void Projection(unsigned _int64 pParam);
 //unsigned _int64 ProjectionAsm(unsigned _int64);
 #endif //_WIN64
 
