@@ -52,8 +52,8 @@ A test dataset in TIFF format is available from the binary folder.
   <LI>Build-180505. Reslicing routine was revised to minimize memory usage and to allow users to specify the reslicing direction with a vector. Polygon lasso function was implemented for defining ROI of statistical analysis.  
   <LI>v5.4.1 (27 Jan 2018). Image analysis routines were updated. No revision were made in the offset CT kernel. Errors observed for some offset-CT data taken at SPring-8 were due to the 'conv.bat' files. Its workaround is described in the FAQ section below. Executable of this release is available only for x64 platforms because this is a very minor revision. 
   <LI>v5.4.0 (3 May 2017). Image analysis routines were updated. The offset CT routine is now under revision. 
-  <LI>v5.3.0 (6 Jan 2017). Routines for <a href="https://github.com/mizutanilab/BluetoothDials">our dial input device</a> were implemented.
- ?<LI>v5.2.0 (13 Nov 2016). Frame selection dialog was implemented. Routines for the sinogram generation were revised.
+  <LI>v5.3.0 (6 Jan 2017). Routines for <a href="https://github.com/mizutanilab/BluetoothDials">our dial input device</a> were implemented. 
+  <LI>v5.2.0 (13 Nov 2016). Frame selection dialog was implemented. Routines for the sinogram generation were revised.
   <LI>v5.1.1 (released 18 Sep 2016). Reconstruction kernels for x86/x64 processors were updated using assembly code. The kernels are accelerated with vectorized instructions. Performances are:
     <UL>
     <LI>Tau (Quadro K4200, 1344 cores, 780 MHz) = 0.27 nsec (2.1 sec for a 2048x2048 tomogram from 1800 projections),
@@ -92,7 +92,7 @@ Here, tau is the time constant required for one pixel projection. For example, o
 Concise help can be found in the 'Help'-'About' menu. We believe that this program is self-explanatory, but the following tips would be helpul.
 
 <B>Installation</B>  
-Download the RecView executable (and CUDA library files, if needed) and place them any folder you like. 
+Download x64 or x86 executable and place it any folder you like. 
 
 <B>Execution</B>  
 Double click the 'RecView' executable.
@@ -160,7 +160,7 @@ frame#      time(msec)     angle(deg) 0=flatfield/1=sample
         <LI>Install 'Visual Studio Comunity 2017' from the <a href="https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=Community">Microsoft site</a>. Choose 'Desktop Development with C++' and include the 'Visual C++ MFC' component. We recommend to include language packs of English(US) and Japanese. </LI>
         <LI>Download 'CUDA Toolkit 10.0' from the <a href="https://developer.nvidia.com/cuda-toolkit-archive">NVIDIA Toolkit site</a> and istall. The installation will associate the toolkit with Visual Studio.</LI>
         <LI>Download the latest GPU driver from the <a href="https://www.nvidia.co.jp/Download/index.aspx">NVIDIA driver site</a> and install. It is not recommended to update the driver from Device Manager of Windows Control Panel.</LI>
-        <LI>Open Visual Studio solution file 'gazo.sln'. Choose your platform (x64 or Win32) and build configuration (Release or CUDA_Release) from the toolbar and generate executable from the 'Build' menu. You can find an .exe file under the "x64" or "Win32" folder. The recent CUDA Toolkit seems not compatible with the "Win32" (x86) platform.</LI>
+        <LI>Open Visual Studio solution file 'gazo.sln'. Choose your platform (x64 or Win32) and build configuration (Release or CUDA_Release) from the toolbar and generate executable from the 'Build' menu. You can find an .exe file under the 'x64' or 'Win32' folder. The recent CUDA Toolkit seems not compatible with the Win32 (x86) platform.</LI>
         <LI>Another configuration 'CUDAFFT_Release' is also prepared. In this configuration, Fourier transform calculations in the deconvolution step can be executed on the GPU, though its eclipsed time is comparable to that of the x86/x64 CPU. Dynamic link libraries ('cudart64_100.dll' and 'cufft64_100.dll') must be placed in the folder where the CUDAFFT executable is placed. The library files are available as part of the CUDA Toolkit.</LI>
       </UL><br>
 </OL>
