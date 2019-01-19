@@ -20,8 +20,6 @@ extern "C" void CudaSinogramHost(RECONST_INFO* ri, int idev, bool bReport) {
 
 extern "C" void CudaReconstHost(RECONST_INFO* ri, int idev, bool bReport) {
 }
-extern "C" void CudaReconstHost2(RECONST_INFO* ri, int idev, bool bReport) {
-}
 
 extern "C" void CudaLsqfitMemAlloc(short** d_ppRefPixel, short** d_ppQryPixel, 
 								   int* pMaxRefPixel, int* pMaxQryPixel, 
@@ -56,6 +54,10 @@ extern "C" int GetCudaDeviceComputingCapability(int iDevice, int* piMajor, int* 
 	return CUDA_ERROR_DEVICE_GETPROPERTY;
 }
 extern "C" int GetCudaNumberOfCores(int iDevice, int* piCores, int* piProcessors) {
+	return CUDA_ERROR_DEVICE_GETPROPERTY;
+}
+
+extern "C" int GetCudaClockRate(int iDevice, int* piClockRate) {
 	return CUDA_ERROR_DEVICE_GETPROPERTY;
 }
 

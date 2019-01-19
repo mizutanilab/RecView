@@ -26,7 +26,7 @@ public:
 	virtual BOOL OnInitDialog();
 	void Init(int icpu, bool bsimd, bool bavx2, 
 		int iCudaCount, int iCudaBlock, int iCudaWarp,
-		int iATIcount, int iATImaxwork, int iATIunitwork);
+		int iATIcount, int iATImaxwork, int iATIunitwork, int iProcessorType = -1);
 	CComboBox m_CPU;
 	CComboBox m_Memory;
 	int iCPU, iMemory;

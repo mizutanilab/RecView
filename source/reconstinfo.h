@@ -65,7 +65,6 @@ struct RECONST_INFO {
 	cl_mem d_ifp;
 	cl_mem d_igp;
 #endif
-
 	float* d_filt;
 	unsigned int max_d_filt;
 	short* d_strip;
@@ -74,7 +73,9 @@ struct RECONST_INFO {
 	unsigned int max_d_p;
 	float* d_px;
 	unsigned int max_d_px;
-	//	float* d_fcos;
+//	int* h_igp;
+//	unsigned int max_h_igp;
+//	float* d_fcos;
 //	float* d_fsin;
 //	unsigned int max_d_fcos;
 

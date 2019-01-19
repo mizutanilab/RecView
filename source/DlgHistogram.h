@@ -8,9 +8,10 @@
 //
 #include "general.h"
 
-#define CDLGHISTG_BITMAP_HEIGHT 150
-#define CDLGHISTG_BITMAP_WIDTH 300
-#define CDLGHISTG_BITMAP_NEAR 3
+#define CDLGHISTG_BITMAP_HEIGHT 190
+#define CDLGHISTG_BITMAP_WIDTH 400
+#define CDLGHISTG_BITMAP_NEAR 5
+//bitmap width must be a multiple of 20
 
 #define CDLGHIST_IDLE 0
 #define CDLGHIST_BUSY 1

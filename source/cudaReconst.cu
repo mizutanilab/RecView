@@ -19,18 +19,6 @@ texture<int, 1, cudaReadModeElementType> tex_igp;
 int blocksize = CUDA_BLOCKSIZE;
 
 __global__ void
-projKernel8f(int* d_ifp, int ixdimp, float fsin, float fcos, float foffset) {
-	int ix = blockDim.x * blockIdx.x + threadIdx.x;
-	if (ix >= ixdimp) return;
-	int iy = blockIdx.y << 1;
-	float fx1 = ix * fcos + iy * fsin + foffset; 
-	int ixy = ix + ixdimp * iy;
-	d_ifp[ixy] += tex1Dfetch(tex_igp, (int)(fx1));
-	if (iy >= ixdimp - 1) return;
-	d_ifp[ixy + ixdimp] += tex1Dfetch(tex_igp, (int)(fx1 + fsin));
-}
-
-__global__ void
 projKernel9(int* d_ifp, int ixdimp, float fsin, float fcos, float foffset) {
 	int ix = blockDim.x * blockIdx.x + threadIdx.x;
 	if (ix >= ixdimp) return;
@@ -40,6 +28,17 @@ projKernel9(int* d_ifp, int ixdimp, float fsin, float fcos, float foffset) {
 	d_ifp[ixy] += tex1Dfetch(tex_igp, (int)(fx1));
 }
 
+__global__ void
+projAtomicKernel9(int* d_ifp, int ixdimp, float fsin, float fcos, float foffset) {
+	int ix = blockDim.x * blockIdx.x + threadIdx.x;
+	if (ix >= ixdimp) return;
+	int iy = blockIdx.y;
+	float fx1 = ix * fcos + iy * fsin + foffset;
+	int ixy = ix + ixdimp * iy;
+	atomicAdd( &(d_ifp[ixy]), tex1Dfetch(tex_igp, (int)(fx1)) );
+}
+
+/*
 __global__ void
 projKernel9b(int* d_ifp, int ixdimp, float fsin, float fcos, float foffset) {
 	int ix = blockDim.x * blockIdx.x + threadIdx.x;
@@ -87,6 +86,7 @@ projKernel10(int* d_ifp, int* d_igp, int ixdimp, float* d_fcos, float* d_fsin, f
 	}
 	d_ifp[ixy] = isum;
 }
+*/
 
 //gazo.cpp, cudaReconstHost.cpp, and DlgProperty.cpp should also be rebuilt to switch on and off CUDAFFT.
 #ifdef CUDAFFT
@@ -187,9 +187,9 @@ void CudaDeconv(int ixdim, int iIntpDim, int ndim, int isino, float center,
 #endif
 
 extern "C"
-void CudaBackProj(int ixdim, int iIntpDim, float center, int iCenterOffset, double theta, int* d_ifp, int* d_igp) {
+void CudaBackProjStream(int ixdimp, float center, int iCenterOffset, double theta, int* d_ifp, int* d_igp, cudaStream_t stream) {
 	//constants
-	const int ixdimp = ixdim * iIntpDim;
+	//const int ixdimp = ixdim * iIntpDim;
 	const int ixdimh = ixdimp / 2;
 	//
 	//kernel parameters
@@ -214,12 +214,29 @@ void CudaBackProj(int ixdim, int iIntpDim, float center, int iCenterOffset, doub
 	//Kernel
 	int iydim = ixdimp;
 	dim3 dimGrid(gridsize, iydim);// 0<=blockIdx.x<gridsize, 0<=blockIdx.y<iydim
-	projKernel9 << < dimGrid, dimBlock >> > (d_ifp, ixdimp, fsin, fcos, foffset);
-	//Kernel9b: slow
-	//dim3 dimGrid9b(gridsize, 1);// 0<=blockIdx.x<gridsize
-	//projKernel9b << < dimGrid9b, dimBlock >> > (d_ifp, ixdimp, fsin, fcos, foffset);
+	projAtomicKernel9 << < dimGrid, dimBlock, 0, stream >> > (d_ifp, ixdimp, fsin, fcos, foffset);//no delays
+	//projKernel9 << < dimGrid, dimBlock, 0, stream >> > (d_ifp, ixdimp, fsin, fcos, foffset);
 }
 
+__global__ void
+px2igpKernelStream(float* d_px, int* d_igp, int ixdimp) {
+	int ix = blockDim.x * blockIdx.x + threadIdx.x;
+	if (ix >= ixdimp) return;
+	const int iy = blockIdx.y;
+	const int gidx = ix * DBPT_GINTP;
+	//const int pidx = (ix + ihoffset < 0) ? 0 : ((ix + ihoffset >= ndim)? ndim-1 : ix + ihoffset);
+	const float p0 = d_px[ix] * BACKPROJ_SCALE;
+	const float p1p0 = (ix == ixdimp - 1) ? 0.0f : (d_px[ix + 1] * BACKPROJ_SCALE - p0) / DBPT_GINTP;
+	d_igp[gidx + iy] = (int)(p0 + p1p0 * iy);
+}
+extern "C" void CudaSinoPx2igpStream(int ixdimp, int* d_igp, float* d_px, cudaStream_t stream) {
+	dim3 dimBlock(blocksize, 1);
+	const int gridsize = (int)(ceil(ixdimp / (float)blocksize));
+	dim3 dimGrid_p2igp(gridsize, DBPT_GINTP);
+	px2igpKernelStream << < dimGrid_p2igp, dimBlock, 0, stream >> > (d_px, d_igp, ixdimp);
+}
+
+/*
 __global__ void
 px2igpKernel(float* d_px, int* d_igp, int ixdimp, int ihoffset, int ndim, int igpdimx) {
 	int ix = blockDim.x * blockIdx.x + threadIdx.x;
@@ -229,7 +246,7 @@ px2igpKernel(float* d_px, int* d_igp, int ixdimp, int ihoffset, int ndim, int ig
 	const int gidx = ix * DBPT_GINTP + isino * igpdimx;
 	const int pidx = ix + ihoffset + isino * ndim;
 	const float p0 = d_px[pidx] * BACKPROJ_SCALE;
-	const float p1p0 = (ix == ixdimp - 1) ? 0.0f : (d_px[pidx + 1] * BACKPROJ_SCALE - p0) / DBPT_GINTP;
+	const float p1p0 = (ix == ixdimp - 1) ? 0.0f : (d_px[pidx + 1] * BACKPROJ_SCALE - p0) / DBPT_GINTP;//should be revised accroding to Stream version
 	d_igp[gidx + iy] = (int)(p0 + p1p0 * iy);
 
 //	for (int i = (ri->iStartSino); i < (ri->iLenSinogr - 1); i += (ri->iStepSino)) {
@@ -319,6 +336,41 @@ void CudaBackProj2(int ixdim, int iIntpDim, float center, int iSinoDimX, int iSi
 	dim3 dimGrid(gridsize, iydim);// 0<=blockIdx.x<gridsize, 0<=blockIdx.y<iydim
 	projKernel10 << < dimGrid, dimBlock, shared_mem_size >> > (d_ifp, d_igp, ixdimp, d_fcos, d_fsin, fcenter, iSinoDimX, iSinoDimY);
 }
+
+extern "C"
+void CudaBackProj(int ixdim, int iIntpDim, float center, int iCenterOffset, double theta, int* d_ifp, int* d_igp) {
+	//constants
+	const int ixdimp = ixdim * iIntpDim;
+	const int ixdimh = ixdimp / 2;
+	//
+	//kernel parameters
+	//const int blocksize = CUDA_BLOCKSIZE;// ==> blockDim.x;
+	dim3 dimBlock(blocksize, 1);
+	const int gridsize = (int)(ceil(ixdimp / (float)blocksize));
+	//igp texture
+	textureReference* texRefPtr;
+	if (cudaSuccess != cudaGetTextureReference((const textureReference **)&texRefPtr, &tex_igp)) return;
+	cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<int>();
+	tex_igp.addressMode[0] = cudaAddressModeClamp;
+	tex_igp.filterMode = cudaFilterModePoint;
+	tex_igp.normalized = false;    // access with integer texture coordinates
+	const unsigned int mem_size_igp = sizeof(int) * ixdimp * DBPT_GINTP;
+	//
+	if (cudaSuccess != cudaBindTexture(0, texRefPtr, d_igp, &channelDesc, mem_size_igp)) return;
+	//params
+	const float fcos = (float)(cos(theta) * DBPT_GINTP);
+	const float fsin = (float)(-sin(theta) * DBPT_GINTP);
+	const float fcenter = (float)((ixdimh + center - (int)(center)) * DBPT_GINTP);
+	const float foffset = fcenter - ixdimh * (fcos + fsin) + DBPT_GINTP * iCenterOffset;
+	//Kernel
+	int iydim = ixdimp;
+	dim3 dimGrid(gridsize, iydim);// 0<=blockIdx.x<gridsize, 0<=blockIdx.y<iydim
+	projKernel9 << < dimGrid, dimBlock >> > (d_ifp, ixdimp, fsin, fcos, foffset);
+	//Kernel9b: slow
+	//dim3 dimGrid9b(gridsize, 1);// 0<=blockIdx.x<gridsize
+	//projKernel9b << < dimGrid9b, dimBlock >> > (d_ifp, ixdimp, fsin, fcos, foffset);
+}
+*/
 
 __global__ void
 sinoKernel(short* d_Dark, short* d_Incident, short* d_Strip, int ixmul, float t0) {
@@ -442,27 +494,16 @@ extern "C" int GetCudaDeviceComputingCapability(int iDevice, int* piMajor, int* 
 	return 0;
 }
 
-extern "C" int GetCudaMaxThreadsPerBlock(int iDeviceCount) {
-	int iCUDAblock = 65536;
-	bool bDeviceDetected = false;
+extern "C" int GetCudaMaxThreadsPerBlock(int iDevice) {
 	cudaDeviceProp deviceProp;
-	for (int i = 0; i < iDeviceCount; i++) {
-		if (cudaSuccess != cudaGetDeviceProperties(&deviceProp, i)) { continue; }
-		if (deviceProp.maxThreadsPerBlock < iCUDAblock) iCUDAblock = deviceProp.maxThreadsPerBlock;
-		bDeviceDetected = true;
-	}
-	if (!bDeviceDetected) iCUDAblock = CUDA_BLOCKSIZE;
-	return iCUDAblock;
+	if (cudaSuccess != cudaGetDeviceProperties(&deviceProp, iDevice)) { return CUDA_ERROR_DEVICE_GETPROPERTY; }
+	return deviceProp.maxThreadsPerBlock;
 }
 
-extern "C" int GetCudaWarpSize(int iDeviceCount) {
-	int iCUDAwarp = CUDA_WARPSIZE;
+extern "C" int GetCudaWarpSize(int iDevice) {
 	cudaDeviceProp deviceProp;
-	for (int i = 0; i < iDeviceCount; i++) {
-		if (cudaSuccess != cudaGetDeviceProperties(&deviceProp, i)) { continue; }
-		if (deviceProp.warpSize < iCUDAwarp) iCUDAwarp = deviceProp.warpSize;
-	}
-	return iCUDAwarp;
+	if (cudaSuccess != cudaGetDeviceProperties(&deviceProp, iDevice)) { return CUDA_ERROR_DEVICE_GETPROPERTY; }
+	return deviceProp.warpSize;
 }
 
 extern "C" int GetCudaNumberOfCores(int iDevice, int* piCores, int* piProcessors) {//190110
@@ -471,6 +512,15 @@ extern "C" int GetCudaNumberOfCores(int iDevice, int* piCores, int* piProcessors
 	if (deviceProp.major == 9999 && deviceProp.minor == 9999) { return CUDA_ERROR_VIRTUAL_DEVICE_DETECTED; }//virtual device
 	if (piCores) *piCores = _ConvertSMVer2Cores(deviceProp.major, deviceProp.minor);
 	if (piProcessors) *piProcessors = deviceProp.multiProcessorCount;
+	return 0;
+}
+
+extern "C" int GetCudaClockRate(int iDevice, int* piClockRate, int* piMemRate) {//190115
+	cudaDeviceProp deviceProp;
+	if (cudaSuccess != cudaGetDeviceProperties(&deviceProp, iDevice)) { return CUDA_ERROR_DEVICE_GETPROPERTY; }
+	if (deviceProp.major == 9999 && deviceProp.minor == 9999) { return CUDA_ERROR_VIRTUAL_DEVICE_DETECTED; }//virtual device
+	if (piClockRate) *piClockRate = deviceProp.clockRate;
+	if (piMemRate) *piMemRate = deviceProp.memoryClockRate;
 	return 0;
 }
 

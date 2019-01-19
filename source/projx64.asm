@@ -14,7 +14,7 @@ projx64 PROC
 ;	mov r10, rdx ; the 2nd arg = rdx
 ;	mov rax, r10 ; rax to return result
 
-;			for (int iy=0; iy<ixdimp; iy++) {
+;			for (int iy=iy0; iy<iy1; iy++) {
 ;				const int ifpidx = iy * ixdimp;
 ;				const float fyoff = iy * fsin + foffset;
 ;				for (int ix=0; ix<ixdimp; ix++) {
@@ -45,6 +45,8 @@ projx64 PROC
 	shl r9, 2	; r9<==ixdimp * 4
 ;	mov ifp, [rsi + 40]
 ;	mov igp, [rsi + 48]
+	mov r12, [rsi + 64]	;iy0
+	mov r13, [rsi + 72]	;iy1
 
 ;sse rounding mode RC=00B (MXCSR[14:13])
 ;	stmxcsr pmxcsr
@@ -57,11 +59,11 @@ projx64 PROC
 	jnz USEAVX
 
 ;load valiables	
-	mov rax, r10; iy = ixdimp
-	mov rcx, rax
+	mov rax, r13; iy = iy1
 	dec rax
+	mov rcx, r10; ix = ixdimp
 	imul rcx
-	shl rax, 2	; ixy = ixdimp * (ixdimp - 1) * 4
+	shl rax, 2	; ixy = ixdimp * (iy1 - 1) * 4
 	add rax, [rsi + 40]	; ixy += ifp
 	mov rdi, rax
 
@@ -83,7 +85,7 @@ projx64 PROC
 	mov rcx, [rsi + 24]	; ixdimpg
 	mov rsi, [rsi + 48]	; igp
 
-	mov rdx, r10	; iy<==ixdimp
+	mov rdx, r13	; iy<==iy1
 	dec rdx
 	mov rax, 0
 LOOPY:
@@ -144,7 +146,8 @@ LOOPXEND:
 LOOPYEND:
 	sub rdi, r9 ; ixdimp*4
 	dec rdx	; iy--
-	jge LOOPY	; iy >= 0
+	cmp rdx, r12
+	jge LOOPY	; iy >= iy0
 
 ;	ldmxcsr smxcsr
 	pop rdi
@@ -166,10 +169,16 @@ USEAVX:
 	vcvtsi2ss xmm1, xmm1, r10	; xmm1<==ixdimp
 	vbroadcastss ymm1, xmm1	; ymm1<==ixdimp, ixdimp, ixdimp, ixdimp
 	
-	mov rdi, [rsi + 40]	; ifp
+	mov rax, r12; iy = iy0
+	mov rcx, r10; ix = ixdimp
+	imul rcx
+	shl rax, 2	; ixy = ixdimp * iy0 * 4
+	add rax, [rsi + 40]	; ixy += ifp
+	mov rdi, rax
+;	mov rdi, [rsi + 40]	; ifp
 	mov rsi, [rsi + 48]	; igp
 
-	mov rdx, 0	; iy<==ixdimp
+	mov rdx, r12	; iy<==iy0
 ALOOPY:
 	mov rbx, 0	; ix<==0
 	vmovaps ymm2, F76543210	; reset ix
@@ -200,102 +209,8 @@ ALOOPX:
 ALOOPYEND2:
 	add rdi, r9 ; +ixdimp*4
 	inc rdx	; iy++
-	cmp rdx, r10
-	jnae ALOOPY	; iy < ixdimp
-
-;	ldmxcsr smxcsr
-	pop rdi
-	pop rsi
-	pop rbp
-	pop rbx
-	ret
-
-;test code to skip after vpgatherdd
-	vaddps ymm2, ymm2, F88888888	; ymm2 + 8.0
-	vextracti128 xmm4, ymm3, 1
-	vmovd eax, xmm3	; lower 4 bytes to eax
-;	cmp eax, ecx	; ix<=>ixdimpg
-;	jae ALOOPXSKIP1	; ix0 >= ixdimp * DBPT_GINTP or ix0 < 0
-;	mov eax, [rsi + rax * 4]	; eax<==igp[ix * DBPT_GINTP]
-	add [rdi + rbx * 4], eax	; ifp[ix] += eax
-ALOOPXSKIP1:
-	inc rbx	; ix++
-	cmp rbx, r10; 
-	jae ALOOPYEND	; ix >= ixdimp
-	vpsrldq xmm3, xmm3, 4	; shift right by 4 bytes (integer32)
-	vmovd eax, xmm3
-;	cmp eax, ecx; ixdimpg
-;	jae ALOOPXSKIP2	; ix0 >= ixdimp * DBPT_GINTP or ix0 < 0
-;	mov eax, [rsi + rax * 4]
-	add [rdi + rbx * 4], eax
-ALOOPXSKIP2:
-	inc rbx	; ix++
-	cmp rbx, r10
-	jae ALOOPYEND	; ix >= ixdimp
-	vpsrldq xmm3, xmm3, 4
-	vmovd eax, xmm3
-;	cmp eax, ecx; ixdimpg
-;	jae ALOOPXSKIP3	; ix0 >= ixdimp * DBPT_GINTP or ix0 < 0
-;	mov eax, [rsi + rax * 4]
-	add [rdi + rbx * 4], eax
-ALOOPXSKIP3:
-	inc rbx	; ix++
-	cmp rbx, r10
-	jae ALOOPYEND	; ix >= ixdimp
-	vpsrldq xmm3, xmm3, 4
-	vmovd eax, xmm3
-;	cmp eax, ecx; ixdimpg
-;	jae ALOOPXSKIP4	; ix0 >= ixdimp * DBPT_GINTP or ix0 < 0
-;	mov eax, [rsi + rax * 4]
-	add [rdi + rbx * 4], eax
-ALOOPXSKIP4:
-	inc rbx	; ix++
-	cmp rbx, r10
-	jae ALOOPYEND	; ix >= ixdimp
-	vmovd eax, xmm4
-;	cmp eax, ecx; ixdimpg
-;	jae ALOOPXSKIP5	; ix0 >= ixdimp * DBPT_GINTP or ix0 < 0
-;	mov eax, [rsi + rax * 4]
-	add [rdi + rbx * 4], eax
-ALOOPXSKIP5:
-	inc rbx	; ix++
-	cmp rbx, r10
-	jae ALOOPYEND	; ix >= ixdimp
-	vpsrldq xmm4, xmm4, 4
-	vmovd eax, xmm4
-;	cmp eax, ecx; ixdimpg
-;	jae ALOOPXSKIP6	; ix0 >= ixdimp * DBPT_GINTP or ix0 < 0
-;	mov eax, [rsi + rax * 4]
-	add [rdi + rbx * 4], eax
-ALOOPXSKIP6:
-	inc rbx	; ix++
-	cmp rbx, r10
-	jae ALOOPYEND	; ix >= ixdimp
-	vpsrldq xmm4, xmm4, 4
-	vmovd eax, xmm4
-;	cmp eax, ecx; ixdimpg
-;	jae ALOOPXSKIP7	; ix0 >= ixdimp * DBPT_GINTP or ix0 < 0
-;	mov eax, [rsi + rax * 4]
-	add [rdi + rbx * 4], eax
-ALOOPXSKIP7:
-	inc rbx	; ix++
-	cmp rbx, r10
-	jae ALOOPYEND	; ix >= ixdimp
-	vpsrldq xmm4, xmm4, 4
-	vmovd eax, xmm4
-;	cmp eax, ecx; ixdimpg
-;	jae ALOOPXEND	; ix0 >= ixdimp * DBPT_GINTP or ix0 < 0
-;	mov eax, [rsi + rax * 4]
-	add [rdi + rbx * 4], eax
-ALOOPXEND:
-	inc rbx	; ix++
-	cmp rbx, r10
-	jnae ALOOPX	; ix < ixdimp
-ALOOPYEND:
-	add rdi, r9 ; +ixdimp*4
-	inc rdx	; iy++
-	cmp rdx, r10
-	jnae ALOOPY	; iy < ixdimp
+	cmp rdx, r13
+	jnae ALOOPY	; iy < iy1
 
 ;	ldmxcsr smxcsr
 	pop rdi

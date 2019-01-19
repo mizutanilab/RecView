@@ -3560,22 +3560,22 @@ TErr CGazoDoc::DeconvBackProj(RECONST_QUEUE* rq, double center, int iMultiplex, 
 				}
 				return 21023;
 			}
-		} else {//(pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_CUDA)
-			try {
-				ppiReconst = new int*[nCPU - 1];
-				for (int i = 0; i < nCPU - 1; i++) {
-					ppiReconst[i] = new int[maxReconst];
-					memset(ppiReconst[i], 0, sizeof(int) * maxReconst);
-				}
-			}
-			catch (CException* e) {
-				e->Delete();
-				if (ppiReconst) {
-					for (int i = 0; i < nCPU - 1; i++) { if (ppiReconst[i]) delete[] ppiReconst[i]; }
-					delete[] ppiReconst;
-				}
-				return 21023;
-			}
+//		} else {//(pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_CUDA)
+//			try {
+//				ppiReconst = new int*[nCPU - 1];
+//				for (int i = 0; i < nCPU - 1; i++) {
+//					ppiReconst[i] = new int[maxReconst];
+//					memset(ppiReconst[i], 0, sizeof(int) * maxReconst);
+//				}
+//			}
+//			catch (CException* e) {
+//				e->Delete();
+//				if (ppiReconst) {
+//					for (int i = 0; i < nCPU - 1; i++) { if (ppiReconst[i]) delete[] ppiReconst[i]; }
+//					delete[] ppiReconst;
+//				}
+//				return 21023;
+//			}
 		}
 	}
 	for (int i=nCPU-1; i>=0; i--) {
@@ -3586,7 +3586,7 @@ TErr CGazoDoc::DeconvBackProj(RECONST_QUEUE* rq, double center, int iMultiplex, 
 		ri[i].iInterpolation = iInterpolation;
 		ri[i].center = (center + HALFPIXEL_OFFSET) / iBinning;
 		ri[i].iLenSinogr = rq->iSinoYdim + 1;//090214 iLenSinogr;
-		ri[i].iReconst = i ? ppiReconst[i-1] : iReconst;
+		ri[i].iReconst = (i && ppiReconst) ? ppiReconst[i-1] : iReconst;
 		ri[i].nSinogr = nSinogr;
 		//ri[i].dataName = dataName;
 		strcpy_s(ri[i].dataName, dataName.Left(60));

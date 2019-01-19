@@ -12,7 +12,7 @@ DATA ends
 .code
 
 projx32 PROC param:dword
-;			for (int iy=0; iy<ixdimp; iy++) {
+;			for (int iy=iy0; iy<iy1; iy++) {
 ;				const int ifpidx = iy * ixdimp;
 ;				const float fyoff = iy * fsin + foffset;
 ;				for (int ix=0; ix<ixdimp; ix++) {
@@ -26,6 +26,8 @@ projx32 PROC param:dword
 ;local valiables
 	local ixdimp :dword
 	local ixdimp4 :dword
+	local iy0 :dword
+	local iy1 :dword
 ;	local pmxcsr :dword
 ;	local smxcsr :dword
 
@@ -48,6 +50,10 @@ projx32 PROC param:dword
 	mov ixdimp4, eax
 ;	mov ifp, [esi + 20]
 ;	mov igp, [esi + 24]
+	mov eax, [esi + 32]	;iy0
+	mov iy0, eax
+	mov eax, [esi + 36]	;iy1
+	mov iy1, eax
 
 ;sse rounding mode RC=00B (MXCSR[14:13])
 ;	stmxcsr pmxcsr
@@ -75,18 +81,18 @@ projx32 PROC param:dword
 
 	movaps xmm6, F3210
 
-	mov eax, ixdimp ; iy
-	mov ecx, eax
+	mov eax, iy1 ; iy1
 	dec eax
+	mov ecx, ixdimp
 	imul ecx
-	shl eax, 2 ; ixy = ixdimp * (ixdimp - 1) * 4
+	shl eax, 2 ; ixy = ixdimp * (iy1 - 1) * 4
 	add eax, [esi + 20]; ixy += ifp
 	mov edi, eax
 
 	mov ecx, [esi + 12]; ixdimpg
 	mov esi, [esi + 24]; igp
 
-	mov edx, ixdimp; iy<==ixdimp
+	mov edx, iy1; iy<==iy1
 	dec edx
 	mov eax, 0
 LOOPY:
@@ -147,7 +153,8 @@ LOOPXEND:
 LOOPYEND:
 	sub edi, ixdimp4
 	dec edx
-	jge LOOPY ; iy >= 0
+	cmp edx, iy0
+	jge LOOPY ; iy >= iy0
 
 ;	ldmxcsr smxcsr
 	pop ebp
@@ -158,6 +165,13 @@ LOOPYEND:
 
 USEAVX:
 ;load valiables	
+	mov eax, iy0; iy = iy0
+	mov ecx, ixdimp; ix = ixdimp
+	imul ecx
+	shl eax, 2	; ixy = ixdimp * iy0 * 4
+	add eax, [esi + 20]	; ixy += ifp
+	mov edi, eax
+
 	mov eax, [esi + 12]	; ixdimpg
 	vcvtsi2ss xmm6, xmm6, eax	; xmm6<==ixdimpg
 	vbroadcastss ymm6, xmm6	; ymm6<==ixdimpg, ixdimpg, ixdimpg, ixdimpg
@@ -167,10 +181,10 @@ USEAVX:
 	vbroadcastss ymm0, real4 ptr [eax]
 	mov eax, [esi + 4]	; &fsin
 	mov ecx, [esi + 8]	; &foffset
-	mov edi, [esi + 20]	; ifp
+;	mov edi, [esi + 20]	; ifp
 	mov esi, [esi + 24]	; igp
 	
-	mov edx, 0	; iy<==ixdimp
+	mov edx, iy0	; iy<==iy0
 ALOOPY:
 	mov ebx, 0	; ix<==0
 	vmovaps ymm2, F76543210	; reset ix
@@ -201,8 +215,8 @@ ALOOPX:
 ALOOPYEND2:
 	add edi, ixdimp4 ; +ixdimp*4
 	inc edx	; iy++
-	cmp edx, ixdimp
-	jnae ALOOPY	; iy < ixdimp
+	cmp edx, iy1
+	jnae ALOOPY	; iy < iy1
 
 ;	ldmxcsr smxcsr
 	pop ebp

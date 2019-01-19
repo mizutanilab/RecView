@@ -123,12 +123,29 @@ CGazoApp::CGazoApp()
 		__cpuidex(CPUInfo, 7, 0);
 		if (CPUInfo[1] & (1 << 5)) bAVX2 = true;
 	}
+	CString sCPUname = "";
+	__cpuid(CPUInfo, 0x80000000);
+	if ((CPUInfo[0] & 0x7FFFFFFF) >= 4) {
+		for (int k = 2; k <= 4; k++) {
+			__cpuid(CPUInfo, 0x80000000 | k);
+			for (int j = 0; j < 4; j++) {
+				for (int i = 0; i < 4; i++) {
+					char cid = CPUInfo[j] & 0xff;
+					sCPUname += cid;
+					CPUInfo[j] = CPUInfo[j] >> 8;
+				}
+			}
+		}
+	}
+	sCPUname.TrimLeft();
 	//131019===>
 	iAvailableCPU = ::GetProcessorCoreCount();
 	if (iAvailableCPU <= 0) iAvailableCPU = iLogicalProcessorCount > 1 ? iLogicalProcessorCount : 1;
 	//===>131019
 	CString msg = "", line;
-	line.Format("x86/x64 CPU\r\n Number of cores: %d\r\n", iAvailableCPU); msg += line;
+	line.Format("x86/x64 CPU\r\n %s\r\n Number of cores: %d\r\n", 
+		sCPUname.IsEmpty() ? " Processor name unknown" : sCPUname, iAvailableCPU); 
+	msg += line;
 	if (bSIMD) msg += " MMX+SSE+SSE2: detected\r\n";
 	else msg += " MMX+SSE+SSE2: not detected\r\n";
 	if (bAVX2) msg += " AVX2: detected\r\n";
@@ -139,37 +156,64 @@ CGazoApp::CGazoApp()
 	GlobalMemoryStatusEx(&memory);
 	double dmem = (double)(memory.ullTotalPhys >> 20);//memory in Mbytes
 	line.Format(" Memory: %.2fGB", dmem / 1024.); msg += line;
+	//estimate CPU score
+	struct _timeb tstruct; double tm0;
+	_ftime_s(&tstruct);
+	tm0 = tstruct.time + tstruct.millitm * 0.001;
+	double tcpu = 0;
+	int icount = 1, isum = 0, ifp = 0;
+	while (tcpu < 0.1) {
+		isum += icount;
+		for (double dx = 0; dx < icount; dx += 0.0001) { ifp += isum; }
+		_ftime_s(&tstruct);
+		tcpu =  + tstruct.time + tstruct.millitm * 0.001 - tm0;
+		icount *= 2;
+	}
+	double dCPUscore = (tcpu * 250000. + cos(ifp)) / isum;//cos(ifp) is a dummy term to force calc.
+	line.Format("\r\n Estimated score: %.2f sec", dCPUscore); msg += line;
+	//double dCPUclock = 0, dCPUscore = 0;
+	//int ipos = sCPUname.Find("GHz");
+	//if (ipos >= 0) {
+	//	dCPUclock = atof(sCPUname.Left(ipos).MakeReverse().SpanIncluding("0123456789. ").MakeReverse());
+	//	dCPUscore = (dCPUclock > 0) ? 45. / (dCPUclock * iAvailableCPU) : 0;
+	//	if (dCPUscore > 0) { line.Format("\r\n Estimated score: %.2f sec", dCPUscore); msg += line; }
+	//}
 	error.Log(1, msg);
-	//CUDA GPUs
+	//CUDA GPUs (assumes homogeneous GPUs but detects incompatible ones)
+	double dCUDAscore = 0;
+	int iCUDAblock = 1024;
+	int iCUDAwarp = 32;
+	int iCUDAcount = 0;
+#ifdef _WIN64
 	int iCUDAtotalcount = GetCudaDeviceCount(0);
 	iCUDAtotalcount &= CUDA_ERROR_DEVICEINFO_MASK;
 	char pcDeviceName[256];
 	msg.Empty();
 	for (int i = 0; i < iCUDAtotalcount; i++) {
 		if (GetCudaDeviceName(i, pcDeviceName, 256) == 0) {
-			int iMajor = 1, iMinor = 0, iCores = 0, iProcessors = 0;
+			int iMajor = 1, iMinor = 0, iCores = 0, iProcessors = 0, iClock = 0, iMemClock = 0;
 			GetCudaDeviceComputingCapability(i, &iMajor, &iMinor);
 			GetCudaNumberOfCores(i, &iCores, &iProcessors);
-			line.Format("GPU%d: %s\r\n Compute capability: %d.%d\r\n Processors x cores: %d (%dx%d)\r\n",
-				i, pcDeviceName, iMajor, iMinor, iProcessors * iCores, iProcessors, iCores);
-		}
-		else {
+			GetCudaClockRate(i, &iClock, &iMemClock);
+			line.Format("GPU%d: %s\r\n Compute capability: %d.%d\r\n Processors x cores: %d (%dx%d)\r\n Core clock: %.3f GHz\r\n Memory clock: %.3f GHz\r\n",
+				i, pcDeviceName, iMajor, iMinor, iProcessors * iCores, iProcessors, iCores, iClock / 1000000., iMemClock / 1000000.);
+		} else {
 			line.Format("GPU%d: Unknown\r\n", i);
 		}
 		msg += line;
 	}
-	if (!msg.IsEmpty()) error.Log(1, msg);
 	//The compute capability number is set in the Project-Property-CUDA C/C++ page
 	//minimum number for CUDA Tk 10.0 is compute_30 (__CUDA_ARCH__ = 300)
 	//though this directive seems "undefined".
-	int iCUDAcount = GetCudaDeviceCount(CGAZOAPP_CUDA_ARCH);
-	msg.Empty();
-#ifdef _WIN64
-	if ((iCUDAcount & CUDA_ERROR_DEVICEINFO_MASK) == 0) msg = "NO CUDA DEVICE FOUND\r\n";
+	iCUDAcount = GetCudaDeviceCount(CGAZOAPP_CUDA_ARCH);
+	if ((iCUDAcount & CUDA_ERROR_DEVICEINFO_MASK) == 0) msg += "NO CUDA DEVICE FOUND\r\n";
 	if (iCUDAcount & CUDA_ERROR_INSUFFICIENT_DRIVER) msg += "INSUFFICIENT CUDA DRIVER\r\n";
 	else if (iCUDAcount & CUDA_ERROR_DEVICE_GETCOUNT) msg += "ERROR IN DEVICE DETECTION\r\n";
+	iCUDAcount &= CUDA_ERROR_DEVICEINFO_MASK;
+	//
+	int iSumCUDAcores = 0;
 	for (int i = 0; i < iCUDAtotalcount; i++) {
-		int iMajor = 1, iMinor = 0;
+		int iMajor = 1, iMinor = 0, iCores = 0, iProcessors = 0;
 		pcDeviceName[0] = 0;
 		GetCudaDeviceName(i, pcDeviceName, 256);
 		if (GetCudaDeviceComputingCapability(i, &iMajor, &iMinor) == CUDA_ERROR_DEVICE_GETPROPERTY) {
@@ -178,25 +222,36 @@ CGazoApp::CGazoApp()
 		} else if (iMajor * 100 + iMinor * 10 < CGAZOAPP_CUDA_ARCH) {
 			line.Format("LOW COMPUTE CAPABILITY: GPU%d(%s) CC=%d.%d\r\n", i, pcDeviceName, iMajor, iMinor);
 			msg += line;
+		} else {
+			if (GetCudaNumberOfCores(i, &iCores, &iProcessors) <= CUDA_ERROR_DEVICEINFO_MASK) iSumCUDAcores += iCores * iProcessors;
+			int iblock = GetCudaMaxThreadsPerBlock(i);
+			iCUDAblock = (iblock < iCUDAblock) ? iblock : iCUDAblock;
+			int iwarp = GetCudaWarpSize(i);
+			iCUDAwarp = (iwarp < iCUDAwarp) ? iwarp : iCUDAwarp;
 		}
 	}
+	dCUDAscore = (iSumCUDAcores > 0) ? 1700. / iSumCUDAcores : 0;
+	if (dCUDAscore > 0) { line.Format("Total GPU score: %.2f sec\r\n", dCUDAscore); msg += line; }
 	if (!msg.IsEmpty()) error.Log(1, msg);
+	//msg.Format("Device:%d Block:%d Warp:%d", iCUDAcount, iCUDAblock, iCUDAwarp); error.Log(1, msg);
 #endif
-	iCUDAcount &= CUDA_ERROR_DEVICEINFO_MASK;
-	int iCUDAblock = iCUDAcount ? GetCudaMaxThreadsPerBlock(iCUDAcount) : 512;
-	int iCUDAwarp = iCUDAcount ? GetCudaWarpSize(iCUDAcount): 32;
-	//msg.Format("%d %d %d", iCUDAcount, iCUDAblock, iCUDAwarp); error.Log(1, msg);
+	//AMD GPU
 	int iATIcount, iATImaxwork, iATIunitwork;
-	CLInitATIstreamDeviceInfo(&iATIcount, &iATImaxwork, &iATIunitwork);//DO NOT call this func twice
+	CLInitATIstreamDeviceInfo(&iATIcount, &iATImaxwork, &iATIunitwork);//DO NOT call this func twice or more
+	//How can we calc AMD processor score?
+	//
+	int iProcessorType = CDLGPROPERTY_PROCTYPE_INTEL;
+	if (dCPUscore > 0) {
+		if ((dCUDAscore > 0)&&(dCUDAscore < dCPUscore)) iProcessorType = CDLGPROPERTY_PROCTYPE_CUDA;
+	}
 	//
 	dlgProperty.Init(iAvailableCPU, bSIMD, bAVX2, 
 						iCUDAcount, iCUDAblock, iCUDAwarp, 
-						iATIcount, iATImaxwork, iATIunitwork);
+						iATIcount, iATImaxwork, iATIunitwork, iProcessorType);
 	//prevPixelWidth = -1;
 	bShowBoxAxis = true;
 	bDragScroll = false;
 	bWheelToGo = false;
-
 }
 
 CGazoApp::~CGazoApp() {

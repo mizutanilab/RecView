@@ -29,7 +29,7 @@ CDlgProperty::~CDlgProperty()
 
 void CDlgProperty::Init(int icpu, bool bsimd, bool bavx2, 
 						int iCudaCount, int iCudaBlock, int iCudaWarp,
-						int iATIcount, int iATImaxwork, int iATIunitwork) {
+						int iATIcount, int iATImaxwork, int iATIunitwork, int iProcessorType) {
 	//CGazoApp* pApp = (CGazoApp*) AfxGetApp();
 	//iCPU = pApp->iAvailableCPU;
 	iCPU = icpu > 1 ? icpu : 1;
@@ -49,12 +49,20 @@ void CDlgProperty::Init(int icpu, bool bsimd, bool bavx2,
 	iATIstreamNwork = ATISTREAM_MAXWORK;
 	iATIstream = maxATIstream;
 	//090724 iMemory = 20;
-	if (maxCUDA) {
-		m_ProcessorType = CDLGPROPERTY_PROCTYPE_CUDA;
-		m_EnReport = FALSE;
-	} else if (maxATIstream) {
-		m_ProcessorType = CDLGPROPERTY_PROCTYPE_ATISTREAM;
-		m_EnReport = FALSE;
+	switch (iProcessorType) {
+	case CDLGPROPERTY_PROCTYPE_CUDA: {m_ProcessorType = iProcessorType; break;}
+	case CDLGPROPERTY_PROCTYPE_ATISTREAM: {m_ProcessorType = iProcessorType; break;}
+	case CDLGPROPERTY_PROCTYPE_INTEL: {m_ProcessorType = iProcessorType; break;}
+	default: {
+		if (maxCUDA) m_ProcessorType = CDLGPROPERTY_PROCTYPE_CUDA;
+		else if (maxATIstream) m_ProcessorType = CDLGPROPERTY_PROCTYPE_ATISTREAM;
+		break;
+		}
+	}
+	switch (m_ProcessorType) {
+	case CDLGPROPERTY_PROCTYPE_CUDA: {m_EnReport = TRUE; break;}
+	case CDLGPROPERTY_PROCTYPE_ATISTREAM: {m_EnReport = FALSE; break;}
+	default: {m_EnReport = TRUE; break;}
 	}
 	iMemory = 80;
 }

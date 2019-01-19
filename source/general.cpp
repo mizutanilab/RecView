@@ -1980,13 +1980,16 @@ int StringCompare( const void *arg1, const void *arg2 ) {
    return _tcsicmp( * ( char** ) arg1, * ( char** ) arg2 );
 }
 
-#ifdef _WIN64
 extern "C" __int64 projx64(__int64);
-#else
 extern "C" int projx32(int);
+#ifdef _WIN64
+#define DBPT_PROJX projx64((__int64)param)
+typedef __int64 DBPT_Int;
+#else
+#define DBPT_PROJX projx32((int)param)
+typedef int DBPT_Int;
 #endif
 
-#ifdef _WIN64
 unsigned __stdcall DeconvBackProjThread(void* pArg) {
 	RECONST_INFO* ri = (RECONST_INFO*)pArg;
 	if (!ri) {
@@ -2013,9 +2016,9 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 		CCmplx* p = NULL;
 		int* igp = NULL;
 		const int imargin = 0;//190108
-		const int igpdimy = ((ri->iLenSinogr - 1) - (ri->iStartSino) + (ri->iStepSino) - 1) / (ri->iStepSino);
-		const int igpdimx = (ixdimp + imargin * 2) * DBPT_GINTP;
-		const int igpdim = igpdimx * igpdimy;
+		//const int igpdimy = ((ri->iLenSinogr - 1) - (ri->iStartSino) + (ri->iStepSino) - 1) / (ri->iStepSino);
+		const int igpdim = (ixdimp + imargin * 2) * DBPT_GINTP;
+		//const int igpdim = igpdimx * igpdimy;
 		try{
 			p = new CCmplx[ndim];
 			igp = new int[igpdim];
@@ -2031,29 +2034,34 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 		CFft fft;
 		fft.Init1(ndimp, -1);
 		memset(igp, 0, sizeof(int) * igpdim);
-		CGazoDoc* pd = (CGazoDoc*)(ri->pDoc);
-		CMainFrame* pf = (CMainFrame*) AfxGetMainWnd();
+		//CGazoDoc* pd = (CGazoDoc*)(ri->pDoc);
+		//CMainFrame* pf = (CMainFrame*) AfxGetMainWnd();
 		float fcos, fsin, foffset;
-		//190109 __int64 iparam6 = ((DWORD_PTR) igp) + imargin * sizeof(int) * DBPT_GINTP;
-		//190109 int* ipgp = (int*)(iparam6);
 		int* ifp = ri->iReconst;
-		__int64 param[8];
+		const int ibatch = ri->iStartSino;
+		const int ncpu = ri->iStepSino;
+		const int iy0 = (ixdimp * ibatch + ncpu - 1) / ncpu;
+		const int iy1 = (ixdimp * (ibatch + 1) + ncpu - 1) / ncpu;
+		DBPT_Int param[10];
 		param[0] = (DWORD_PTR)(&fcos);
 		param[1] = (DWORD_PTR)(&fsin);
 		param[2] = (DWORD_PTR)(&foffset);
 		param[3] = ixdimpg;
 		param[4] = ixdimp;
 		param[5] = (DWORD_PTR)ri->iReconst;//ifp;
-		//190109 param[6] = iparam6;
+		DBPT_Int iparam6 = ((DWORD_PTR)igp) + imargin * sizeof(int) * DBPT_GINTP;
+		param[6] = iparam6;
+		int* ipgp = (int*)(iparam6);
 		param[7] = 0;
 		if (pApp->dlgProperty.m_bEnableAVX2) param[7] |= 0x0001;
-		//if (pApp->dlgProperty.bEnableSIMD) param[7] |= 0x0001;
+		param[8] = iy0;
+		param[9] = iy1;
 		BOOL bUseSIMD = pApp->dlgProperty.bEnableSIMD;
 		const BOOL bReport = pApp->dlgProperty.m_EnReport;
 		const int iProgStep = ri->iLenSinogr / PROGRESS_BAR_UNIT;
 		int iCurrStep = 0;
-		for (int i = (ri->iStartSino); i < (ri->iLenSinogr - 1); i += (ri->iStepSino)) {
-			int isino = (i - (ri->iStartSino)) / (ri->iStepSino);
+		for (int i = 0; i < (ri->iLenSinogr - 1); i++) {
+			int isino = i;
 			if (bReport && (isino % 20 == 0)) {
 				if (DBProjDlgCtrl(ri, iProgStep, i, &iCurrStep)) break;
 			}
@@ -2098,25 +2106,20 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 				const TCmpElmnt p0 = p[j + ihoffset].re * BACKPROJ_SCALE;
 				const TCmpElmnt p1p0 = (j == ixdimp - 1) ?
 					0.0f : (p[j + ihoffset + 1].re - p[j + ihoffset].re) / DBPT_GINTP * BACKPROJ_SCALE;
-				//190108 const int gidx = (j + imargin) * DBPT_GINTP;
-				const int gidx = (j + imargin) * DBPT_GINTP + isino * igpdimx;//190109
+				const int gidx = (j + imargin) * DBPT_GINTP;
+				//190117 const int gidx = (j + imargin) * DBPT_GINTP + isino * igpdimx;//190109
 				for (int k = 0; k < DBPT_GINTP; k++) { igp[gidx + k] = (int)(p0 + p1p0 * k); }
 			}
-			//The filtering calc above takes only about 0.1-0.2 sec on Core i5 4670.
-			//So the calc is not separated and its result igp is not kept. 
-			//Following projection calc takes most of eclipsed time 3.5 sec.
 			const double th = (ri->fdeg[i] + ri->fTiltAngle) * DEG_TO_RAD;
 			fcos = (float)(cos(th) * DBPT_GINTP);
 			fsin = (float)(-sin(th) * DBPT_GINTP);
 			foffset = fcenter - ixdimh * (fcos + fsin);
-			__int64 iparam6 = ((DWORD_PTR)igp) + imargin * sizeof(int) * DBPT_GINTP + isino * igpdimx * sizeof(int);//190109
-			param[6] = iparam6;
-			int* ipgp = (int*)(iparam6);
 			if (bUseSIMD) {
-				projx64((__int64)param);
+				DBPT_PROJX;//projx64((__int64)param) or projx32((int)param)
 			} else {
 				foffset = fcenter - ixdimh * (fcos + fsin);
-				for (int iy=0; iy<ixdimp; iy++) {
+				//for (int iy=0; iy<ixdimp; iy++) {
+				for (int iy = iy0; iy < iy1; iy++) {
 					int ifpidx = iy * ixdimp - 1;
 					float fyoff = iy * fsin + foffset;//double can be used 160919
 					for (int ix=0; ix<ixdimp; ix++) {
@@ -2155,8 +2158,7 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 	return 0;
 }
 
-#endif // ifdef _WIN64
-
+/*
 #ifndef _WIN64
 
 unsigned __stdcall DeconvBackProjThread(void* pArg) {
@@ -2320,11 +2322,12 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 }
 
 #endif // ifndef _WIN64
+*/
 
 bool DBProjDlgCtrl(RECONST_INFO* ri, int iProgStep, int iSino, int* pCurrStep) {
 	CGazoDoc* pd = (CGazoDoc*)(ri->pDoc);
 	CMainFrame* pf = (CMainFrame*) AfxGetMainWnd();
-	if ((pd->dlgReconst.iStatus == CDLGRECONST_STOP) || (pd->dlgReconst.iStatus & CDLGRECONST_WHEEL)) return true;
+	//190115 if ((pd->dlgReconst.iStatus == CDLGRECONST_STOP) || (pd->dlgReconst.iStatus & CDLGRECONST_WHEEL)) return true;
 	if (!ri->bMaster) return false;
 	if (pd->dlgReconst.m_hWnd) {
 		if (iProgStep > 0) {//121013
@@ -2342,6 +2345,7 @@ bool DBProjDlgCtrl(RECONST_INFO* ri, int iProgStep, int iSino, int* pCurrStep) {
 			pf->m_wndStatusBar.SetPaneText(0, line + ri->dataName);
 		}
 	}
+	if ((pd->dlgReconst.iStatus == CDLGRECONST_STOP) || (pd->dlgReconst.iStatus & CDLGRECONST_WHEEL)) return true;
 	return false;
 }
 

@@ -17,21 +17,24 @@ extern "C" void CudaReconstHost(RECONST_INFO* ri, int idev, bool bReport);
 extern "C" void CudaReconstMemFree(RECONST_INFO* ri);
 extern "C" void CudaReconstHostFFT(RECONST_INFO* ri, int idev, bool bReport);
 extern "C" int GetCudaDeviceCount(int iMinComputeCapability);
-extern "C" int GetCudaMaxThreadsPerBlock(int iDeviceCount);
-extern "C" int GetCudaWarpSize(int iDeviceCount);
+extern "C" int GetCudaMaxThreadsPerBlock(int iDevice);
+extern "C" int GetCudaWarpSize(int iDevice);
 extern "C" int GetCudaDeviceName(int iDevice, char* pcName, int iszcName);
 extern "C" int GetCudaDeviceComputingCapability(int iDevice, int* piMajor, int* piMinor);
 extern "C" int GetCudaNumberOfCores(int iDevice, int* piCores, int* piProcessors);
+extern "C" int GetCudaClockRate(int iDevice, int* piClockRate, int* piMemRate);
 
 extern "C" void CudaSinogramHost(RECONST_INFO* ri, int idev, bool bReport);
 
 //CUDA
-extern "C" void CudaBackProj(int ixdim, int iIntpDim, float center, int iCenterOffset, double theta, int* d_ifp, int* d_igp);
-extern "C" void CudaSinoPx2igp(int ndim, int ixdimp, int igpdimx, int igpdimy, int* d_igp, float* d_px);
-extern "C" void CudaBackProj2(int ixdim, int iIntpDim, float center, int iSinoDimX, int iSinoDimY, int* d_ifp, int* d_igp, float* d_fcos, float* d_fsin);
-extern "C" void CudaBackProj3(int ixdim, int iIntpDim, float center, int iStartSino, int iLenSinogr, int iStepSino, float* pfdeg, float ftilt, int* d_ifp, int* d_igp);
 extern "C" void CudaDeconv(int ixdim, int iIntpDim, int ndim, int isino, float center, 
 				float* d_filt, short* d_strip, int* d_igp, float2* d_p, cufftHandle* fftplan);
+extern "C" void CudaBackProjStream(int ixdimp, float center, int iCenterOffset, double theta, int* d_ifp, int* d_igp, cudaStream_t stream);
+extern "C" void CudaSinoPx2igpStream(int ixdimp, int* d_igp, float* d_px, cudaStream_t stream);
+//extern "C" void CudaBackProj(int ixdim, int iIntpDim, float center, int iCenterOffset, double theta, int* d_ifp, int* d_igp);
+//extern "C" void CudaBackProj2(int ixdim, int iIntpDim, float center, int iSinoDimX, int iSinoDimY, int* d_ifp, int* d_igp, float* d_fcos, float* d_fsin);
+//extern "C" void CudaBackProj3(int ixdim, int iIntpDim, float center, int iStartSino, int iLenSinogr, int iStepSino, float* pfdeg, float ftilt, int* d_ifp, int* d_igp);
+//extern "C" void CudaSinoPx2igp(int ndim, int ixdimp, int igpdimx, int igpdimy, int* d_igp, float* d_px);
 extern "C" bool DBProjDlgCtrl(RECONST_INFO* ri, int iProgStep, int iSino, int* pCurrStep);
 
 extern "C" void CudaSinogram(short* d_Strip, int ixmul, float t0);
