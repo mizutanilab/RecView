@@ -65,4 +65,5 @@ public:
 	BOOL m_EnFastSeek;
 	BOOL m_bEnableAVX2;
 	afx_msg void OnBnClickedPropSimd();
+	afx_msg void OnBnClickedPropInfo();
 };

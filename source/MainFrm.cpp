@@ -87,6 +87,19 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		TRACE0("Failed to create status bar\n");
 		return -1;      // 作成に失敗
 	}
+	//190119
+	UINT nID, nStyle;
+	int cxWidth;
+	CDC* pDC = m_wndStatusBar.GetDC();
+	CFont *pOldFont = pDC->SelectObject(m_wndStatusBar.GetFont());
+	CSize size1 = pDC->GetTextExtent(CString('-', 110));
+	CSize size2 = pDC->GetTextExtent("Center (0000 0000) Size (0000 0000) Tilt 000");
+	pDC->SelectObject(pOldFont);
+	m_wndStatusBar.ReleaseDC(pDC);
+	m_wndStatusBar.GetPaneInfo(1, nID, nStyle, cxWidth);
+	m_wndStatusBar.SetPaneInfo(1, nID, nStyle, size1.cx);
+	m_wndStatusBar.GetPaneInfo(2, nID, nStyle, cxWidth);
+	m_wndStatusBar.SetPaneInfo(2, nID, nStyle, size2.cx);
 
 	// TODO: ツール バーをドッキング可能にしない場合は以下の３行を削除
 	//       してください。

@@ -4,7 +4,7 @@
 #include "stdafx.h"
 #include "gazo.h"
 #include "DlgProperty.h"
-
+#include "MainFrm.h"
 
 // CDlgProperty ダイアログ
 
@@ -90,6 +90,7 @@ ON_BN_CLICKED(IDC_PROP_INTELCPU, &CDlgProperty::OnBnClickedIntelcpu)
 ON_BN_CLICKED(IDC_PROP_CUDAGPU, &CDlgProperty::OnBnClickedCudagpu)
 ON_BN_CLICKED(IDC_PROP_ATISTREAM, &CDlgProperty::OnBnClickedPropAtistream)
 ON_BN_CLICKED(IDC_PROP_SIMD, &CDlgProperty::OnBnClickedPropSimd)
+ON_BN_CLICKED(IDC_PROP_INFO, &CDlgProperty::OnBnClickedPropInfo)
 END_MESSAGE_MAP()
 
 
@@ -272,6 +273,17 @@ void CDlgProperty::OnOK()
 	if (item >= 0) iATIstreamNwork = (int)m_ATIstreamNwork.GetItemData(item);
 	else iATIstreamNwork = ATISTREAM_MAXWORK;
 
+	CString sPane1 = "";
+	CGazoApp* pApp = (CGazoApp*)AfxGetApp();
+	switch (m_ProcessorType) {
+	case CDLGPROPERTY_PROCTYPE_INTEL: {sPane1 = pApp->sCPUname; break;}
+	case CDLGPROPERTY_PROCTYPE_CUDA: {sPane1 = pApp->sCudaGPUname; break;}
+	case CDLGPROPERTY_PROCTYPE_ATISTREAM: {sPane1 = "AMD GPU"; break;}
+	default: {sPane1 = "Generic processor"; break;}
+	}
+	CMainFrame* pf = (CMainFrame*)AfxGetMainWnd();
+	if (pf) pf->m_wndStatusBar.SetPaneText(1, sPane1);
+
 	CDialog::OnOK();
 }
 
@@ -317,4 +329,12 @@ void CDlgProperty::OnBnClickedPropSimd()
 {
 	UpdateData();
 	EnableCtrl();
+}
+
+
+void CDlgProperty::OnBnClickedPropInfo()
+{
+	// TODO: ここにコントロール通知ハンドラー コードを追加します。
+	CGazoApp* pApp = (CGazoApp*) AfxGetApp();
+	pApp->OnViewError();
 }

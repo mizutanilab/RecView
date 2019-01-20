@@ -216,14 +216,14 @@ void CudaReconstHostFFT(RECONST_INFO* ri, int idev, bool bReport) {
 			//100315 if (sidx >= ri->maxLenSinogr) break;
 			const int sidx = i * ri->iMultiplex + ri->iOffset;
 			if (sidx >= ri->maxSinogrLen) break;
-			(*(ri->nSinogr))++;
 			//140611
 			if (ri->dReconFlags & (RQFLAGS_USEONLYEVENFRAMES | RQFLAGS_USEONLYODDFRAMES)) {
 				if (i & 1) { if (ri->dReconFlags & RQFLAGS_USEONLYEVENFRAMES) continue; }
 				else { if (ri->dReconFlags & RQFLAGS_USEONLYODDFRAMES) continue; }
 			}
+			(*(ri->nSinogr))++;
 			if (cudaSuccess != cudaMemcpy(ri->d_strip, ri->iSinogr[sidx], mem_size_strip, cudaMemcpyHostToDevice)) {
-				AfxMessageBox("cudaMemcpy error: d_strip");
+				error.Log(1, "cudaMemcpy error: d_strip");
 				break;
 			}
 			//130923 cutilSafeCall(cudaMemcpy(ri->d_strip, ri->iSinogr[sidx], mem_size_strip, cudaMemcpyHostToDevice) );
@@ -233,7 +233,7 @@ void CudaReconstHostFFT(RECONST_INFO* ri, int idev, bool bReport) {
 		cudaDeviceSynchronize();
 	}
 	//reset tomograph
-	if (cudaSuccess != cudaMemset(ri->d_ifp, 0, mem_size_ifp)) AfxMessageBox("cudaMemset error: ifp");
+	if (cudaSuccess != cudaMemset(ri->d_ifp, 0, mem_size_ifp)) error.Log(1, "cudaMemset error: ifp");
 	const int iProgStep = ri->iLenSinogr / PROGRESS_BAR_UNIT;
 	int iCurrStep = 0;
 	for (int i = (ri->iStartSino); i < (ri->iLenSinogr - 1); i += (ri->iStepSino)) {
@@ -248,8 +248,8 @@ void CudaReconstHostFFT(RECONST_INFO* ri, int idev, bool bReport) {
 			if (i & 1) { if (ri->dReconFlags & RQFLAGS_USEONLYEVENFRAMES) continue; }
 			else { if (ri->dReconFlags & RQFLAGS_USEONLYODDFRAMES) continue; }
 		}
-		CudaBackProj(ixdim, iIntpDim, fCenter, intcenter - ri->iSinoCenter,
-			(ri->fdeg[i] + ri->fTiltAngle) * DEG_TO_RAD, ri->d_ifp, &(ri->d_igp[isino * igpdimx]));
+		CudaBackProjStream(ixdimp, fCenter, intcenter - ri->iSinoCenter,
+			(ri->fdeg[i] + ri->fTiltAngle) * DEG_TO_RAD, ri->d_ifp, &(ri->d_igp[isino * igpdimx]), cudaStreamDefault);
 	}
 	// copy results from device to host
 	int* ifp = ri->iReconst;//each iReconst is dedicated to the thread
@@ -667,7 +667,6 @@ void CudaReconstHost(RECONST_INFO* ri, int idev, bool bReport) {
 		if (!(ri->bInc[i] & CGAZODOC_BINC_SAMPLE)) continue;
 		const int sidx = i * ri->iMultiplex + ri->iOffset;
 		if (sidx >= ri->maxSinogrLen) break;
-		(*(ri->nSinogr))++;
 		//140611
 		if (ri->dReconFlags & (RQFLAGS_USEONLYEVENFRAMES | RQFLAGS_USEONLYODDFRAMES)) {
 			if (i & 1) {
@@ -677,6 +676,7 @@ void CudaReconstHost(RECONST_INFO* ri, int idev, bool bReport) {
 				if (ri->dReconFlags & RQFLAGS_USEONLYODDFRAMES) continue;
 			}
 		}
+		(*(ri->nSinogr))++;
 		if (bDeconv) {
 			//deconvolution
 			short* iStrip = ri->iSinogr[sidx];
@@ -693,6 +693,7 @@ void CudaReconstHost(RECONST_INFO* ri, int idev, bool bReport) {
 				//interpolation
 				if (k == ixdim - 1) break;
 				for (int j = 1; j < iIntpDim; j++) {
+					if (idx + j >= ndim) break;//190120
 					p[idx + j].re = (TCmpElmnt)
 						(iStrip[k] * (iIntpDim - j) / iIntpDim + iStrip[k + 1] * j / iIntpDim);
 				}

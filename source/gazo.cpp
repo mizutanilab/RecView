@@ -123,7 +123,7 @@ CGazoApp::CGazoApp()
 		__cpuidex(CPUInfo, 7, 0);
 		if (CPUInfo[1] & (1 << 5)) bAVX2 = true;
 	}
-	CString sCPUname = "";
+	sCPUname.Empty();
 	__cpuid(CPUInfo, 0x80000000);
 	if ((CPUInfo[0] & 0x7FFFFFFF) >= 4) {
 		for (int k = 2; k <= 4; k++) {
@@ -143,8 +143,8 @@ CGazoApp::CGazoApp()
 	if (iAvailableCPU <= 0) iAvailableCPU = iLogicalProcessorCount > 1 ? iLogicalProcessorCount : 1;
 	//===>131019
 	CString msg = "", line;
-	line.Format("x86/x64 CPU\r\n %s\r\n Number of cores: %d\r\n", 
-		sCPUname.IsEmpty() ? " Processor name unknown" : sCPUname, iAvailableCPU); 
+	if (sCPUname.IsEmpty()) sCPUname = "Unknown x86/x64 processor";
+	line.Format("x86/x64 CPU\r\n %s\r\n Number of cores: %d\r\n", sCPUname, iAvailableCPU); 
 	msg += line;
 	if (bSIMD) msg += " MMX+SSE+SSE2: detected\r\n";
 	else msg += " MMX+SSE+SSE2: not detected\r\n";
@@ -156,21 +156,30 @@ CGazoApp::CGazoApp()
 	GlobalMemoryStatusEx(&memory);
 	double dmem = (double)(memory.ullTotalPhys >> 20);//memory in Mbytes
 	line.Format(" Memory: %.2fGB", dmem / 1024.); msg += line;
+	error.Log(1, msg);
+	//CPU/GPU scores
+	double dCPUscore = 0;
+	double dCUDAscore = 0;
+	int iCUDAblock = 1024;
+	int iCUDAwarp = 32;
+	int iCUDAcount = 0;
+	sCudaGPUname.Empty();
+#ifdef _WIN64
 	//estimate CPU score
 	struct _timeb tstruct; double tm0;
 	_ftime_s(&tstruct);
 	tm0 = tstruct.time + tstruct.millitm * 0.001;
 	double tcpu = 0;
-	int icount = 1, isum = 0, ifp = 0;
+	int icount = 1, isum = 0, ifp[100];
 	while (tcpu < 0.1) {
 		isum += icount;
-		for (double dx = 0; dx < icount; dx += 0.0001) { ifp += isum; }
+		for (double dx = 0; dx < icount; dx += 0.0001) { ifp[isum % 100] += isum; }
 		_ftime_s(&tstruct);
-		tcpu =  + tstruct.time + tstruct.millitm * 0.001 - tm0;
+		tcpu = tstruct.time + tstruct.millitm * 0.001 - tm0;
 		icount *= 2;
 	}
-	double dCPUscore = (tcpu * 250000. + cos(ifp)) / isum;//cos(ifp) is a dummy term to force calc.
-	line.Format("\r\n Estimated score: %.2f sec", dCPUscore); msg += line;
+	dCPUscore = (tcpu * 270000. + cos(ifp[isum % 100])) / isum;//cos(ifp) is a dummy term to force calc.
+	msg.Format(" Estimated score: %.2f sec", dCPUscore);
 	//double dCPUclock = 0, dCPUscore = 0;
 	//int ipos = sCPUname.Find("GHz");
 	//if (ipos >= 0) {
@@ -180,11 +189,6 @@ CGazoApp::CGazoApp()
 	//}
 	error.Log(1, msg);
 	//CUDA GPUs (assumes homogeneous GPUs but detects incompatible ones)
-	double dCUDAscore = 0;
-	int iCUDAblock = 1024;
-	int iCUDAwarp = 32;
-	int iCUDAcount = 0;
-#ifdef _WIN64
 	int iCUDAtotalcount = GetCudaDeviceCount(0);
 	iCUDAtotalcount &= CUDA_ERROR_DEVICEINFO_MASK;
 	char pcDeviceName[256];
@@ -223,6 +227,7 @@ CGazoApp::CGazoApp()
 			line.Format("LOW COMPUTE CAPABILITY: GPU%d(%s) CC=%d.%d\r\n", i, pcDeviceName, iMajor, iMinor);
 			msg += line;
 		} else {
+			sCudaGPUname = pcDeviceName;
 			if (GetCudaNumberOfCores(i, &iCores, &iProcessors) <= CUDA_ERROR_DEVICEINFO_MASK) iSumCUDAcores += iCores * iProcessors;
 			int iblock = GetCudaMaxThreadsPerBlock(i);
 			iCUDAblock = (iblock < iCUDAblock) ? iblock : iCUDAblock;
@@ -230,6 +235,7 @@ CGazoApp::CGazoApp()
 			iCUDAwarp = (iwarp < iCUDAwarp) ? iwarp : iCUDAwarp;
 		}
 	}
+	if (sCudaGPUname.IsEmpty()) sCudaGPUname = "Unknown CUDA GPU";
 	dCUDAscore = (iSumCUDAcores > 0) ? 1700. / iSumCUDAcores : 0;
 	if (dCUDAscore > 0) { line.Format("Total GPU score: %.2f sec\r\n", dCUDAscore); msg += line; }
 	if (!msg.IsEmpty()) error.Log(1, msg);
@@ -241,8 +247,12 @@ CGazoApp::CGazoApp()
 	//How can we calc AMD processor score?
 	//
 	int iProcessorType = CDLGPROPERTY_PROCTYPE_INTEL;
+	sProcessorSelectedOnInit = sCPUname;
 	if (dCPUscore > 0) {
-		if ((dCUDAscore > 0)&&(dCUDAscore < dCPUscore)) iProcessorType = CDLGPROPERTY_PROCTYPE_CUDA;
+		if ((dCUDAscore > 0) && (dCUDAscore < dCPUscore)) {
+			iProcessorType = CDLGPROPERTY_PROCTYPE_CUDA;
+			sProcessorSelectedOnInit = sCudaGPUname;
+		}
 	}
 	//
 	dlgProperty.Init(iAvailableCPU, bSIMD, bAVX2, 
@@ -323,6 +333,8 @@ BOOL CGazoApp::InitInstance()
 	// メイン ウィンドウが初期化されたので、表示と更新を行います。
 	pMainFrame->ShowWindow(m_nCmdShow);
 	pMainFrame->UpdateWindow();
+
+	pMainFrame->m_wndStatusBar.SetPaneText(1, sProcessorSelectedOnInit);
 
 	return TRUE;
 }

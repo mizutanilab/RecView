@@ -34,6 +34,8 @@ projx64 PROC
 	push rbp
 	push rsi
 	push rdi
+	push r12
+	push r13
 
 ;get pointer to args
 	mov rsi, rcx	; arg #1
@@ -49,6 +51,7 @@ projx64 PROC
 	mov r13, [rsi + 72]	;iy1
 
 ;sse rounding mode RC=00B (MXCSR[14:13])
+;	stmxcsr smxcsr
 ;	stmxcsr pmxcsr
 ;	and pmxcsr, 0FFFF9FFFh
 ;	ldmxcsr pmxcsr
@@ -149,7 +152,10 @@ LOOPYEND:
 	cmp rdx, r12
 	jge LOOPY	; iy >= iy0
 
+RTN:
 ;	ldmxcsr smxcsr
+	pop r13
+	pop r12
 	pop rdi
 	pop rsi
 	pop rbp
@@ -213,6 +219,8 @@ ALOOPYEND2:
 	jnae ALOOPY	; iy < iy1
 
 ;	ldmxcsr smxcsr
+	pop r13
+	pop r12
 	pop rdi
 	pop rsi
 	pop rbp

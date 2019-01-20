@@ -124,14 +124,23 @@ __global__ void
 intpKernel(float2* d_p, short* d_strip, int ixdim, int ndim, int iIntpDim, float center) {
 	int ix = blockDim.x * blockIdx.x + threadIdx.x;
 	if (ix >= ixdim) return;
-	int idx = (ix - (int)center) * iIntpDim + (ndim / 2);
+	int iy = blockIdx.y;
+	int idx = (ix - (int)center) * iIntpDim + (ndim / 2) + iy;
 	if (idx < 0) return;
 	if (idx >= ndim) return;
-	int iy = blockIdx.y;
-	if (iy == 0) {d_p[idx].x = d_strip[ix]; return;}
+	if (iy == 0) { d_p[idx].x = d_strip[ix]; return; }
 	//interpolation
 	if (ix == ixdim - 1) return;
-	d_p[idx+iy].x = (float)(d_strip[ix] * (iIntpDim - iy) + d_strip[ix+1] * iy) / iIntpDim;
+	d_p[idx].x = (float)(d_strip[ix] * (iIntpDim - iy) + d_strip[ix + 1] * iy) / iIntpDim;
+//190120
+//	int idx = (ix - (int)center) * iIntpDim + (ndim / 2);
+//	if (idx < 0) return;
+//	if (idx >= ndim) return;
+//	int iy = blockIdx.y;
+//	if (iy == 0) {d_p[idx].x = d_strip[ix]; return;}
+//	//interpolation
+//	if (ix == ixdim - 1) return;
+//	d_p[idx+iy].x = (float)(d_strip[ix] * (iIntpDim - iy) + d_strip[ix+1] * iy) / iIntpDim;
 	/*
 	for (int k=0; k<ixdim; k++) {
 		int idx = (k - (int)center) * iIntpDim + (ndim / 2);

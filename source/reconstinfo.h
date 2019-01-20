@@ -53,7 +53,8 @@ struct RECONST_INFO {
 	BOOL drOmit;
 	unsigned int threadID;
 	//120828 HANDLE hThread;
-	unsigned int hThread;
+	//190119 unsigned int hThread;
+	uintptr_t hThread;
 	//
 	//CUDA memory allocation
 	unsigned int max_d_ifp;

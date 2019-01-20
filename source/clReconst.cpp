@@ -479,7 +479,6 @@ void CLReconstHost(RECONST_INFO* ri, int idev, bool bReport) {
 		if (!(ri->bInc[i] & CGAZODOC_BINC_SAMPLE)) continue;
 		const int sidx = i * ri->iMultiplex + ri->iOffset;
 		if (sidx >= ri->maxSinogrLen) break;
-		(*(ri->nSinogr))++;
 		//140611
 		if (ri->dReconFlags & (RQFLAGS_USEONLYEVENFRAMES | RQFLAGS_USEONLYODDFRAMES)) {
 			if (i & 1) {
@@ -488,6 +487,7 @@ void CLReconstHost(RECONST_INFO* ri, int idev, bool bReport) {
 				if (ri->dReconFlags & RQFLAGS_USEONLYODDFRAMES) continue;
 			}
 		}
+		(*(ri->nSinogr))++;
 
 		short* iStrip = ri->iSinogr[sidx];
 		//Deconvolution
@@ -509,6 +509,7 @@ void CLReconstHost(RECONST_INFO* ri, int idev, bool bReport) {
 			//interpolation
 			if (k == ixdim - 1) break;
 			for (int j=1; j<iIntpDim; j++) {
+				if (idx + j >= ndim) break;//190120
 				p[idx+j].re = (TCmpElmnt)
 					(iStrip[k] * (iIntpDim - j) / iIntpDim + iStrip[k+1] * j / iIntpDim);
 			}

@@ -38,6 +38,7 @@
 
 class CGazoApp : public CWinApp
 {
+friend class CDlgProperty;
 public:
 	CGazoApp();
 	~CGazoApp();
@@ -71,11 +72,14 @@ private:
 
 protected:
 	int iStatus;
+	CString sProcessorSelectedOnInit;
+	CString sCPUname;
+	CString sCudaGPUname;
 
 // オーバーライド
 	// ClassWizard は仮想関数のオーバーライドを生成します。
 	//{{AFX_VIRTUAL(CGazoApp)
-	public:
+public:
 	virtual BOOL InitInstance();
 	//}}AFX_VIRTUAL
 

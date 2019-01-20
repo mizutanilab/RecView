@@ -5,6 +5,8 @@
 #define IDC_RECONST_QUEUE               3
 #define IDC_HISTG_QUEUE                 3
 #define IDC_REFR_SHOW                   3
+#define IDC_PROP                        3
+#define IDC_PROP_INFO                   3
 #define IDC_RECONST_STOP                4
 #define IDC_HISTG_GETPATH               4
 #define IDC_REFR_STOP                   4
@@ -365,7 +367,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_3D_CONTROLS                     1
-#define _APS_NEXT_RESOURCE_VALUE        151
+#define _APS_NEXT_RESOURCE_VALUE        153
 #define _APS_NEXT_COMMAND_VALUE         32844
 #define _APS_NEXT_CONTROL_VALUE         1128
 #define _APS_NEXT_SYMED_VALUE           102

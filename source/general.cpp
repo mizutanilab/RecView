@@ -2069,7 +2069,6 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 			const int sidx = i * ri->iMultiplex + ri->iOffset;
 			if (sidx >= ri->maxSinogrLen) break;
 			short* iStrip = ri->iSinogr[sidx];
-			(*(ri->nSinogr))++;
 			//140611
 			if (ri->dReconFlags & (RQFLAGS_USEONLYEVENFRAMES | RQFLAGS_USEONLYODDFRAMES)) {
 				if (i & 1) {
@@ -2079,6 +2078,7 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 					if (ri->dReconFlags & RQFLAGS_USEONLYODDFRAMES) continue;
 				}
 			}
+			if (ri->bMaster) (*(ri->nSinogr))++;
 			//
 			memset(p, 0, sizeof(CCmplx) * ndim);//111206
 			const int idx0 = (0 - (int)center) * iIntpDim + (ndim / 2 - 1);
@@ -2094,6 +2094,7 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 				//interpolation
 				if (k == ixdim - 1) break;
 				for (int j = 1; j < iIntpDim; j++) {
+					if (idx + j >= ndim) break;//190120
 					p[idx + j].re = (TCmpElmnt)
 						(iStrip[k] * (iIntpDim - j) / iIntpDim + iStrip[k + 1] * j / iIntpDim);
 				}
@@ -2101,7 +2102,6 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 			fft.FFT1Rev(p);
 			for (int k = 0; k < ndim; k++) { p[k] *= ri->fFilter[k]; }
 			fft.FFT1(p);
-			//
 			for (int j = 0; j < ixdimp; j++) {
 				const TCmpElmnt p0 = p[j + ihoffset].re * BACKPROJ_SCALE;
 				const TCmpElmnt p1p0 = (j == ixdimp - 1) ?
@@ -2110,6 +2110,7 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 				//190117 const int gidx = (j + imargin) * DBPT_GINTP + isino * igpdimx;//190109
 				for (int k = 0; k < DBPT_GINTP; k++) { igp[gidx + k] = (int)(p0 + p1p0 * k); }
 			}
+			//
 			const double th = (ri->fdeg[i] + ri->fTiltAngle) * DEG_TO_RAD;
 			fcos = (float)(cos(th) * DBPT_GINTP);
 			fsin = (float)(-sin(th) * DBPT_GINTP);
@@ -2132,7 +2133,6 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 				}
 			}//(bUseSIMD)
 		}
-
 		delete [] igp;
 		delete [] p;
 		//-----end of INTEL body-----//
