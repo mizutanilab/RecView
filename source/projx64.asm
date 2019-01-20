@@ -28,6 +28,8 @@ projx64 PROC
 ;local valiables
 ;	local pmxcsr :dword
 ;	local smxcsr :dword
+	local regXMM6 :oword
+	local regXMM7 :oword
 
 ;store registers
 	push rbx
@@ -36,6 +38,8 @@ projx64 PROC
 	push rdi
 	push r12
 	push r13
+	movdqu regXMM6, xmm6
+	movdqu regXMM7, xmm7
 
 ;get pointer to args
 	mov rsi, rcx	; arg #1
@@ -152,15 +156,7 @@ LOOPYEND:
 	cmp rdx, r12
 	jge LOOPY	; iy >= iy0
 
-RTN:
-;	ldmxcsr smxcsr
-	pop r13
-	pop r12
-	pop rdi
-	pop rsi
-	pop rbp
-	pop rbx
-	ret
+	jmp RTN
 
 USEAVX:
 ;load valiables	
@@ -218,7 +214,10 @@ ALOOPYEND2:
 	cmp rdx, r13
 	jnae ALOOPY	; iy < iy1
 
+RTN:
 ;	ldmxcsr smxcsr
+	movdqu xmm7, regXMM7
+	movdqu xmm6, regXMM6
 	pop r13
 	pop r12
 	pop rdi
