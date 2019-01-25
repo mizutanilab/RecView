@@ -89,10 +89,11 @@ CGazoView::CGazoView()
 
 CGazoView::~CGazoView()
 {
+	if (hBitmap) DeleteObject(hBitmap);
 	if (lpBmpInfo) HeapFree(GetProcessHeap(),0,lpBmpInfo);
 //	if (pPix) delete [] pPix;
 	if (pbOverlay) delete [] pbOverlay;
-	if (hBitmap) DeleteObject(hBitmap);
+	//190122 if (hBitmap) DeleteObject(hBitmap);
 	if (dlgPolygon.m_hWnd) dlgPolygon.DestroyWindow();
 	//lpBmPixel is automatically deleted by DeleteObject
 }
@@ -248,7 +249,7 @@ void CGazoView::SetPixels(int ixd, int iyd, int iBrightness, int iContrast) {
 
 void CGazoView::UpdateBitmap(int ixdarg, int iBrightness, int iContrast) {
 	const bool bCreate = (lpBmPixel) ? false : true;
-	CDC* pDC = this->GetDC();
+	//190122 CDC* pDC = this->GetDC();
 	/*
 	if (lpBmPixel) {
 		//AfxMessageBox("not allocate");
@@ -266,6 +267,7 @@ void CGazoView::UpdateBitmap(int ixdarg, int iBrightness, int iContrast) {
 		return;
 	}*/
 	if (bCreate) {
+		CDC* pDC = this->GetDC();//190122
 		if (hBitmap) DeleteObject(hBitmap);
 		BITMAPINFOHEADER* bh = &(lpBmpInfo->bmiHeader);
 		bh->biSize = sizeof(BITMAPINFOHEADER); 
@@ -290,7 +292,8 @@ void CGazoView::UpdateBitmap(int ixdarg, int iBrightness, int iContrast) {
 		//if NULL, use CreateDIBSection
 //		bh->biBitCount = 32;
 		hBitmap = CreateDIBSection(pDC->m_hDC, lpBmpInfo, DIB_RGB_COLORS, (void**)&lpBmPixel, NULL, 0);
-		if (!hBitmap) {AfxMessageBox("Out of memory: bitmap"); this->ReleaseDC(pDC); return;}
+		this->ReleaseDC(pDC);//190122
+		if (!hBitmap) {AfxMessageBox("Out of memory: bitmap"); return;}
 	}//(bCreate)
 	//copy bitmap
 	CGazoDoc* pd = GetDocument();
@@ -348,7 +351,7 @@ void CGazoView::UpdateBitmap(int ixdarg, int iBrightness, int iContrast) {
 		//	}
 		//}
 	}//(bColor)
-	if (bCreate) this->ReleaseDC(pDC);
+	//190122 if (bCreate) this->ReleaseDC(pDC);
 }
 
 void CGazoView::OnDraw(CDC* pDC)
@@ -385,6 +388,8 @@ void CGazoView::OnDraw(CDC* pDC)
 	pDC->SetStretchBltMode(isMode);
 	::SetBrushOrgEx(pDC->m_hDC, brushOrg.x, brushOrg.y, NULL);
 	MemDC.SelectObject(pOldBitmap);
+	Bitmap.DeleteObject();//190122
+	MemDC.DeleteDC();//190122
 	//131021 if (bBoxEnabled) {
 	if (bBoxEnabled && (iBoxSizeX > 0) && (iBoxSizeY > 0)) {
 		const double rBoxCentX = iBoxCentX * rMagnify + ix0img;
@@ -424,9 +429,10 @@ void CGazoView::OnDraw(CDC* pDC)
 			pDC->TextOut((int)(pntBox[0].x + e1x * 30 / e1r), (int)(pntBox[0].y + e1y * 30 / e1r), "x");
 			pDC->TextOut((int)(pntBox[0].x + e2x * 30 / e2r), (int)(pntBox[0].y + e2y * 30 / e2r), "y");
 			pDC->SelectObject(orgFont);
-			mPen1.DeleteObject();
+			//190122 mPen1.DeleteObject();
 			labelfont.DeleteObject();
 		}//if bShowBoxAxis
+		mPen1.DeleteObject();//190122
 	}
 	if (bPolygonEnabled) {//180424
 		for (int i=0; i<CGAZOVIEW_NPOLYGON; i++) {

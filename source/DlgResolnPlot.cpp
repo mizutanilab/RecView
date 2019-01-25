@@ -274,8 +274,9 @@ void CDlgResolnPlot::UpdateBitmap() {
 	bh->biYPelsPerMeter = 10000; 
 	bh->biClrUsed = BITMAP_NCOLORS; 
 	bh->biClrImportant = 0; 
-	hBitmap = CreateDIBitmap(this->GetDC()->m_hDC, &(lpBmpInfo->bmiHeader), CBM_INIT, pBitmapPix,
-																lpBmpInfo, DIB_RGB_COLORS);
+	CClientDC dc(this);//190122
+	hBitmap = CreateDIBitmap(dc.m_hDC, &(lpBmpInfo->bmiHeader), CBM_INIT, pBitmapPix, lpBmpInfo, DIB_RGB_COLORS);
+	//190122 hBitmap = CreateDIBitmap(this->GetDC()->m_hDC, &(lpBmpInfo->bmiHeader), CBM_INIT, pBitmapPix, lpBmpInfo, DIB_RGB_COLORS);
 	if (hBitmap) m_Bitmap.SetBitmap(hBitmap);
 }
 

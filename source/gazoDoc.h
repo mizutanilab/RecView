@@ -16,7 +16,7 @@
 #include "DlgQueue.h"
 #include "DlgRefraction.h"
 #include "DlgOverlay.h"
-//#include "DlgProperty.h"
+#include "DlgProperty.h" //CDLGPROPERTY_PROCTYPE_ND
 #include "chdf5.h"
 #include <atlimage.h> //CImage
 
@@ -79,6 +79,7 @@ public:
 	void DeleteAll();
 	void InitAll();
 	void ClearAll();
+	void GPUMemFree(int iProcessorType = CDLGPROPERTY_PROCTYPE_ND);//190124
 	void GetDimension(int* ix, int* iy);
 	void SetDimension(int ix, int iy);
 	CString GetLogPath();

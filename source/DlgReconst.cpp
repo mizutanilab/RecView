@@ -315,14 +315,15 @@ void CDlgReconst::OnReconstQueue()
 	iContext = CDLGRECONST_CONTEXT_NONE;
 	iStatus = CDLGRECONST_IDLE;
 	//delete GPU memory if any 190107
-	if (pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_CUDA) {
-		int nCPU = (int)(pApp->dlgProperty.iCUDA);
-		for (int i = 0; i < nCPU; i++) { CudaReconstMemFree(&(pd->ri[i])); }
-	}
-	else if (pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_ATISTREAM) {
-		int nCPU = (int)(pApp->dlgProperty.iATIstream);
-		for (int i = 0; i < nCPU; i++) { CLReconstMemFree(&(pd->ri[i])); }
-	}
+	pd->GPUMemFree();
+	//if (pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_CUDA) {
+	//	int nCPU = (int)(pApp->dlgProperty.iCUDA);
+	//	for (int i = 0; i < nCPU; i++) { CudaReconstMemFree(&(pd->ri[i])); }
+	//}
+	//else if (pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_ATISTREAM) {
+	//	int nCPU = (int)(pApp->dlgProperty.iATIstream);
+	//	for (int i = 0; i < nCPU; i++) { CLReconstMemFree(&(pd->ri[i])); }
+	//}
 //AfxMessageBox(rq.dataPath + rq.itexFilePrefix + rq.itexFileSuffix);
 }
 
@@ -451,15 +452,16 @@ void CDlgReconst::OnCancel()
 	iStatus = CDLGRECONST_IDLE;
 	iContext = CDLGRECONST_CONTEXT_NONE;
 	//delete GPU memory if any 190107
-	CGazoApp* pApp = (CGazoApp*)AfxGetApp();
-	if (pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_CUDA) {
-		int nCPU = (int)(pApp->dlgProperty.iCUDA);
-		for (int i = 0; i < nCPU; i++) { CudaReconstMemFree(&(pd->ri[i])); }
-	}
-	else if (pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_ATISTREAM) {
-		int nCPU = (int)(pApp->dlgProperty.iATIstream);
-		for (int i = 0; i < nCPU; i++) { CLReconstMemFree(&(pd->ri[i])); }
-	}
+	pd->GPUMemFree();
+	//CGazoApp* pApp = (CGazoApp*)AfxGetApp();
+	//if (pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_CUDA) {
+	//	int nCPU = (int)(pApp->dlgProperty.iCUDA);
+	//	for (int i = 0; i < nCPU; i++) { CudaReconstMemFree(&(pd->ri[i])); }
+	//}
+	//else if (pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_ATISTREAM) {
+	//	int nCPU = (int)(pApp->dlgProperty.iATIstream);
+	//	for (int i = 0; i < nCPU; i++) { CLReconstMemFree(&(pd->ri[i])); }
+	//}
 	//CDialog::OnCancel();
 }
 

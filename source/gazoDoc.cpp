@@ -111,6 +111,8 @@ ON_COMMAND(IDM_TOMO_HORIZCENT, &CGazoDoc::OnTomoHorizcent)
 	ON_UPDATE_COMMAND_UI(IDM_OVERLAY, &CGazoDoc::OnUpdateMenuOverlay)
 	ON_COMMAND(ID_ANALYSIS_ENLARGE, &CGazoDoc::OnAnalysisEnlarge)
 	ON_COMMAND(ID_ANALYSIS_RADIALPROFILE, &CGazoDoc::OnAnalysisRadialprofile)
+	ON_COMMAND(ID_TOOLBAR_HISTG, &CGazoDoc::OnTomoHistg)
+	ON_UPDATE_COMMAND_UI(ID_TOOLBAR_HISTG, &CGazoDoc::OnUpdateTomoHistg)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -163,10 +165,11 @@ void CGazoDoc::ClearAll() {
 		ri[i].hThread = NULL;
 		ri[i].iStatus = RECONST_INFO_IDLE;
 		ri[i].iStartSino = i;
-		ri[i].bMaster = false;
+		//ri[i].bMaster = false;
 		ri[i].pDoc = (unsigned int*)this;
 		ri[i].piDrift = NULL;
 	}
+	//ri[0].bMaster = true;
 	uiDocStatus = CGAZODOC_STATUS_RESET;
 	m_iFlag = 0;
 	bColor = false;
@@ -223,7 +226,7 @@ void CGazoDoc::InitAll() {
 //		ri[i].d_fsin = NULL;
 //		ri[i].max_d_fcos = 0;
 	}
-	ri[0].bMaster = true;
+	//190121 ri[0].bMaster = true;
 }
 
 CGazoDoc::~CGazoDoc() {
@@ -262,12 +265,26 @@ void CGazoDoc::DeleteAll()
 	//	CudaReconstMemFree(&(ri[i]));
 	//}
 	//190107
+	GPUMemFree();
+	//CGazoApp* pApp = (CGazoApp*)AfxGetApp();
+	//if (pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_CUDA) {
+	//	int nCPU = (int)(pApp->dlgProperty.iCUDA);
+	//	for (int i = 0; i < nCPU; i++) { CudaReconstMemFree(&(ri[i])); }
+	//}
+	//else if (pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_ATISTREAM) {
+	//	int nCPU = (int)(pApp->dlgProperty.iATIstream);
+	//	for (int i = 0; i < nCPU; i++) { CLReconstMemFree(&(ri[i])); }
+	//}
+}
+
+void CGazoDoc::GPUMemFree(int iProcessorType) {
 	CGazoApp* pApp = (CGazoApp*)AfxGetApp();
-	if (pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_CUDA) {
+	iProcessorType = (iProcessorType == CDLGPROPERTY_PROCTYPE_ND) ? pApp->dlgProperty.m_ProcessorType : iProcessorType;
+	if (iProcessorType == CDLGPROPERTY_PROCTYPE_CUDA) {
 		int nCPU = (int)(pApp->dlgProperty.iCUDA);
 		for (int i = 0; i < nCPU; i++) { CudaReconstMemFree(&(ri[i])); }
 	}
-	else if (pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_ATISTREAM) {
+	else if (iProcessorType == CDLGPROPERTY_PROCTYPE_ATISTREAM) {
 		int nCPU = (int)(pApp->dlgProperty.iATIstream);
 		for (int i = 0; i < nCPU; i++) { CLReconstMemFree(&(ri[i])); }
 	}
@@ -594,7 +611,14 @@ TErr CGazoDoc::OutputImageInBox(FORMAT_QUEUE* fq, CProgressCtrl* progress, CStri
 	CString sLogFileName = "recviewlog.txt";
 	if (!flog.Open(sdataPath + sLogFileName, CFile::modeRead | CFile::shareDenyWrite | CFile::typeText)) {
 		sLogFileName = "0recviewlog.txt";
-	} else {
+		if (!flog.Open(sdataPath + sLogFileName, CFile::modeRead | CFile::shareDenyWrite | CFile::typeText)) {
+			sLogFileName = "_recviewlog.txt";
+		}
+		else {
+			flog.Close();
+		}
+	}
+	else {
 		flog.Close();
 	}
 	CGazoApp* pApp = (CGazoApp*) AfxGetApp();
@@ -609,42 +633,43 @@ TErr CGazoDoc::OutputImageInBox(FORMAT_QUEUE* fq, CProgressCtrl* progress, CStri
 		_tctime_s(tctime, 26, &(tstruct.time));
 		const CString stime = tctime;
 		CString line;
-		line.Format("Image conversion [%s] %s\r\n", stime.Left(24), pApp->sProgVersion);
+		CString sVer = pApp->sProgVersion; sVer.Replace('\n', ' ');
+		line.Format("Image conversion [%s] %s\n", stime.Left(24), sVer);
 		flog.WriteString(line);
 		if (fq->nFiles > 1) {
-			flog.WriteString(" Source files: " + sfinput + " etc...\r\n");
+			flog.WriteString(" Source files: " + sfinput + " etc...\n");
 		} else {
-			flog.WriteString(" Source file: " + sfinput + "\r\n");
+			flog.WriteString(" Source file: " + sfinput + "\n");
 		}
-		line.Format(" Number of files: %d\r\n", fq->nFiles);
+		line.Format(" Number of files: %d\n", fq->nFiles);
 		flog.WriteString(line);
-		line.Format(" Source image sizes: x=%d, y=%d\r\n", fq->iXdim, fq->iYdim);
+		line.Format(" Source image sizes: x=%d, y=%d\n", fq->iXdim, fq->iYdim);
 		flog.WriteString(line);
-		line.Format(" LAC limits: low=%.2f, high=%.2f\r\n", fq->dLow, fq->dHigh);
+		line.Format(" LAC limits: low=%.2f, high=%.2f\n", fq->dLow, fq->dHigh);
 		flog.WriteString(line);
 		if (fq->bBoxEnabled) {
-			flog.WriteString(" Trimming enabled\r\n");
-			line.Format("  Box center: x=%d, y=%d\r\n", fq->iBoxCentX, fq->iBoxCentY);
+			flog.WriteString(" Trimming enabled\n");
+			line.Format("  Box center: x=%d, y=%d\n", fq->iBoxCentX, fq->iBoxCentY);
 			flog.WriteString(line);
-			line.Format("  Box sizes: x=%d, y=%d\r\n", fq->iBoxSizeX, fq->iBoxSizeY);
+			line.Format("  Box sizes: x=%d, y=%d\n", fq->iBoxSizeX, fq->iBoxSizeY);
 			flog.WriteString(line);
-			line.Format("  Box tilt: %d deg\r\n", fq->iBoxAngle);
+			line.Format("  Box tilt: %d deg\n", fq->iBoxAngle);
 			flog.WriteString(line);
 		}
 		if (fq->iAverage > 1) {
-			line.Format(" Averaging: %d pixel\r\n", fq->iAverage);
+			line.Format(" Averaging: %d pixel\n", fq->iAverage);
 			flog.WriteString(line);
 		}
-		if (fq->uiFlags & FQFLAGS_16BIT) flog.WriteString(" Output 16 bit TIFF files\r\n"); else flog.WriteString(" Output 8 bit TIFF files\r\n");
-		flog.WriteString(" Output file prefix: " + fq->outFilePrefix + "\r\n");
+		if (fq->uiFlags & FQFLAGS_16BIT) flog.WriteString(" Output 16 bit TIFF files\n"); else flog.WriteString(" Output 8 bit TIFF files\n");
+		flog.WriteString(" Output file prefix: " + fq->outFilePrefix + "\n");
 		if (fq->iOspDepth) {
-			line.Format(" Carving depth: %d pixels\r\n", fq->iOspDepth);
+			line.Format(" Carving depth: %d pixels\n", fq->iOspDepth);
 			flog.WriteString(line);
-			line.Format("  LAC threshold: %.2f\r\n", fq->dOspThreshold);
+			line.Format("  LAC threshold: %.2f\n", fq->dOspThreshold);
 			flog.WriteString(line);
 		}
 		if (!sPolygonList.IsEmpty()) {
-			line.Format(" Polygon list:\r\n%s", sPolygonList);
+			line.Format(" Polygon list:\n%s", sPolygonList);
 			flog.WriteString(line);
 		}
 		//120803 flog.WriteString("---------------------------------------------------\r\n");
@@ -691,7 +716,7 @@ TErr CGazoDoc::OutputImageInBox(FORMAT_QUEUE* fq, CProgressCtrl* progress, CStri
 			RemoveSurface(pixIn, fq, kxdim, kydim, tpixDiv, tpixBase, &iRemoved);
 			//CString msg; msg.Format("Removed %d %f", iRemoved, kxdim * kydim * 0.8); AfxMessageBox(msg);
 			if (iRemoved > kxdim * kydim * 0.8) {//if removed area is greater than 80% of image
-				if (flog.GetStatus(fstatus)) {flog.WriteString("   Truncated: " + finput + "\r\n");}//120803
+				if (flog.GetStatus(fstatus)) {flog.WriteString("   Truncated: " + finput + "\n");}//120803
 				if (psMsg) {*psMsg = "**Truncated**";}//130210
 			}
 		}
@@ -824,16 +849,16 @@ TErr CGazoDoc::OutputImageInBox(FORMAT_QUEUE* fq, CProgressCtrl* progress, CStri
 	}
 	if (flog.GetStatus(fstatus)) {//120803
 		if (bHistLog) {
-			flog.WriteString(" Histogram\r\n pixel\tLAC\tn\tFreq\r\n");
+			flog.WriteString(" Histogram\n pixel\tLAC\tn\tFreq\n");
 			for (int i=0; i<256; i++) {
 				CString line;
-				line.Format(" %d\t%.2f\t%lld\t%.6f\r\n", 
+				line.Format(" %d\t%.2f\t%lld\t%.6f\n", 
 					(fq->uiFlags & FQFLAGS_16BIT) ? i*256 : i, i * (dHigh - dLow) / maxIntensity + dLow,
 					pllHistLog[i], (double)pllHistLog[i] / ullHistLogCount);
 				flog.WriteString(line);
 			}
 		}
-		flog.WriteString("---------------------------------------------------\r\n");
+		flog.WriteString("---------------------------------------------------\n");
 		flog.Close();
 	}
 	//AfxMessageBox(line);
@@ -1070,12 +1095,14 @@ TErr CGazoDoc::ReadFile(CFile* fp) {
 	m_cimage.Destroy();
 	//120803 iLossFrameSet = -1;
 	if ((_tcscmp(ext, ".tif") == 0)||(_tcscmp(ext, ".TIF") == 0)) {
+		float fPrevPixDiv = pixDiv, fPrevPixBase = pixBase;
 		pixDiv = 0; pixBase = 0;
 		float pw = (float)dlgReconst.m_PixelWidth;
 		err = ReadTif(fp, &pPixel, &maxPixel, &iydim, &ixdim, &pixDiv, &pixBase,
 									&fCenter, &(dlgReconst.m_Filter), &pw);
-		if (err ==  WARN_READIMAGE_SIZECHANGE) return err;//160803
-		else if (err) {
+		if (err == WARN_READIMAGE_SIZECHANGE) {//160803
+			pixDiv = fPrevPixDiv; pixBase = fPrevPixBase; return err;
+		} else if (err) {
 			HRESULT hResult = m_cimage.Load(fp->GetFilePath());
 			if (SUCCEEDED(hResult)) err = 0;
 		}
@@ -1487,6 +1514,11 @@ TErr CGazoDoc::BatchReconst(RECONST_QUEUE* rq) {
 	CString sLogFileName = "recviewlog.txt";
 	if (!flog.Open(rq->dataPath + sLogFileName, CFile::modeRead | CFile::shareDenyWrite | CFile::typeText)) {
 		sLogFileName = "0recviewlog.txt";
+		if (!flog.Open(rq->dataPath + sLogFileName, CFile::modeRead | CFile::shareDenyWrite | CFile::typeText)) {
+			sLogFileName = "_recviewlog.txt";
+		} else {
+			flog.Close();
+		}
 	} else {
 		flog.Close();
 	}
@@ -1497,78 +1529,85 @@ TErr CGazoDoc::BatchReconst(RECONST_QUEUE* rq) {
 		TCHAR tctime[26];
 		_tctime_s(tctime, 26, &(tstruct.time));
 		const CString stime = tctime;
-		CString line;
-		line.Format("Reconst [%s] %s\r\n", stime.Left(24), pApp->sProgVersion);
+		CString line, sVer;
+		sVer = pApp->sProgVersion; sVer.Replace('\n', ' ');
+		line.Format("Reconst [%s] %s\n", stime.Left(24), sVer);
 		flog.WriteString(line);
+		if (pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_INTEL) flog.WriteString(" Reconstruction kernel: x86/x64\n");
+		else if (pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_CUDA) {
+			if (pApp->dlgProperty.bUseCUDAFFT) flog.WriteString(" Reconstruction kernel: CUDA-FFT\n");
+			else flog.WriteString(" Reconstruction kernel: CUDA\n");
+		} else if (pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_ATISTREAM) flog.WriteString(" Reconstruction kernel: AMD\n");
+		else flog.WriteString(" Reconstruction kernel: Unknown\n");
 		if (rq->itexFileSuffix.MakeUpper() == ".HIS") {
-			flog.WriteString(" Data file: " + rq->dataPath + rq->itexFilePrefix + rq->itexFileSuffix + "\r\n");
+			flog.WriteString(" Data file: " + rq->dataPath + rq->itexFilePrefix + rq->itexFileSuffix + "\n");
 		} else {
-			flog.WriteString(" Data files: " + rq->dataPath + rq->itexFilePrefix + "*" + rq->itexFileSuffix + "\r\n");
+			flog.WriteString(" Data files: " + rq->dataPath + rq->itexFilePrefix + "*" + rq->itexFileSuffix + "\n");
 		}
-		line.Format(" From layer %d (center=%.2f) to layer %d (center=%.2f)\r\n", rq->iLayer1, rq->dCenter1, rq->iLayer2, rq->dCenter2);
+		line.Format(" From layer %d (center=%.2f) to layer %d (center=%.2f)\n", rq->iLayer1, rq->dCenter1, rq->iLayer2, rq->dCenter2);
 		flog.WriteString(line);
 		if (rq->iLayer1 == rq->iLayer2) {
-			line.Format("  Axis increment %.3f\r\n", rq->dAxisInc); flog.WriteString(line);
+			line.Format("  Axis increment %.3f\n", rq->dAxisInc); flog.WriteString(line);
 		}
-		line.Format(" Dataset: %d\r\n", rq->iDatasetSel);
+		line.Format(" Dataset: %d\n", rq->iDatasetSel);
 		if (rq->iLossFrameSet >= 0) {
 			flog.WriteString(line);
-			line.Format(" A frame have been lost in dataset: %d\r\n", rq->iLossFrameSet);
+			line.Format(" A frame have been lost in dataset: %d\n", rq->iLossFrameSet);
 		}
 		flog.WriteString(line);
-		line.Format(" Pixel width: %f um\r\n", rq->dPixelWidth);
+		line.Format(" Pixel width: %f um\n", rq->dPixelWidth);
 		flog.WriteString(line);
 		switch (rq->iFilter) {
-			case CDLGRECONST_FILT_HAN: {line.Format(" Filter func: Hann, cutoff: %f\r\n", rq->dCutoff); break;}
-			case CDLGRECONST_FILT_HAM: {line.Format(" Filter func: Hamming, cutoff: %f\r\n", rq->dCutoff); break;}
-			case CDLGRECONST_FILT_RAMP: {line.Format(" Filter func: Rectangular, cutoff: %f\r\n", rq->dCutoff); break;}
-			case CDLGRECONST_FILT_PARZN: {line.Format(" Filter func: Parzen, cutoff: %f\r\n", rq->dCutoff); break;}
-			case CDLGRECONST_FILT_BUTER: {line.Format(" Filter func: Butterworth, cutoff: %f, order: %f\r\n", rq->dCutoff, rq->dOrder); break;}
+			case CDLGRECONST_FILT_HAN: {line.Format(" Filter func: Hann, cutoff: %f\n", rq->dCutoff); break;}
+			case CDLGRECONST_FILT_HAM: {line.Format(" Filter func: Hamming, cutoff: %f\n", rq->dCutoff); break;}
+			case CDLGRECONST_FILT_RAMP: {line.Format(" Filter func: Rectangular, cutoff: %f\n", rq->dCutoff); break;}
+			case CDLGRECONST_FILT_PARZN: {line.Format(" Filter func: Parzen, cutoff: %f\n", rq->dCutoff); break;}
+			case CDLGRECONST_FILT_BUTER: {line.Format(" Filter func: Butterworth, cutoff: %f, order: %f\n", rq->dCutoff, rq->dOrder); break;}
 		}
 		flog.WriteString(line);
-		line.Format(" Tilt angle: %.1f deg\r\n Trimming: %d pixel\r\n", rq->fTiltAngle, rq->iTrimWidth);
+		line.Format(" Tilt angle: %.1f deg\n Trimming: %d pixel\n", rq->fTiltAngle, rq->iTrimWidth);
 		flog.WriteString(line);
 		switch (rq->iInterpolation) {
-			case 0: {line = " Binning/zooming: x4 binning\r\n"; break;}
-			case 1: {line = " Binning/zooming: x2 binning\r\n"; break;}
-			case 2: {line = " Binning/zooming: none\r\n"; break;}
-			case 3: {line = " Binning/zooming: x2 zooming\r\n"; break;}
-			case 4: {line = " Binning/zooming: x4 zooming\r\n"; break;}
-			case 5: {line = " Binning/zooming: x8 zooming\r\n"; break;}
+			case 0: {line = " Binning/zooming: x4 binning\n"; break;}
+			case 1: {line = " Binning/zooming: x2 binning\n"; break;}
+			case 2: {line = " Binning/zooming: none\n"; break;}
+			case 3: {line = " Binning/zooming: x2 zooming\n"; break;}
+			case 4: {line = " Binning/zooming: x4 zooming\n"; break;}
+			case 5: {line = " Binning/zooming: x8 zooming\n"; break;}
 		}
 		flog.WriteString(line);
-		flog.WriteString(" Acquisition log file: " + rq->logFileName + "\r\n");
-		flog.WriteString(" Output files: " + rq->outFilePath + rq->outFilePrefix + "*.tif\r\n");
-		line.Format(" Raw sinogram dimensions: x=%d, y=%d\r\n", rq->iRawSinoXdim, rq->iSinoYdim);
+		flog.WriteString(" Experiment log file: " + rq->logFileName + "\n");
+		flog.WriteString(" Output files: " + rq->outFilePath + rq->outFilePrefix + "*.tif\n");
+		line.Format(" Raw sinogram dimensions: x=%d, y=%d\n", rq->iRawSinoXdim, rq->iSinoYdim);
 		flog.WriteString(line);
-		line.Format(" Source image dimensions: x=%d, y=%d\r\n", rq->iXdim, rq->iYdim);
+		line.Format(" Source image dimensions: x=%d, y=%d\n", rq->iXdim, rq->iYdim);
 		flog.WriteString(line);
-		if (rq->bOffsetCT) flog.WriteString(" Offset CT enabled\r\n");
-		if ((rq->dReconFlags) & RQFLAGS_ANGINTP) flog.WriteString(" Angular interpolation enabled\r\n");
-		if ((rq->dReconFlags) & RQFLAGS_ZERNIKE) flog.WriteString(" Zernike contrast\r\n");
+		if (rq->bOffsetCT) flog.WriteString(" Offset CT enabled\n");
+		if ((rq->dReconFlags) & RQFLAGS_ANGINTP) flog.WriteString(" Angular interpolation enabled\n");
+		if ((rq->dReconFlags) & RQFLAGS_ZERNIKE) flog.WriteString(" Zernike contrast\n");
 		if ((rq->dReconFlags) & RQFLAGS_DRIFTPARAMS) {
-			flog.WriteString(" Drift correction\r\n");
-			line.Format("  Drift start frame=%d, end frame=%d\r\n", rq->drStart, rq->drEnd);
+			flog.WriteString(" Drift correction\n");
+			line.Format("  Drift start frame=%d, end frame=%d\n", rq->drStart, rq->drEnd);
 			flog.WriteString(line);
 			if (rq->drOmit) {
-				flog.WriteString("  Drifting frames were omitted\r\n");
+				flog.WriteString("  Drifting frames were omitted\n");
 			} else {
-				line.Format("  Drift vector x=%.2f, y=%.2f\r\n", rq->drX, rq->drY);
+				line.Format("  Drift vector x=%.2f, y=%.2f\n", rq->drX, rq->drY);
 				flog.WriteString(line);
 			}
 		}
 		if ( !(rq->sFramesToExclude.IsEmpty()) ) {
 			flog.WriteString(" Frames not used in reconstruction: ");
-			flog.WriteString(rq->sFramesToExclude + "\r\n");
-			flog.WriteString("  (frame# h0000=HISdark/white; b0000=HDF5dark; w0000=HDF5white; s0000=skip; 0000=replacedWithAdjacents)\r\n");
+			flog.WriteString(rq->sFramesToExclude + "\n");
+			flog.WriteString("  (frame# h0000=HISdark/white; b0000=HDF5dark; w0000=HDF5white; s0000=skip; 0000=replacedWithAdjacents)\n");
 		}
-		line.Format(" Sample frame range: %d - %d\r\n", rq->iSampleFrameStart, rq->iSampleFrameEnd);
+		line.Format(" Sample frame range: %d - %d\n", rq->iSampleFrameStart, rq->iSampleFrameEnd);
 		flog.WriteString(line);
 		if ((rq->dReconFlags) & RQFLAGS_DRIFTLIST) {
 			flog.WriteString(" Drift correction\r\n  Drift list: ");
-			flog.WriteString(rq->sDriftListPath + "\r\n");
+			flog.WriteString(rq->sDriftListPath + "\n");
 		}
-		flog.WriteString("---------------------------------------------------\r\n");
+		flog.WriteString("---------------------------------------------------\n");
 		flog.Close();
 	}
 	//
@@ -1700,13 +1739,14 @@ TErr CGazoDoc::BatchReconst(RECONST_QUEUE* rq) {
 	}
 	pf->m_wndStatusBar.SetPaneText(0, "Ready");
 	//100515==> delete GPU Memory if any
-	if (pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_CUDA) {
-		int nCPU = (int)(pApp->dlgProperty.iCUDA);
-		for (int i=0; i<nCPU; i++) {CudaReconstMemFree(&(ri[i]));}
-	} else if (pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_ATISTREAM) {
-		int nCPU = (int)(pApp->dlgProperty.iATIstream);
-		for (int i=0; i<nCPU; i++) {CLReconstMemFree(&(ri[i]));}
-	}
+	GPUMemFree();
+	//if (pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_CUDA) {
+	//	int nCPU = (int)(pApp->dlgProperty.iCUDA);
+	//	for (int i=0; i<nCPU; i++) {CudaReconstMemFree(&(ri[i]));}
+	//} else if (pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_ATISTREAM) {
+	//	int nCPU = (int)(pApp->dlgProperty.iATIstream);
+	//	for (int i=0; i<nCPU; i++) {CLReconstMemFree(&(ri[i]));}
+	//}
 	//==>100515
 	return err;
 }
@@ -3670,6 +3710,10 @@ TErr CGazoDoc::DeconvBackProj(RECONST_QUEUE* rq, double center, int iMultiplex, 
 			}
 		}
 	}
+	//CString msg; 
+	//msg.Format("%f %f\r\n%f %f %d\r\n %f %d %d %d", 
+	//	*pixelDiv, *pixelBase, scaleFactor, rq->dPixelWidth, iBinning, sc, *nSinogr, ipintp, imax-imin);
+	//AfxMessageBox(msg);
 	return 0;
 }
 
@@ -5237,7 +5281,6 @@ void CGazoDoc::BatchRefracCorr(REFRAC_QUEUE* refq) {
 		///
 		void* pArg = (void*)(&(ri[i]));
 		if (i) {
-			//_beginthreadex( NULL, 0, DeconvBackProjThread, pArg, 0, &(ri[i].threadID) );
 			ri[i].hThread = (unsigned int)_beginthreadex( NULL, 0, RefracCorrThread, pArg, 0, &(ri[i].threadID) );
 		} else {
 			RefracCorrThread(&(ri[i]));

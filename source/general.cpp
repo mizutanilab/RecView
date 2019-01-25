@@ -2078,7 +2078,7 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 					if (ri->dReconFlags & RQFLAGS_USEONLYODDFRAMES) continue;
 				}
 			}
-			if (ri->bMaster) (*(ri->nSinogr))++;
+			if (ri->iStartSino == 0) (*(ri->nSinogr))++;
 			//
 			memset(p, 0, sizeof(CCmplx) * ndim);//111206
 			const int idx0 = (0 - (int)center) * iIntpDim + (ndim / 2 - 1);
@@ -2328,7 +2328,7 @@ bool DBProjDlgCtrl(RECONST_INFO* ri, int iProgStep, int iSino, int* pCurrStep) {
 	CGazoDoc* pd = (CGazoDoc*)(ri->pDoc);
 	CMainFrame* pf = (CMainFrame*) AfxGetMainWnd();
 	//190115 if ((pd->dlgReconst.iStatus == CDLGRECONST_STOP) || (pd->dlgReconst.iStatus & CDLGRECONST_WHEEL)) return true;
-	if (!ri->bMaster) return false;
+	if (ri->iStartSino) return false;//if (!ri->bMaster) return false;
 	if (pd->dlgReconst.m_hWnd) {
 		if (iProgStep > 0) {//121013
 			if ((*pCurrStep) < iSino / iProgStep) {
@@ -2540,7 +2540,7 @@ unsigned __stdcall RefracCorrThread(void* pArg) {
 	int* iIncident1 = NULL; int maxIncident1 = 0; int ixIncident1, iyIncident1;
 	int iInc0pos = -1, iInc1pos = -1;
 	for (int is=(ri->iStartSino); is<(ri->iLenSinogr)-1; is+=(ri->iStepSino)) {
-		if (ri->bMaster) {
+		if (ri->iStartSino == 0) {//(ri->bMaster) {
 			::ProcessMessage();
 			if (pd->dlgRefraction.m_hWnd)	{
 				fn = "Processing "+ refq->outFilePrefix + fname[is].Right(ideg);

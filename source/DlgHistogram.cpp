@@ -246,12 +246,15 @@ void CDlgHistogram::UpdateBitmap() {
 	bh->biBitCount = 8;
 	bh->biCompression = BI_RGB; 
 	bh->biSizeImage = 0; 
-	bh->biXPelsPerMeter = 10000; 
-	bh->biYPelsPerMeter = 10000; 
-	bh->biClrUsed = BITMAP_NCOLORS; 
+	//bh->biXPelsPerMeter = 10000; 
+	//bh->biYPelsPerMeter = 10000; 
+	bh->biXPelsPerMeter = 0;
+	bh->biYPelsPerMeter = 0;
+	bh->biClrUsed = BITMAP_NCOLORS;
 	bh->biClrImportant = 0; 
-	hBitmap = CreateDIBitmap(this->GetDC()->m_hDC, &(lpBmpInfo->bmiHeader), CBM_INIT, pBitmapPix,
-																				lpBmpInfo, DIB_RGB_COLORS);
+	CClientDC dc(this);//190122
+	hBitmap = CreateDIBitmap(dc.m_hDC, &(lpBmpInfo->bmiHeader), CBM_INIT, pBitmapPix, lpBmpInfo, DIB_RGB_COLORS);
+	//190122 hBitmap = CreateDIBitmap(this->GetDC()->m_hDC, &(lpBmpInfo->bmiHeader), CBM_INIT, pBitmapPix, lpBmpInfo, DIB_RGB_COLORS);
 	if (hBitmap) m_Bitmap.SetBitmap(hBitmap);
 }
 
@@ -437,7 +440,7 @@ void CDlgHistogram::OnDeltaposHistgMag(NMHDR* pNMHDR, LRESULT* pResult)
 	SetCursor();
 	UpdateBitmap();
 	GetDlgItem(IDC_HISTG_BITMAP)->Invalidate();
-	UpdateView();
+	//190122 UpdateView();
 
 	*pResult = 0;
 }

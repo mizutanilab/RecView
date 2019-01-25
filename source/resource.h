@@ -360,6 +360,8 @@
 #define ID_ANALYSIS_POLYGONLASSO        32841
 #define ID_VIEW_WHEELTOGO               32842
 #define IDM_VIEW_WHEELTOGO              32843
+#define ID_TOOLBAR_QUEUE                32844
+#define ID_TOOLBAR_HISTG                32845
 #define ID_POPUPQUEUE_DEL               32860
 
 // Next default values for new objects
@@ -368,7 +370,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_3D_CONTROLS                     1
 #define _APS_NEXT_RESOURCE_VALUE        153
-#define _APS_NEXT_COMMAND_VALUE         32844
+#define _APS_NEXT_COMMAND_VALUE         32846
 #define _APS_NEXT_CONTROL_VALUE         1128
 #define _APS_NEXT_SYMED_VALUE           102
 #endif

@@ -195,8 +195,11 @@ void CudaReconstHostFFT(RECONST_INFO* ri, int idev, bool bReport) {
 	const int intcenter = (int)(ri->center);
 	int idim_ifp = ixdimp * ixdimp;
 	const unsigned int mem_size_ifp = sizeof(int) * idim_ifp;
+	const unsigned int mem_size_filt = sizeof(float) * ndim;
+	const unsigned int mem_size_strip = sizeof(short) * ixdim;
+	const bool bDeconv = ((ri->dReconFlags & RQFLAGS_SINOGRAMKEPT) == 0) || (ri->d_ifp == NULL) || (ri->max_d_ifp < mem_size_ifp);
 	//
-	if (((ri->dReconFlags & RQFLAGS_SINOGRAMKEPT) == 0) || (ri->d_ifp == NULL) || (ri->max_d_ifp < mem_size_ifp)) {
+	if (bDeconv) {
 		if (CudaReconstMemAlloc(ri, idev)) {
 			AfxMessageBox("Out of CUDA device memory.\r\n Close other dataset,\r\n or select on-board CPU from Tomography->Property menu.");
 			ri->iStatus = RECONST_INFO_ERROR;
@@ -204,33 +207,8 @@ void CudaReconstHostFFT(RECONST_INFO* ri, int idev, bool bReport) {
 			return;
 		}
 		//if (ixdimp & 0x01) idim_ifp += ixdimp;//making sure that iy is even. OK?
-		const unsigned int mem_size_filt = sizeof(float) * ndim;
-		const unsigned int mem_size_strip = sizeof(short) * ixdim;
 		cudaMemcpy(ri->d_filt, ri->fFilter, mem_size_filt, cudaMemcpyHostToDevice);
-		//
 		ri->iSinoCenter = intcenter;//190108
-		for (int i = (ri->iStartSino); i < (ri->iLenSinogr - 1); i += (ri->iStepSino)) {
-			int isino = (i - (ri->iStartSino)) / (ri->iStepSino);
-			if (!(ri->bInc[i] & CGAZODOC_BINC_SAMPLE)) continue;
-			//100315 const int sidx = ixdim * (i * ri->iMultiplex + ri->iOffset);
-			//100315 if (sidx >= ri->maxLenSinogr) break;
-			const int sidx = i * ri->iMultiplex + ri->iOffset;
-			if (sidx >= ri->maxSinogrLen) break;
-			//140611
-			if (ri->dReconFlags & (RQFLAGS_USEONLYEVENFRAMES | RQFLAGS_USEONLYODDFRAMES)) {
-				if (i & 1) { if (ri->dReconFlags & RQFLAGS_USEONLYEVENFRAMES) continue; }
-				else { if (ri->dReconFlags & RQFLAGS_USEONLYODDFRAMES) continue; }
-			}
-			(*(ri->nSinogr))++;
-			if (cudaSuccess != cudaMemcpy(ri->d_strip, ri->iSinogr[sidx], mem_size_strip, cudaMemcpyHostToDevice)) {
-				error.Log(1, "cudaMemcpy error: d_strip");
-				break;
-			}
-			//130923 cutilSafeCall(cudaMemcpy(ri->d_strip, ri->iSinogr[sidx], mem_size_strip, cudaMemcpyHostToDevice) );
-			CudaDeconv(ixdim, iIntpDim, ndim, isino, fCenter,
-				ri->d_filt, ri->d_strip, ri->d_igp, ri->d_p, &(ri->fftplan));
-		}
-		cudaDeviceSynchronize();
 	}
 	//reset tomograph
 	if (cudaSuccess != cudaMemset(ri->d_ifp, 0, mem_size_ifp)) error.Log(1, "cudaMemset error: ifp");
@@ -242,14 +220,27 @@ void CudaReconstHostFFT(RECONST_INFO* ri, int idev, bool bReport) {
 			if (DBProjDlgCtrl(ri, iProgStep, i, &iCurrStep)) break;
 		}
 		if (!(ri->bInc[i] & CGAZODOC_BINC_SAMPLE)) continue;
+		//100315 const int sidx = ixdim * (i * ri->iMultiplex + ri->iOffset);
+		//100315 if (sidx >= ri->maxLenSinogr) break;
 		const int sidx = i * ri->iMultiplex + ri->iOffset;
 		if (sidx >= ri->maxSinogrLen) break;
+		//140611
 		if (ri->dReconFlags & (RQFLAGS_USEONLYEVENFRAMES | RQFLAGS_USEONLYODDFRAMES)) {
 			if (i & 1) { if (ri->dReconFlags & RQFLAGS_USEONLYEVENFRAMES) continue; }
 			else { if (ri->dReconFlags & RQFLAGS_USEONLYODDFRAMES) continue; }
 		}
+		(*(ri->nSinogr))++;
+		if (bDeconv) {
+			if (cudaSuccess != cudaMemcpy(ri->d_strip, ri->iSinogr[sidx], mem_size_strip, cudaMemcpyHostToDevice)) {
+				error.Log(1, "cudaMemcpy error: d_strip");
+				break;
+			}
+			CudaDeconv(ixdim, iIntpDim, ndim, fCenter,
+				ri->d_filt, ri->d_strip, &(ri->d_igp[isino * igpdimx]), ri->d_p, &(ri->fftplan));
+		}
 		CudaBackProjStream(ixdimp, fCenter, intcenter - ri->iSinoCenter,
 			(ri->fdeg[i] + ri->fTiltAngle) * DEG_TO_RAD, ri->d_ifp, &(ri->d_igp[isino * igpdimx]), cudaStreamDefault);
+		if (bReport && (isino % 40 == 0)) cudaDeviceSynchronize();//this is for progress bar and may add 10 msec delay
 	}
 	// copy results from device to host
 	int* ifp = ri->iReconst;//each iReconst is dedicated to the thread
@@ -702,8 +693,6 @@ void CudaReconstHost(RECONST_INFO* ri, int idev, bool bReport) {
 			for (int k = 0; k < ndim; k++) { p[k] *= ri->fFilter[k]; }
 			fft.FFT1(p);
 			//
-			//for (int k = 0; k < ndim; k++) { h_px[k + isino * ndim] = p[k].re; }
-			//const unsigned int cpy_size_px = sizeof(float) * ndim;
 			for (int k = 0; k < ixdimp; k++) { h_px[k + isino * ixdimp] = p[k + ihoffset].re; }
 			const unsigned int cpy_size_px = sizeof(float) * ixdimp;
 			if (cudaSuccess != cudaMemcpyAsync(&(ri->d_px[isino * ixdimp]), &(h_px[isino * ixdimp]), cpy_size_px, cudaMemcpyHostToDevice, *pCurrentStream)) 
@@ -743,7 +732,7 @@ void CudaReconstHost(RECONST_INFO* ri, int idev, bool bReport) {
 				}
 			}
 		//==>141205///*///
-		if (bReport && !bDeconv && (isino % 40 == 0)) cudaDeviceSynchronize();//this is for progress bar and may add 10 msec delay
+		if (bReport && (isino % 40 == 0)) cudaDeviceSynchronize();//this is for progress bar and may add 10 msec delay
 	}// i < (ri->iLenSinogr - 1)
 	//process messages while streams progress
 	while ((cudaStreamQuery(stream1) == cudaErrorNotReady) || (cudaStreamQuery(stream2) == cudaErrorNotReady)) {

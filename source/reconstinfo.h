@@ -29,7 +29,7 @@ struct RECONST_INFO {
 	int* iReconst;
 	int iStartSino;
 	int iStepSino;
-	bool bMaster;
+	//190122 bool bMaster;
 	//CGazoDoc* pDoc;
 	unsigned int* pDoc;
 	int* nSinogr;

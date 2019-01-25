@@ -128,6 +128,11 @@ void CDlgRenumFiles::OnOK()
 	CStdioFile flog;
 	if (!flog.Open(path_buffer, CFile::modeRead | CFile::shareDenyWrite | CFile::typeText)) {
 		_tmakepath_s(path_buffer, _MAX_PATH, drive, dir, "0recviewlog", ".txt");
+		if (!flog.Open(path_buffer, CFile::modeRead | CFile::shareDenyWrite | CFile::typeText)) {
+			_tmakepath_s(path_buffer, _MAX_PATH, drive, dir, "_recviewlog", ".txt");
+		} else {
+			flog.Close();
+		}
 	} else {
 		flog.Close();
 	}
@@ -137,26 +142,27 @@ void CDlgRenumFiles::OnOK()
 		TCHAR tctime[26];
 		_tctime_s(tctime, 26, &(tstruct.time));
 		const CString stime = tctime;
+		CString sVer = pApp->sProgVersion; sVer.Replace('\n', ' ');
 		CString line;
-		line.Format("Renumbering [%s] %s\r\n", stime.Left(24), pApp->sProgVersion);
+		line.Format("Renumbering [%s] %s\n", stime.Left(24), sVer);
 		flog.WriteString(line);
-		line.Format(" Output path: %s\r\n", m_OutPath);
+		line.Format(" Output path: %s\n", m_OutPath);
 		flog.WriteString(line);
-		line.Format(" Output prefix: %s\r\n", m_Prefix);
+		line.Format(" Output prefix: %s\n", m_Prefix);
 		flog.WriteString(line);
-		line.Format(" Start index: %d\r\n", m_StartIndex);
+		line.Format(" Start index: %d\n", m_StartIndex);
 		flog.WriteString(line);
-		line.Format(" Files processed: %s ...\r\n", m_FileList.SpanExcluding(_T("\r\n")));
+		line.Format(" Files processed: %s ...\n", m_FileList.SpanExcluding(_T("\r\n")));
 		flog.WriteString(line);
-		line.Format(" Number of files: %d\r\n", nFiles);
+		line.Format(" Number of files: %d\n", nFiles);
 		flog.WriteString(line);
 		if ((m_ResliceEndZ-m_ResliceOrgZ != 0)||(m_ResliceEndY-m_ResliceOrgY != 0)||(m_ResliceEndX-m_ResliceOrgX != 0)) {
-			line.Format(" Reslicing vector origin: (%d %d %d)\r\n", m_ResliceOrgX, m_ResliceOrgY, m_ResliceOrgZ);
+			line.Format(" Reslicing vector origin: (%d %d %d)\n", m_ResliceOrgX, m_ResliceOrgY, m_ResliceOrgZ);
 			flog.WriteString(line);
-			line.Format(" Reslicing vector end: (%d %d %d)\r\n", m_ResliceEndX, m_ResliceEndY, m_ResliceEndZ);
+			line.Format(" Reslicing vector end: (%d %d %d)\n", m_ResliceEndX, m_ResliceEndY, m_ResliceEndZ);
 			flog.WriteString(line);
 		}
-		flog.WriteString("---------------------------------------------------\r\n");
+		flog.WriteString("---------------------------------------------------\n");
 		flog.Close();
 	}//120624
 

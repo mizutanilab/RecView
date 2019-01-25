@@ -64,6 +64,7 @@ BEGIN_MESSAGE_MAP(CGazoApp, CWinApp)
 
 ON_COMMAND(IDM_VIEW_WHEELTOGO, &CGazoApp::OnViewWheeltogo)
 ON_UPDATE_COMMAND_UI(IDM_VIEW_WHEELTOGO, &CGazoApp::OnUpdateViewWheeltogo)
+ON_COMMAND(ID_TOOLBAR_QUEUE, &CGazoApp::OnTomoQueue)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -91,7 +92,7 @@ CGazoApp::CGazoApp()
 #ifdef CUDAFFT
 	sProgVersion += " with CUDA-FFT";
 #endif
-	sProgVersion += "\r\nBuild: ";
+	sProgVersion += "\nBuild: ";
 	sProgVersion += __DATE__;
 	sProgVersion += " / ";
 	sProgVersion += __TIME__;
@@ -166,28 +167,28 @@ CGazoApp::CGazoApp()
 	sCudaGPUname.Empty();
 #ifdef _WIN64
 	//estimate CPU score
-	struct _timeb tstruct; double tm0;
-	_ftime_s(&tstruct);
-	tm0 = tstruct.time + tstruct.millitm * 0.001;
-	double tcpu = 0;
-	int icount = 1, isum = 0, ifp[100];
-	while (tcpu < 0.1) {
-		isum += icount;
-		for (double dx = 0; dx < icount; dx += 0.0001) { ifp[isum % 100] += isum; }
-		_ftime_s(&tstruct);
-		tcpu = tstruct.time + tstruct.millitm * 0.001 - tm0;
-		icount *= 2;
-	}
-	dCPUscore = (tcpu * 270000. + cos(ifp[isum % 100])) / isum;//cos(ifp) is a dummy term to force calc.
-	msg.Format(" Estimated score: %.2f sec", dCPUscore);
-	//double dCPUclock = 0, dCPUscore = 0;
-	//int ipos = sCPUname.Find("GHz");
-	//if (ipos >= 0) {
-	//	dCPUclock = atof(sCPUname.Left(ipos).MakeReverse().SpanIncluding("0123456789. ").MakeReverse());
-	//	dCPUscore = (dCPUclock > 0) ? 45. / (dCPUclock * iAvailableCPU) : 0;
-	//	if (dCPUscore > 0) { line.Format("\r\n Estimated score: %.2f sec", dCPUscore); msg += line; }
+	//struct _timeb tstruct; double tm0;
+	//_ftime_s(&tstruct);
+	//tm0 = tstruct.time + tstruct.millitm * 0.001;
+	//double tcpu = 0;
+	//int icount = 1, isum = 0, ifp[100];
+	//while (tcpu < 0.1) {
+	//	isum += icount;
+	//	for (double dx = 0; dx < icount; dx += 0.0001) { ifp[isum % 100] += isum; }
+	//	_ftime_s(&tstruct);
+	//	tcpu = tstruct.time + tstruct.millitm * 0.001 - tm0;
+	//	icount *= 2;
 	//}
-	error.Log(1, msg);
+	//dCPUscore = (tcpu * 270000. + cos(ifp[isum % 100])) / isum;//cos(ifp) is a dummy term to force calc.
+	//msg.Format(" Estimated score: %.2f sec", dCPUscore);
+	//error.Log(1, msg);
+	double dCPUclock = 0;
+	int ipos = sCPUname.Find("GHz");
+	if (ipos >= 0) {
+		dCPUclock = atof(sCPUname.Left(ipos).MakeReverse().SpanIncluding("0123456789. ").MakeReverse());
+		dCPUscore = (dCPUclock > 0) ? 45. / (dCPUclock * iAvailableCPU) : 0;
+		if (dCPUscore > 0) { msg.Format(" Estimated score: %.2f sec", dCPUscore); error.Log(1, msg);}
+	}
 	//CUDA GPUs (assumes homogeneous GPUs but detects incompatible ones)
 	int iCUDAtotalcount = GetCudaDeviceCount(0);
 	iCUDAtotalcount &= CUDA_ERROR_DEVICEINFO_MASK;
@@ -426,7 +427,9 @@ void CGazoApp::OnFileOpen() {
 	static char BASED_CODE defaultExt[] = ".img";
 	static char BASED_CODE szFilter[] = 
 		"Raw data (*.his;q*.img;*.h5)|*.his;q*.img;*.h5|rec files (rec*.tif)|rec*.tif|ro files (ro*.tif)|ro*.tif|ITEX files (*.img)|*.img|TIFF files (*.tif)|*.tif|Images (*.jpg;*.png;*.bmp)|*.jpg;*.png;*.bmp|All files (*.*)|*.*||";
-	CFileDialog dlg(TRUE, defaultExt, fn, OFN_FILEMUSTEXIST | OFN_HIDEREADONLY, szFilter, NULL);
+	//CFileDialog dlg(TRUE, defaultExt, fn, OFN_FILEMUSTEXIST | OFN_HIDEREADONLY, szFilter, NULL, 0, FALSE);
+	//190121 CFileDialog dlg(TRUE, defaultExt, fn, OFN_FILEMUSTEXIST | OFN_HIDEREADONLY, szFilter);
+	CFileDialog dlg(TRUE, defaultExt, NULL, OFN_FILEMUSTEXIST | OFN_HIDEREADONLY, szFilter);
 	if (dlg.DoModal() != IDOK) return;
 	fn = dlg.GetPathName();
 	CWinApp::OpenDocumentFile(fn);
@@ -477,8 +480,25 @@ void CGazoApp::OnTomoQueue()
 
 void CGazoApp::OnTomoProperty()
 {
-	// TODO: ここにコマンド ハンドラ コードを追加します。
-	dlgProperty.DoModal();
+	const int iPrevProcType = dlgProperty.m_ProcessorType;
+	if (dlgProperty.DoModal() == IDOK) {
+		if (iPrevProcType != dlgProperty.m_ProcessorType) {
+			CFrameWnd *pFrame = ((CMDIFrameWnd*)AfxGetMainWnd())->GetActiveFrame();
+			if (pFrame) {
+				CGazoDoc* pd0 = (CGazoDoc*)(pFrame->GetActiveDocument());
+				if (pd0) {
+					CDocTemplate* pdt = pd0->GetDocTemplate();
+					if (pdt) {
+						POSITION pos = pdt->GetFirstDocPosition();
+						while (pos) {
+							CGazoDoc* pd1 = (CGazoDoc*)pdt->GetNextDoc(pos);
+							if (pd1) pd1->GPUMemFree(iPrevProcType);
+						}
+					}
+				}
+			}
+		}
+	}
 	extern int blocksize;
 	blocksize = dlgProperty.iCUDAnblock;
 }
@@ -933,7 +953,14 @@ CString CGazoApp::Lsqfit(LSQFIT_QUEUE* lq, CDlgLsqfit* dlg, CDlgQueue* dqueue) {
 	CStdioFile flog;
 	if (!flog.Open(path_buffer, CFile::modeRead | CFile::shareDenyWrite | CFile::typeText)) {
 		_tmakepath_s(path_buffer, _MAX_PATH, drive, dir, "0recviewlog", ".txt");
-	} else {
+		if (!flog.Open(path_buffer, CFile::modeRead | CFile::shareDenyWrite | CFile::typeText)) {
+			_tmakepath_s(path_buffer, _MAX_PATH, drive, dir, "_recviewlog", ".txt");
+		}
+		else {
+			flog.Close();
+		}
+	}
+	else {
 		flog.Close();
 	}
 	//AfxMessageBox(path_buffer); return rtn;//////////////
@@ -943,9 +970,10 @@ CString CGazoApp::Lsqfit(LSQFIT_QUEUE* lq, CDlgLsqfit* dlg, CDlgQueue* dqueue) {
 		_tctime_s(tctime, 26, &(tstruct.time));
 		const CString stime = tctime;
 		CString line;
-		line.Format("LSQ fit [%s] %s\r\n", stime.Left(24), this->sProgVersion);
+		CString sVer = this->sProgVersion; sVer.Replace('\n', ' ');
+		line.Format("LSQ fit [%s] %s\n", stime.Left(24), sVer);
 		flog.WriteString(line);
-		line.Format(" Ref set: %s [%d files]\r\n Qry set: %s [%d files]\r\n", lq->m_RefList.SpanExcluding(_T("\r\n")), lq->nRefFiles, 
+		line.Format(" Ref set: %s [%d files]\n Qry set: %s [%d files]\n", lq->m_RefList.SpanExcluding(_T("\r\n")), lq->nRefFiles, 
 										lq->m_QryList.SpanExcluding(_T("\r\n")), lq->nQryFiles);
 		flog.WriteString(line);
 		//if (dlg) flog.WriteString(dlg->m_Result);
@@ -1001,7 +1029,7 @@ CString CGazoApp::Lsqfit(LSQFIT_QUEUE* lq, CDlgLsqfit* dlg, CDlgQueue* dqueue) {
 						TReal dilsq = (double)ilsq;
 						//120624 CString msg; msg.Format("%d %d %d %f %.0f/%d\r\n", ix, iy, iz, rlsq, dilsq, nlsq);
 						//120624 m_Result += msg;
-						CString msg; msg.Format("%f (%d %d %d) %.0f/%.0f\r\n", rlsq, ix, iy, iz, dilsq, (TReal)nlsq);
+						CString msg; msg.Format("%f (%d %d %d) %.0f/%.0f", rlsq, ix, iy, iz, dilsq, (TReal)nlsq);
 						sLsqList[iLsqList++] = msg;
 						if (iz == 0) {
 							if (dlg) dlg->m_Result = "RMSD (dx dy dz) SumDiff/NSum\r\n" + msg;
@@ -1031,7 +1059,7 @@ CString CGazoApp::Lsqfit(LSQFIT_QUEUE* lq, CDlgLsqfit* dlg, CDlgQueue* dqueue) {
 					for (int i=nCPU-1; i>=0; i--) {
 						ri[i].hThread = NULL;
 						ri[i].iStartSino = i;
-						if (i) ri[i].bMaster = false; else ri[i].bMaster = true;
+						//if (i) ri[i].bMaster = false; else ri[i].bMaster = true;
 						ri[i].iStatus = RECONST_INFO_IDLE;
 						ri[i].i64result = 0;//double
 						ri[i].i64sum = 0;//int
@@ -1072,7 +1100,7 @@ CString CGazoApp::Lsqfit(LSQFIT_QUEUE* lq, CDlgLsqfit* dlg, CDlgQueue* dqueue) {
 							TReal dilsq = (double)ilsq;
 							//120624 CString msg; msg.Format("%d %d %d %f %.0f/%d\r\n", ix, iy, iz+i, rlsq, dilsq, nlsq);
 							//120624 m_Result += msg;
-							CString msg; msg.Format("%f (%d %d %d) %.0f/%d\r\n", rlsq, ix, iy, iz+i, dilsq, nlsq);
+							CString msg; msg.Format("%f (%d %d %d) %.0f/%lld", rlsq, ix, iy, iz+i, dilsq, nlsq);
 							sLsqList[iLsqList++] = msg;
 							if (dlg) dlg->m_Result = "RMSD (dx dy dz) SumDiff/NSum\r\n" + msg;
 							if (pf) pf->m_wndStatusBar.SetPaneText(1, "Lsqfit: " + msg);
@@ -1109,22 +1137,22 @@ CString CGazoApp::Lsqfit(LSQFIT_QUEUE* lq, CDlgLsqfit* dlg, CDlgQueue* dqueue) {
 	for (int i=0; i<iLsqList; i++) {pLsqList[i] = &(sLsqList[i]);}
 	qsort( (void *)pLsqList, (size_t)iLsqList, sizeof(CString*), GazoAppLsqFitCompare );
 	if (dlg) dlg->m_Result.Empty();
-	for (int i=0; i<iLsqList; i++) {if (dlg) dlg->m_Result += " " + *(pLsqList[i]);}
+	for (int i=0; i<iLsqList; i++) {if (dlg) dlg->m_Result += " " + *(pLsqList[i]) + "\r\n";}
 	_ftime_s( &tstruct );
 	TReal tcpu = tstruct.time + tstruct.millitm * 0.001 - tm0;
 	CString msg;
 	TReal minlsq = 0; int mx = 0, my = 0, mz = 0;
 	sscanf_s(*(pLsqList[0]), "%lf (%d %d %d)", &minlsq, &mx, &my, &mz);
 	msg.Format(" Min: ref(0 0 0)=qry(%d %d %d) rmsd=%f", mx, my, mz, minlsq);
-	const CString headerStr = "\r\n RMSD (dx dy dz) SumDiff/NSum\r\n";
+	const CString headerStr = " RMSD (dx dy dz) SumDiff/NSum";
 	if (dlg) {
 		if (dlg->bStarted) {
 			if (pf) pf->m_wndStatusBar.SetPaneText(1, "Lsqfit: " + msg);
 			if (flog.m_hFile != CFile::hFileNull) {
-				flog.WriteString(msg + headerStr);
-				for (int i=0; i<30; i++) {flog.WriteString(" " + *(pLsqList[i]));}
+				flog.WriteString(msg + "\n" + headerStr + "\n");
+				for (int i=0; i<30; i++) {flog.WriteString(" " + *(pLsqList[i]) + "\n");}
 			}
-			dlg->m_Result = msg + headerStr + dlg->m_Result;
+			dlg->m_Result = msg +"\r\n" + headerStr + "\r\n" + dlg->m_Result;
 			msg.Format("CPU=%fsec\r\n", tcpu);
 			dlg->m_Result += msg;
 			rtn.Format("(%d %d %d)%.2f", mx, my, mz, minlsq);
@@ -1136,8 +1164,8 @@ CString CGazoApp::Lsqfit(LSQFIT_QUEUE* lq, CDlgLsqfit* dlg, CDlgQueue* dqueue) {
 		if (dqueue->iStatus != CDLGQUEUE_STOP) {
 			if (pf) pf->m_wndStatusBar.SetPaneText(1, "Lsqfit: " + msg);
 			if (flog.m_hFile != CFile::hFileNull) {
-				flog.WriteString(msg + headerStr);
-				for (int i=0; i<30; i++) {flog.WriteString(" " + *(pLsqList[i]));}
+				flog.WriteString(msg + "\n" + headerStr + "\n");
+				for (int i=0; i<30; i++) {flog.WriteString(" " + *(pLsqList[i]) + "\n");}
 			}
 			rtn.Format("(%d %d %d)%.2f", mx, my, mz, minlsq);
 		} else {
@@ -1147,11 +1175,11 @@ CString CGazoApp::Lsqfit(LSQFIT_QUEUE* lq, CDlgLsqfit* dlg, CDlgQueue* dqueue) {
 		if (pf) pf->m_wndStatusBar.SetPaneText(1, "Lsqfit: " + msg);
 		if (flog.m_hFile != CFile::hFileNull) {
 			flog.WriteString(msg + headerStr);
-			for (int i=0; i<30; i++) {flog.WriteString(" " + *(pLsqList[i]));}
+			for (int i=0; i<30; i++) {flog.WriteString(" " + *(pLsqList[i]) + "\n");}
 		}
 	}
 	if (flog.m_hFile != CFile::hFileNull) {
-		flog.WriteString("---------------------------------------------------\r\n");
+		flog.WriteString("---------------------------------------------------\n");
 		flog.Close();
 	}
 	//delete images
@@ -1357,7 +1385,14 @@ CString CGazoApp::LsqfitMin(LSQFIT_QUEUE* lq, CDlgLsqfit* dlg, CDlgQueue* dqueue
 	CStdioFile flog;
 	if (!flog.Open(path_buffer, CFile::modeRead | CFile::shareDenyWrite | CFile::typeText)) {
 		_tmakepath_s(path_buffer, _MAX_PATH, drive, dir, "0recviewlog", ".txt");
-	} else {
+		if (!flog.Open(path_buffer, CFile::modeRead | CFile::shareDenyWrite | CFile::typeText)) {
+			_tmakepath_s(path_buffer, _MAX_PATH, drive, dir, "_recviewlog", ".txt");
+		}
+		else {
+			flog.Close();
+		}
+	}
+	else {
 		flog.Close();
 	}
 	//AfxMessageBox(path_buffer); return rtn;//////////////
@@ -1368,13 +1403,14 @@ CString CGazoApp::LsqfitMin(LSQFIT_QUEUE* lq, CDlgLsqfit* dlg, CDlgQueue* dqueue
 		_tctime_s(tctime, 26, &(tstruct.time));
 		const CString stime = tctime;
 		CString line;
-		line.Format("LSQ fit [%s] %s\r\n", stime.Left(24), this->sProgVersion);
+		CString sVer = this->sProgVersion; sVer.Replace('\n', ' ');
+		line.Format("LSQ fit [%s] %s\n", stime.Left(24), sVer);
 		flog.WriteString(line);
-		line.Format(" Ref set: %s [%d files]\r\n Qry set: %s [%d files]\r\n", lq->m_RefList.SpanExcluding(_T("\r\n")), lq->nRefFiles, 
+		line.Format(" Ref set: %s [%d files]\n Qry set: %s [%d files]\n", lq->m_RefList.SpanExcluding(_T("\r\n")), lq->nRefFiles, 
 										lq->m_QryList.SpanExcluding(_T("\r\n")), lq->nQryFiles);
 		flog.WriteString(line);
 		msgfn = line;
-		line.Format(" Scan diameter: %d pixel\r\n Max binning: %d\r\n", iMaxDaimeter, iMaxBinning);
+		line.Format(" Scan diameter: %d pixel\n Max binning: %d\n", iMaxDaimeter, iMaxBinning);
 		flog.WriteString(line);
 		//if (dlg) flog.WriteString(dlg->m_Result);
 	}
@@ -1395,6 +1431,7 @@ CString CGazoApp::LsqfitMin(LSQFIT_QUEUE* lq, CDlgLsqfit* dlg, CDlgQueue* dqueue
 		if (pMaxQryPixel) delete [] pMaxQryPixel;
 		return rtn;
 	}
+	msgfn.Replace("\n", "\r\n");
 	if (dlg) dlg->m_Result = msgfn;
 	const int imaxrad2 = iMaxDaimeter * iMaxDaimeter / 4;
 	double dsummin = 0;
@@ -1580,31 +1617,34 @@ CString CGazoApp::LsqfitMin(LSQFIT_QUEUE* lq, CDlgLsqfit* dlg, CDlgQueue* dqueue
 				da = a[0]*dx2y + a[1]*dxy + a[2]*dy;
 				double db = a[3]*dx2y + a[4]*dxy + a[5]*dy;
 				double dc = a[6]*dx2y + a[7]*dxy + a[8]*dy;
-				dpeakx = -db / (2 * da);
-				//CString mmsg; mmsg.Format("%f %f %f %f", da, db, dc, dpeakx); AfxMessageBox(mmsg);
-				if ((da > 0.01)&&(dpeakx >= 0)&&(dpeakx <= dlimit)) {
-					for (int k=0; k<10; k++) {//deviation from model
-						double x = k * dstep;
-						double d = da * x * x + db * x + dc;
-						devy += (d - diff[k]) * (d - diff[k]);
-					}
-//					if ( sqrt(devy/10) < 0.5 * sqrt(dy2 / 10 -(dy * dy / 100)) ) {
+				if (da > 0.01) {
+					dpeakx = -db / (2 * da);
+					//CString mmsg; mmsg.Format("%f %f %f %f", da, db, dc, dpeakx); AfxMessageBox(mmsg);
+					if ((dpeakx >= 0) && (dpeakx <= dlimit)) {
+						for (int k = 0; k < 10; k++) {//deviation from model
+							double x = k * dstep;
+							double d = da * x * x + db * x + dc;
+							devy += (d - diff[k]) * (d - diff[k]);
+						}
+						//if ( sqrt(devy/10) < 0.5 * sqrt(dy2 / 10 -(dy * dy / 100)) ) {
 						dsummin = GetImageDiff(psBinRefPixel, psBinQryPixel, ibin, cDelta, cGrad.X(-dpeakx),
-												ibxref, ibyref, ibzref, ibxqry, ibyqry, ibzqry);
+							ibxref, ibyref, ibzref, ibxqry, ibyqry, ibzqry);
 						dmin = dpeakx;
 						cDelta.x -= cGrad.x * ibin * dmin;
 						cDelta.y -= cGrad.y * ibin * dmin;
 						cDelta.z -= cGrad.z * ibin * dmin;
-//					}
-					devy = sqrt(devy/10) / sqrt(dy2 / 10 -(dy * dy / 100));
+						//					}
+						devy = sqrt(devy / 10) / sqrt(dy2 / 10 - (dy * dy / 100));
+					}
 				}
 			}
 			CString msg2; 
-			msg2.Format("Shift(x y z) RMSD  grad(x y z) x binning x step | peak 2ndOrder\r\n(%.1f %.1f %.1f) %.2f  (%.3f %.3f %.3f)x%dx%.1f | %.1f %.2f\r\n", 
+			msg2.Format("Shift(x y z) RMSD  grad(x y z) x binning x step | peak 2ndOrder\n(%.1f %.1f %.1f) %.2f  (%.3f %.3f %.3f)x%dx%.1f | %.1f %.2f\n", 
 				cDelta.x, cDelta.y, cDelta.z, (dsummin < 0) ? 0 : sqrt(dsummin), cGrad.x, cGrad.y, cGrad.z, ibin, dmin, dpeakx, da);
-			msg2 += msg3 + "\r\n" + msg4 + "\r\n";
+			msg2 += msg3 + "\n" + msg4 + "\n";
 			msglog += msg2;
 			if (dlg) {
+				msg2.Replace("\n", "\r\n");
 				dlg->m_Result += msg2;
 				dlg->UpdateData(FALSE);
 				ProcessMessage();
@@ -1622,7 +1662,7 @@ CString CGazoApp::LsqfitMin(LSQFIT_QUEUE* lq, CDlgLsqfit* dlg, CDlgQueue* dqueue
 		if (dlg->bStarted) {
 			if (pf) pf->m_wndStatusBar.SetPaneText(1, "Lsqfit: " + msg);
 			if (flog.m_hFile != CFile::hFileNull) {
-				flog.WriteString(" Min: " + msg + "\r\n");
+				flog.WriteString(" Min: " + msg + "\n");
 				flog.WriteString(msglog);
 			}
 			dlg->m_Result = msg + "\r\n--------------\r\n" + dlg->m_Result;
@@ -1636,7 +1676,7 @@ CString CGazoApp::LsqfitMin(LSQFIT_QUEUE* lq, CDlgLsqfit* dlg, CDlgQueue* dqueue
 		if (dqueue->iStatus != CDLGQUEUE_STOP) {
 			if (pf) pf->m_wndStatusBar.SetPaneText(1, "Lsqfit: " + msg);
 			if (flog.m_hFile != CFile::hFileNull) {
-				flog.WriteString(" Min: " + msg + "\r\n");
+				flog.WriteString(" Min: " + msg + "\n");
 				flog.WriteString(msglog);
 			}
 			rtn.Format("(%.1f %.1f %.1f)%.2f", cDelta.x, cDelta.y, cDelta.z, minlsq);
@@ -1646,12 +1686,12 @@ CString CGazoApp::LsqfitMin(LSQFIT_QUEUE* lq, CDlgLsqfit* dlg, CDlgQueue* dqueue
 	} else {
 		if (pf) pf->m_wndStatusBar.SetPaneText(1, "Lsqfit: " + msg);
 		if (flog.m_hFile != CFile::hFileNull) {
-			flog.WriteString(" Min: " + msg + "\r\n");
+			flog.WriteString(" Min: " + msg + "\n");
 			flog.WriteString(msglog);
 		}
 	}
 	if (flog.m_hFile != CFile::hFileNull) {
-		flog.WriteString("---------------------------------------------------\r\n");
+		flog.WriteString("---------------------------------------------------\n");
 		flog.Close();
 	}
 	//delete images
@@ -1765,7 +1805,7 @@ double CGazoApp::GetImageDiff(short* psBinRefPixel, short* psBinQryPixel, int ib
 	for (int i=nCPU-1; i>=0; i--) {
 		ri[i].hThread = NULL;
 		ri[i].iStartSino = i;
-		if (i) ri[i].bMaster = false; else ri[i].bMaster = true;
+		//if (i) ri[i].bMaster = false; else ri[i].bMaster = true;
 		ri[i].iStatus = RECONST_INFO_BUSY;
 		//190102 ri[i].max_d_ifp = ibin;
 		//190102 ri[i].max_d_igp = ibxref;

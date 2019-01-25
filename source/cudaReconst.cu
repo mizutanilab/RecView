@@ -91,12 +91,12 @@ projKernel10(int* d_ifp, int* d_igp, int ixdimp, float* d_fcos, float* d_fsin, f
 //gazo.cpp, cudaReconstHost.cpp, and DlgProperty.cpp should also be rebuilt to switch on and off CUDAFFT.
 #ifdef CUDAFFT
 __global__ void
-p2igpKernel(float2* d_p, int* d_igp, int ixdimp, int ihoffset, float fscale, int isinogpdimx) {
+p2igpKernel(float2* d_p, int* d_igp, int ixdimp, int ihoffset, float fscale) {
 	int ix = blockDim.x * blockIdx.x + threadIdx.x;
 	if (ix >= ixdimp) return;
 	int iy = blockIdx.y;
 	//const int gidx = ix * DBPT_GINTP;
-	const int gidx = ix * DBPT_GINTP + isinogpdimx;
+	const int gidx = ix * DBPT_GINTP;
 	const int pidx = ix + ihoffset;
 	const float p0 = d_p[pidx].x * fscale;
 	const float p1p0 = (ix == ixdimp -1)? 0.0f : (d_p[pidx + 1].x * fscale - p0) / DBPT_GINTP;
@@ -156,13 +156,12 @@ intpKernel(float2* d_p, short* d_strip, int ixdim, int ndim, int iIntpDim, float
 }
 
 extern "C" 
-void CudaDeconv(int ixdim, int iIntpDim, int ndim, int isino, float center,   
+void CudaDeconv(int ixdim, int iIntpDim, int ndim, float center,   
 				float* d_filt, short* d_strip, int* d_igp, float2* d_p, cufftHandle* fftplan) {
 	//constants
 	const int ixdimp = ixdim * iIntpDim;
 	const int ixdimh = ixdimp / 2;
 	const int ihoffset = ndim / 2 - ixdimh;
-	const int igpdimx = ixdimp * DBPT_GINTP;
 	//
 	//kernel parameters
 	//const int blocksize = CUDA_BLOCKSIZE;// ==> blockDim.x;
@@ -178,20 +177,18 @@ void CudaDeconv(int ixdim, int iIntpDim, int ndim, int isino, float center,
 	const int gridsize_intp = (int)(ceil( ixdim / (float)blocksize));
 	dim3 dimGrid_intp(gridsize_intp, iIntpDim);
 	intpKernel<<< dimGrid_intp, dimBlock >>>(d_p, d_strip, ixdim, ndim, iIntpDim, center);
-	cudaDeviceSynchronize();
 	//FFT-filter
 	cufftExecC2C(*fftplan, (cufftComplex*)d_p, (cufftComplex*)d_p, CUFFT_FORWARD );
 	//
 	const int gridsize_ndim = (int)(ceil( ndim / (float)blocksize));
 	dim3 dimGrid_ndim(gridsize_ndim);
 	filtKernel<<< dimGrid_ndim, dimBlock >>>(d_p, d_filt, ndim);
-	cudaDeviceSynchronize();
 	//
 	cufftExecC2C(*fftplan, (cufftComplex*)d_p, (cufftComplex*)d_p, CUFFT_INVERSE );
 	//
 	float fscale = (float)BACKPROJ_SCALE / ndim;
 	dim3 dimGrid_p2igp(gridsize, DBPT_GINTP);
-	p2igpKernel<<< dimGrid_p2igp, dimBlock >>>(d_p, d_igp, ixdimp, ihoffset, fscale, isino * igpdimx);
+	p2igpKernel<<< dimGrid_p2igp, dimBlock >>>(d_p, d_igp, ixdimp, ihoffset, fscale);
 }
 #endif
 

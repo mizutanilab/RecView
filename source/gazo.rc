@@ -97,9 +97,8 @@ IDR_MAINFRAME TOOLBAR 16, 15
 BEGIN
     BUTTON      ID_FILE_OPEN
     BUTTON      IDM_TOMO_RECONST
-    SEPARATOR
-    BUTTON      ID_FILE_SAVE
-    BUTTON      ID_EDIT_PASTE
+    BUTTON      ID_TOOLBAR_HISTG
+    BUTTON      ID_TOOLBAR_QUEUE
     BUTTON      ID_APP_ABOUT
     SEPARATOR
     BUTTON      ID_TOOLBAR_MAG
@@ -815,7 +814,7 @@ BEGIN
             VALUE "FileDescription", "RecView CT software"
             VALUE "FileVersion", "4, 2, 0, 1"
             VALUE "InternalName", "recview"
-            VALUE "LegalCopyright", "Copyright (C) 2008-2014"
+            VALUE "LegalCopyright", "Copyright (C) 2008-2019"
             VALUE "OriginalFilename", "recview.EXE"
             VALUE "ProductName", "RecView Application"
             VALUE "ProductVersion", "4, 2, 0, 1"
@@ -1158,7 +1157,7 @@ BEGIN
     ID_EDIT_COPY            "Copy the selection and put it on the Clipboard\nCopy"
     ID_EDIT_CUT             "Cut the selection and put it on the Clipboard\nCut"
     ID_EDIT_FIND            "Find the specified text\nFind"
-    ID_EDIT_PASTE           "Insert Clipboard contents\nPaste"
+    ID_EDIT_PASTE           "Open queue dialog\nQueue"
     ID_EDIT_REPEAT          "Repeat the last action\nRepeat"
     ID_EDIT_REPLACE         "Replace specific text with different text\nReplace"
     ID_EDIT_SELECT_ALL      "Select the entire document\nSelect All"
