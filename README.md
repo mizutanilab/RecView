@@ -39,7 +39,7 @@ A test dataset in TIFF format is available from the binary folder.
   <LI>Build-190118. CUDA routines were revised by using the 'stream' pipelining to parallelize the calculation. Performances are: 
     <UL>
     <LI>Tau (Quadro K5000, 1536 cores, 706 MHz) = 0.130 nsec (0.98 sec for a 2048x2048 slice from 1800 projections)
-    <LI>Tau (Core i5-4670 x64, 4 threads, 3.4 GHz) TBD
+    <LI>Tau (Core i5-4670 (x64), 4 threads, 3.4 GHz) = 0.38 nsec (2.9 sec for a 2048x2048 tomogram from 1800 projections)
     </UL>
   <LI>Build-190111. On-the-fly reconstruction with which you can adjust the rotation axis in real time was implemented. If your PC has a sufficient computing power (over 1500 cores of GPU or 8 cores of AVX2-compatible CPU preferably Skylake or later), the axis position can be adjusted in real time using mouse wheel + shift key. Procedures for the data transfer between CPU and GPU were revised to accelerate the calculation.
    <LI>Build-190102. We moved to Visual Studio 2017 and CUDA Toolkit 10.0 in this release. CUDA executable on the x86 platform became unavailable. ATI executable is not compiled at present. The x86/x64 reconstruction kernels were revised by using the AVX2 instruction set. CUDA routines were revised to be compatible with the new CUDA Toolkit. 
