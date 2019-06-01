@@ -82,6 +82,7 @@ struct RECONST_INFO {
 
 	cufftHandle fftplan;
 	unsigned int ifftdim;
+	cudaStream_t stream1, stream2;
 
 	//lsqfit
 	unsigned __int64 i64result;

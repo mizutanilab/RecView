@@ -584,7 +584,7 @@ void CudaReconstHost(RECONST_INFO* ri, int idev, bool bReport) {
 	//-----end of CUDA body-----//
 }*/
 
-void CudaReconstHost(RECONST_INFO* ri, int idev, bool bReport) {
+void CudaReconstHost(RECONST_INFO* ri, int idev, bool bReport, bool bEnStream) {
 	if (cudaSuccess != cudaSetDevice( idev )) {
 		AfxMessageBox("cudaSetDevice error"); return;
 	}
@@ -637,11 +637,13 @@ void CudaReconstHost(RECONST_INFO* ri, int idev, bool bReport) {
 		}
 	}
 	//reset slice
-	cudaStream_t stream1, stream2;
-	cudaStreamCreate(&stream1);
-	cudaStreamCreate(&stream2);
-	cudaStream_t *pCurrentStream = &stream1;
-	if (cudaSuccess != cudaMemsetAsync(ri->d_ifp, 0, mem_size_ifp, bDeconv ? stream1 : cudaStreamDefault)) error.Log(28806);
+	//cudaStream_t stream1, stream2;
+	if (bEnStream) {//190529
+		if (ri->stream1 == NULL) cudaStreamCreate(&(ri->stream1));
+		if (ri->stream2 == NULL) cudaStreamCreate(&(ri->stream2));
+	}
+	cudaStream_t *pCurrentStream = &(ri->stream1);
+	if (cudaSuccess != cudaMemsetAsync(ri->d_ifp, 0, mem_size_ifp, (bDeconv && bEnStream) ? ri->stream1 : cudaStreamDefault)) error.Log(28806);
 	//130923 cutilSafeCall(cudaMemset(ri->d_ifp, 0, mem_size_ifp) );
 	//generate slice
 	CFft fft;
@@ -651,7 +653,7 @@ void CudaReconstHost(RECONST_INFO* ri, int idev, bool bReport) {
 	int iCurrStep = 0;
 	for (int i = (ri->iStartSino); i < (ri->iLenSinogr - 1); i += (ri->iStepSino)) {
 		const int isino = (i - (ri->iStartSino)) / (ri->iStepSino);
-		pCurrentStream = (isino & 0x01) ? &stream1 : &stream2;
+		if (bEnStream) pCurrentStream = (isino & 0x01) ? &(ri->stream1) : &(ri->stream2);
 		if (bReport && (isino % 20 == 0)) {
 			if (DBProjDlgCtrl(ri, iProgStep, i, &iCurrStep)) break;
 		}
@@ -695,9 +697,10 @@ void CudaReconstHost(RECONST_INFO* ri, int idev, bool bReport) {
 			//
 			for (int k = 0; k < ixdimp; k++) { h_px[k + isino * ixdimp] = p[k + ihoffset].re; }
 			const unsigned int cpy_size_px = sizeof(float) * ixdimp;
-			if (cudaSuccess != cudaMemcpyAsync(&(ri->d_px[isino * ixdimp]), &(h_px[isino * ixdimp]), cpy_size_px, cudaMemcpyHostToDevice, *pCurrentStream)) 
+			if (cudaSuccess != cudaMemcpyAsync(&(ri->d_px[isino * ixdimp]), &(h_px[isino * ixdimp]), cpy_size_px, cudaMemcpyHostToDevice, 
+													bEnStream ? *pCurrentStream : cudaStreamDefault))
 				{ error.Log(28804); break; }
-			CudaSinoPx2igpStream(ixdimp, &(ri->d_igp[isino * igpdimx]), &(ri->d_px[isino * ixdimp]), *pCurrentStream);
+			CudaSinoPx2igpStream(ixdimp, &(ri->d_igp[isino * igpdimx]), &(ri->d_px[isino * ixdimp]), bEnStream ? *pCurrentStream : cudaStreamDefault);
 //			for (int j = 0; j < ixdimp; j++) {
 //				const TCmpElmnt p0 = p[j + ihoffset].re * BACKPROJ_SCALE;
 //				const TCmpElmnt p1p0 = (j == ixdimp - 1) ?
@@ -708,12 +711,12 @@ void CudaReconstHost(RECONST_INFO* ri, int idev, bool bReport) {
 //			//
 //			int* igpm = (int*)(((DWORD_PTR)h_igp) + imargin * DBPT_GINTP * sizeof(int) + isino * igpdimx * sizeof(int));
 //			const unsigned int cpy_size_igp = sizeof(int) * ixdimp * DBPT_GINTP;
-//			if (cudaSuccess != cudaMemcpyAsync(&(ri->d_igp[isino * igpdimx]), igpm, cpy_size_igp, cudaMemcpyHostToDevice, *pCurrentStream)) { error.Log(28804); break; }
+//			if (cudaSuccess != cudaMemcpyAsync(&(ri->d_igp[isino * igpdimx]), igpm, cpy_size_igp, cudaMemcpyHostToDevice, bEnStream ? *pCurrentStream : cudaStreamDefault)) { error.Log(28804); break; }
 		}
 		//back projection
 		const int iCenterOffset = intcenter - ri->iSinoCenter;
 		CudaBackProjStream(ixdimp, fCenter, iCenterOffset, (ri->fdeg[i] + ri->fTiltAngle) * DEG_TO_RAD,
-			ri->d_ifp, &(ri->d_igp[isino * igpdimx]), bDeconv ? *pCurrentStream : cudaStreamDefault);
+			ri->d_ifp, &(ri->d_igp[isino * igpdimx]), (bDeconv && bEnStream) ? *pCurrentStream : cudaStreamDefault);
 		/*/141205==>
 		float theta = (ri->fdeg[i] + ri->fTiltAngle) * (float)DEG_TO_RAD;
 		const float fcos = (float)(cos(theta) * DBPT_GINTP);
@@ -735,12 +738,14 @@ void CudaReconstHost(RECONST_INFO* ri, int idev, bool bReport) {
 		if (bReport && (isino % 40 == 0)) cudaDeviceSynchronize();//this is for progress bar and may add 10 msec delay
 	}// i < (ri->iLenSinogr - 1)
 	//process messages while streams progress
-	while ((cudaStreamQuery(stream1) == cudaErrorNotReady) || (cudaStreamQuery(stream2) == cudaErrorNotReady)) {
-		::ProcessMessage();
-		Sleep(10);
+	if (bEnStream) {
+		while ((cudaStreamQuery(ri->stream1) == cudaErrorNotReady) || (cudaStreamQuery(ri->stream2) == cudaErrorNotReady)) {
+			::ProcessMessage();
+			Sleep(10);
+		}
+		//cudaStreamDestroy(stream1);
+		//cudaStreamDestroy(stream2);
 	}
-	cudaStreamDestroy(stream1);
-	cudaStreamDestroy(stream2);
 	if (h_px) cudaFreeHost(h_px);
 	if (p) delete[] p;
 	// copy result from device to host

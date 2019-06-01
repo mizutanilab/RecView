@@ -18,6 +18,7 @@ CDlgProperty::CDlgProperty(CWnd* pParent /*=NULL*/)
 	, bUseCUDAFFT(FALSE)
 	, m_EnFastSeek(TRUE)
 	, m_bEnableAVX2(FALSE)
+	, m_EnCUDAStream(FALSE)
 {
 	Init(1, false, false, 0, CUDA_BLOCKSIZE, CUDA_WARPSIZE, 
 					0, ATISTREAM_MAXWORK, ATISTREAM_UNITWORK);
@@ -82,6 +83,7 @@ void CDlgProperty::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_PROP_ATISTREAMNWORK, m_ATIstreamNwork);
 	DDX_Check(pDX, IDC_PROP_ENFASTSEEK, m_EnFastSeek);
 	DDX_Check(pDX, IDC_PROP_AVX2, m_bEnableAVX2);
+	DDX_Check(pDX, IDC_PROP_CUDASTREAM, m_EnCUDAStream);
 }
 
 
@@ -111,6 +113,7 @@ BOOL CDlgProperty::OnInitDialog()
 	r_EnReport = m_EnReport;
 	r_EnFastSeek = m_EnFastSeek;
 	r_UseCUDAFFT = bUseCUDAFFT;
+	r_EnCUDAStream = m_EnCUDAStream;
 	rATIstream = iATIstream;
 	rATIstreamNwork = iATIstreamNwork;
 
@@ -218,6 +221,7 @@ void CDlgProperty::EnableCtrl() {
 	GetDlgItem(IDC_PROP_NGPU)->EnableWindow(FALSE);
 	GetDlgItem(IDC_PROP_CUDANBLOCK)->EnableWindow(FALSE);
 	GetDlgItem(IDC_PROP_CUDAFFT)->EnableWindow(FALSE);
+	GetDlgItem(IDC_PROP_CUDASTREAM)->EnableWindow(FALSE);
 	GetDlgItem(IDC_PROP_NATISTREAM)->EnableWindow(FALSE);
 	GetDlgItem(IDC_PROP_ATISTREAMNWORK)->EnableWindow(FALSE);
 	//
@@ -234,6 +238,7 @@ void CDlgProperty::EnableCtrl() {
 		case CDLGPROPERTY_PROCTYPE_CUDA: {
 			GetDlgItem(IDC_PROP_NGPU)->EnableWindow(TRUE);
 			GetDlgItem(IDC_PROP_CUDANBLOCK)->EnableWindow(TRUE);
+			GetDlgItem(IDC_PROP_CUDASTREAM)->EnableWindow(TRUE);
 #ifdef CUDAFFT
 			GetDlgItem(IDC_PROP_CUDAFFT)->EnableWindow(TRUE);
 #endif
@@ -241,7 +246,6 @@ void CDlgProperty::EnableCtrl() {
 		case CDLGPROPERTY_PROCTYPE_ATISTREAM: {
 			GetDlgItem(IDC_PROP_NATISTREAM)->EnableWindow(TRUE);
 			GetDlgItem(IDC_PROP_ATISTREAMNWORK)->EnableWindow(TRUE);
-			//GetDlgItem(IDC_PROP_CUDAFFT)->EnableWindow(TRUE);
 			break;}
 		default: {
 			break;}
@@ -319,6 +323,7 @@ void CDlgProperty::OnCancel()
 	iATIstreamNwork = rATIstreamNwork;
 	m_EnReport = r_EnReport;
 	m_EnFastSeek = r_EnFastSeek;
+	m_EnCUDAStream = r_EnCUDAStream;
 
 	CDialog::OnCancel();
 }

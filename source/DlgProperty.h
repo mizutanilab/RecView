@@ -45,6 +45,7 @@ protected:
 	BOOL r_EnReport;
 	BOOL r_UseCUDAFFT;
 	BOOL r_EnFastSeek;
+	BOOL r_EnCUDAStream;
 
 protected:
 	virtual void OnOK();
@@ -67,4 +68,5 @@ public:
 	BOOL m_bEnableAVX2;
 	afx_msg void OnBnClickedPropSimd();
 	afx_msg void OnBnClickedPropInfo();
+	BOOL m_EnCUDAStream;
 };

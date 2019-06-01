@@ -151,6 +151,8 @@
 #define IDC_PROP_SIMD3                  1055
 #define IDC_PROP_AVX2                   1055
 #define IDC_REFR_LAC                    1056
+#define IDC_PROP_CUDAFFT2               1056
+#define IDC_PROP_CUDASTREAM             1056
 #define IDC_REFR_XENERGY                1057
 #define IDC_REFR_S2DDIST                1058
 #define IDC_REFR_PXSIZE                 1059

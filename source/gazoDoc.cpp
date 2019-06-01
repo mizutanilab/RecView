@@ -168,6 +168,8 @@ void CGazoDoc::ClearAll() {
 		//ri[i].bMaster = false;
 		ri[i].pDoc = (unsigned int*)this;
 		ri[i].piDrift = NULL;
+		ri[i].stream1 = NULL;//190529
+		ri[i].stream2 = NULL;
 	}
 	//ri[0].bMaster = true;
 	uiDocStatus = CGAZODOC_STATUS_RESET;
@@ -282,7 +284,11 @@ void CGazoDoc::GPUMemFree(int iProcessorType) {
 	iProcessorType = (iProcessorType == CDLGPROPERTY_PROCTYPE_ND) ? pApp->dlgProperty.m_ProcessorType : iProcessorType;
 	if (iProcessorType == CDLGPROPERTY_PROCTYPE_CUDA) {
 		int nCPU = (int)(pApp->dlgProperty.iCUDA);
-		for (int i = 0; i < nCPU; i++) { CudaReconstMemFree(&(ri[i])); }
+		for (int i = 0; i < nCPU; i++) { 
+			if (ri[i].stream1) { cudaStreamDestroy(ri[i].stream1); ri[i].stream1 = NULL; }//190529
+			if (ri[i].stream2) { cudaStreamDestroy(ri[i].stream2); ri[i].stream2 = NULL; }//190529
+			CudaReconstMemFree(&(ri[i]));
+		}
 	}
 	else if (iProcessorType == CDLGPROPERTY_PROCTYPE_ATISTREAM) {
 		int nCPU = (int)(pApp->dlgProperty.iATIstream);

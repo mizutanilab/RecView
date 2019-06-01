@@ -2144,7 +2144,8 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 			//CudaReconstHostLong(ri, ri->iStartSino);
 		} else {
 			//kernel 4/8 with my FFT
-			CudaReconstHost(ri, ri->iStartSino, (pApp->dlgProperty.m_EnReport)? TRUE : FALSE);
+			CudaReconstHost(ri, ri->iStartSino, (pApp->dlgProperty.m_EnReport)? TRUE : FALSE, 
+				(pApp->dlgProperty.m_EnCUDAStream) ? true : false);
 		}
 	} else if (pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_ATISTREAM) {
 		CLReconstHost(ri, ri->iStartSino, (pApp->dlgProperty.m_EnReport)? TRUE : FALSE);

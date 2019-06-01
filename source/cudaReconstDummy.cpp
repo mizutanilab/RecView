@@ -18,7 +18,7 @@ extern "C" void CudaReconstHostFFT(RECONST_INFO* ri, int idev, bool bReport) {
 extern "C" void CudaSinogramHost(RECONST_INFO* ri, int idev, bool bReport) {
 }
 
-extern "C" void CudaReconstHost(RECONST_INFO* ri, int idev, bool bReport) {
+extern "C" void CudaReconstHost(RECONST_INFO* ri, int idev, bool bReport, bool bEnStream) {
 }
 
 extern "C" void CudaLsqfitMemAlloc(short** d_ppRefPixel, short** d_ppQryPixel, 

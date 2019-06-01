@@ -13,7 +13,7 @@
 #define CUDA_ERROR_DEVICE_GETCOUNT 0x00100000
 
 //Host routine
-extern "C" void CudaReconstHost(RECONST_INFO* ri, int idev, bool bReport);
+extern "C" void CudaReconstHost(RECONST_INFO* ri, int idev, bool bReport, bool bEnStream);
 extern "C" void CudaReconstMemFree(RECONST_INFO* ri);
 extern "C" void CudaReconstHostFFT(RECONST_INFO* ri, int idev, bool bReport);
 extern "C" int GetCudaDeviceCount(int iMinComputeCapability);
