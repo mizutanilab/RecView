@@ -36,6 +36,7 @@ The binary folder contains 64-bit (x64) and 32-bit (x86) executables complied us
 A test dataset in TIFF format is available from the binary folder. 
 
 <UL>
+  <LI>Build-190530. A checkbox for enabling/disabling the CUDA stream pipelining was implemented in the Tomography-Computing config dialog. The default is disabled. This is because our legacy Quadro K4200 card causes driver errors when used with the stream. 
   <LI>Build-190118. CUDA routines were revised by using the 'stream' pipelining to parallelize the calculation. Performances are: 
     <UL>
     <LI>Tau (Quadro K5000, 1536 cores, 706 MHz) = 0.130 nsec (0.98 sec for a 2048x2048 slice from 1800 projections)
@@ -156,8 +157,7 @@ frame#      time(msec)     angle(deg) 0=flatfield/1=sample
   <LI><b>My samples showed drifts in reconsturcted images. How can I prepare biological samples best suited for the synchrotron radiation experiment? </b></LI>
       Please see the following:<br>
       R. Saiga and R. Mizutani (2018). Preparation of soft tissue samples for synchrotron radiation microtomography and nanotomography. <I>Protocol Exchange</I> DOI: 10.1038/protex.2018.085.
-       <A href="https://www.nature.com/protocolexchange/protocols/6905">web</A> 
-       <A href="http://dx.doi.org/10.1038/protex.2018.085">DOI</A></li><br><br>
+       <A href="https://www.nature.com/protocolexchange/protocols/6905">web</A> <A href="http://dx.doi.org/10.1038/protex.2018.085">DOI</A></li><br><br>
   <LI><b>How to prepare a development environment for RecView.</b></LI>
       You need Visual Studio 2017 and CUDA Toolkit 10.0 to compile the source code. The 'Desktop Environment with C++' package and 'Visual C++ MFC' component of VS2017 should be installed. You may also need to update GPU driver to the latest one to run the CUDA reconstruction kernel. 
       <UL>
