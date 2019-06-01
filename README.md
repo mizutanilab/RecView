@@ -36,7 +36,7 @@ The binary folder contains 64-bit (x64) and 32-bit (x86) executables complied us
 A test dataset in TIFF format is available from the binary folder. 
 
 <UL>
-  <LI>Build-190530. A checkbox for enabling/disabling the CUDA stream pipelining was implemented in the Tomography-Computing config dialog. The default is disabled. This is because our legacy Quadro K4200 card causes driver errors when used with the stream. 
+  <LI>Build-190530. A checkbox to enablie/disable CUDA stream pipelining was implemented in the Tomography-Computing config dialog. The default is disabled. This is because our legacy Quadro K4200 card causes driver errors repeatedly when used with the stream. 
   <LI>Build-190118. CUDA routines were revised by using the 'stream' pipelining to parallelize the calculation. Performances are: 
     <UL>
     <LI>Tau (Quadro K5000, 1536 cores, 706 MHz) = 0.130 nsec (0.98 sec for a 2048x2048 slice from 1800 projections)
