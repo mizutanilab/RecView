@@ -18,7 +18,7 @@ CDlgProperty::CDlgProperty(CWnd* pParent /*=NULL*/)
 	, bUseCUDAFFT(FALSE)
 	, m_EnFastSeek(TRUE)
 	, m_bEnableAVX2(FALSE)
-	, m_EnCUDAStream(FALSE)
+	, m_EnCUDAStream(TRUE) //190620
 {
 	Init(1, false, false, 0, CUDA_BLOCKSIZE, CUDA_WARPSIZE, 
 					0, ATISTREAM_MAXWORK, ATISTREAM_UNITWORK);

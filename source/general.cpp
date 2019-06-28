@@ -1997,6 +1997,13 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 		return 0;
 	}
 	const CGazoApp* pApp = (CGazoApp*) AfxGetApp();
+	BOOL bReport = pApp->dlgProperty.m_EnReport;//190620
+	if (bReport) {
+		CGazoDoc* pd = (CGazoDoc*)(ri->pDoc);
+		if (pd) {
+			if (!(pd->dlgReconst.m_hWnd)) bReport = FALSE;
+		}
+	}
 	//AfxMessageBox("131014 #ifdef _WIN64  DeconvBackProjThread");
 	if (pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_INTEL) {
 		//-----INTEL body-----//
@@ -2057,7 +2064,7 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 		param[8] = iy0;
 		param[9] = iy1;
 		BOOL bUseSIMD = pApp->dlgProperty.bEnableSIMD;
-		const BOOL bReport = pApp->dlgProperty.m_EnReport;
+		//190620 const BOOL bReport = pApp->dlgProperty.m_EnReport;
 		const int iProgStep = ri->iLenSinogr / PROGRESS_BAR_UNIT;
 		int iCurrStep = 0;
 		for (int i = 0; i < (ri->iLenSinogr - 1); i++) {
@@ -2138,14 +2145,13 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 		//-----end of INTEL body-----//
 	} else if (pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_CUDA) {
 		if (pApp->dlgProperty.bUseCUDAFFT) {
-			//kernel 4/8 CUDA-FFT
-			CudaReconstHostFFT(ri, ri->iStartSino, (pApp->dlgProperty.m_EnReport)? TRUE : FALSE);
+			//kernel 9 CUDA-FFT
+			CudaReconstHostFFT(ri, ri->iStartSino, bReport);
 			//kernel 4/8 CUDA-FFT with long integer
 			//CudaReconstHostLong(ri, ri->iStartSino);
 		} else {
-			//kernel 4/8 with my FFT
-			CudaReconstHost(ri, ri->iStartSino, (pApp->dlgProperty.m_EnReport)? TRUE : FALSE, 
-				(pApp->dlgProperty.m_EnCUDAStream) ? true : false);
+			//kernel 9 with my FFT
+			CudaReconstHost(ri, ri->iStartSino, bReport, (pApp->dlgProperty.m_EnCUDAStream) ? true : false);
 		}
 	} else if (pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_ATISTREAM) {
 		CLReconstHost(ri, ri->iStartSino, (pApp->dlgProperty.m_EnReport)? TRUE : FALSE);

@@ -1408,7 +1408,8 @@ void CGazoDoc::OnTomoReconst()
 		//121013 iLenSinogr is determined in LoadLogFile
 		const int ideg = (int)(log10((double)iLenSinogr)) + 1;
 		const int ipos = dataPrefix.GetLength() - ideg;
-		if ((ipos > 0)&&(dataSuffix.MakeUpper() != ".H5")) dataPrefix = dataPrefix.Left(ipos);
+		//190620 if ((ipos > 0)&&(dataSuffix.MakeUpper() != ".H5")) dataPrefix = dataPrefix.Left(ipos);
+		if ((ipos > 0) && (dataSuffix.MakeUpper() != ".H5") && (dataSuffix.MakeUpper() != ".HIS")) dataPrefix = dataPrefix.Left(ipos);
 		//160617 else dataPrefix = dataPrefix.SpanExcluding("0123456789");
 		//CString msg; msg.Format("%d %d %s", ideg, ipos, dataPrefix); AfxMessageBox(msg);
 		//
@@ -2701,7 +2702,7 @@ TErr CGazoDoc::GenerateSinogram(RECONST_QUEUE* rq, int iLayer, double center, do
 		//110914
 		fn = rq->dataPath + rq->itexFilePrefix + rq->itexFileSuffix;//"a.his";
 		if (!fimg.Open(fn, CFile::modeRead | CFile::shareDenyWrite)) {
-			AfxMessageBox("Image file not found: " + fn);
+			AfxMessageBox("Image file not found: " + fn + "\r\n" + rq->itexFilePrefix + "\r\n" + rq->dataPath);
 			return 21012;
 		}
 		HIS_Header his;
