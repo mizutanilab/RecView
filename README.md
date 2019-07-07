@@ -36,7 +36,7 @@ The binary folder contains 64-bit (x64) and 32-bit (x86) executables complied us
 A test dataset in TIFF format is available from the binary folder. 
 
 <UL>
-  <LI>Build-190707. A bugfix in multithreading. Some improved GUI functions were implemented. CUDA stream is now enabled by default. Currently we recommend to run RecView using most recent GPU boards. 
+  <LI>Build-190707. A bugfix in multithreading. Some improved GUI functions were implemented. CUDA stream is now enabled by default. Currently we recommend to run RecView using most recent GPU boards. For former GPUs, try CUDA5.5.exe that was compiled with VS2007 using almost the same source code. 
   <LI>Build-190530. A checkbox to enablie/disable CUDA stream pipelining was implemented in the Tomography-Computing config dialog. The default is disabled. This is because our legacy Quadro K4200 card causes driver errors repeatedly when used with the stream. 
   <LI>Build-190118. CUDA routines were revised by using the 'stream' pipelining to parallelize the calculation. Performances are: 
     <UL>
