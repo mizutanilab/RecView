@@ -35,6 +35,7 @@
 extern "C" cudaError_t cudaFreeHost(void* ptr);//190110
 extern "C" cudaError_t cudaHostAlloc(void** ptr, size_t size, unsigned int flags);//190110
 extern "C" cudaError_t cudaMallocHost(int** ptr, size_t size);
+extern "C" cudaError_t cudaStreamDestroy(cudaStream_t stream);//190707
 #endif
 //OpenCL
 #include "clReconst.h"

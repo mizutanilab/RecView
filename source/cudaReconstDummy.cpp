@@ -66,3 +66,5 @@ extern "C" cudaError_t cudaFreeHost(void* ptr) { return cudaSuccess; }//190108
 extern "C" cudaError_t cudaHostAlloc(void** ptr, size_t size, unsigned int flags) { return cudaSuccess; }//190108
 
 extern "C" cudaError_t cudaMallocHost(int** ptr, size_t size) { return cudaSuccess; }//190110
+
+extern "C" cudaError_t cudaStreamDestroy(cudaStream_t stream) { return cudaSuccess; }//190707
