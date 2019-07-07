@@ -377,8 +377,18 @@ void CDlgReconst::OnOK()
 	if (m_Slice1 == m_Slice2) {
 		if (AfxMessageBox("This will generate axis-scan images.\r\nProceed?", MB_OKCANCEL) == IDCANCEL) return;
 	}
+	//mutex190628
+	CGazoApp* pApp = (CGazoApp*)AfxGetApp();
+	CSingleLock slock(&(pApp->m_mutex), FALSE);
+	if (pApp->dlgProperty.m_ProcessorType != CDLGPROPERTY_PROCTYPE_INTEL) {
+		slock.Lock(10);
+		if (!slock.IsLocked()) {
+			AfxMessageBox("Error: another instance is running.");
+			return;
+		}
+	}
 	iStatus = CDLGRECONST_BUSY;
-	CGazoApp* pApp = (CGazoApp*) AfxGetApp();
+	//CGazoApp* pApp = (CGazoApp*) AfxGetApp();
 	pApp->SetBusy();
 	//100315 pApp->prevPixelWidth = m_PixelWidth;
 	pApp->prevDlgReconst.ParamCopyFrom(*this);
@@ -438,6 +448,7 @@ void CDlgReconst::OnOK()
 		bOptionUpdated = false;
 	}
 	//
+	if (slock.IsLocked()) slock.Unlock();//190628
 	pApp->SetIdle();
 	iStatus = CDLGRECONST_IDLE;
 	EnableCtrl();

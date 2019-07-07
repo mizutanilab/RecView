@@ -368,8 +368,9 @@ void CGazoDoc::UpdateView(bool bInit) {
 			//130207 dlgReconst.Init(iydim, ixdim, ixdim/2, ixdim/2);
 			dlgReconst.Init(iydim, ixdim, 0, 0);
 			InitContrast();
-			pv->SetScrollPos(SB_VERT, 50);
-			pv->SetScrollPos(SB_HORZ, 50);
+			pv->OnInitialUpdate();//190628
+			pv->SetScrollPos(SB_VERT, CGV_VSCROLL_RANGE / 2);
+			pv->SetScrollPos(SB_HORZ, CGV_HSCROLL_RANGE / 2);
 			pv->SetBoxParams(ixdim/2, iydim/2, ixdim/2, iydim/2, 0);
 			pv->InitPolygon(ixdim/2, iydim/2, ixdim/2, iydim/2);//180424
 			CGazoApp* pApp = (CGazoApp*) AfxGetApp();
@@ -3607,22 +3608,24 @@ TErr CGazoDoc::DeconvBackProj(RECONST_QUEUE* rq, double center, int iMultiplex, 
 				}
 				return 21023;
 			}
-//		} else {//(pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_CUDA)
-//			try {
-//				ppiReconst = new int*[nCPU - 1];
-//				for (int i = 0; i < nCPU - 1; i++) {
-//					ppiReconst[i] = new int[maxReconst];
-//					memset(ppiReconst[i], 0, sizeof(int) * maxReconst);
-//				}
-//			}
-//			catch (CException* e) {
-//				e->Delete();
-//				if (ppiReconst) {
-//					for (int i = 0; i < nCPU - 1; i++) { if (ppiReconst[i]) delete[] ppiReconst[i]; }
-//					delete[] ppiReconst;
-//				}
-//				return 21023;
-//			}
+		} else {//(pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_CUDA)
+			//190707==>uncommented ??why this setion was commented out??
+			try {
+				ppiReconst = new int*[nCPU - 1];
+				for (int i = 0; i < nCPU - 1; i++) {
+					ppiReconst[i] = new int[maxReconst];
+					memset(ppiReconst[i], 0, sizeof(int) * maxReconst);
+				}
+			}
+			catch (CException* e) {
+				e->Delete();
+				if (ppiReconst) {
+					for (int i = 0; i < nCPU - 1; i++) { if (ppiReconst[i]) delete[] ppiReconst[i]; }
+					delete[] ppiReconst;
+				}
+				return 21023;
+			}
+			//==>190707
 		}
 	}
 	for (int i=nCPU-1; i>=0; i--) {

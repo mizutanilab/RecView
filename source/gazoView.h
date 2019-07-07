@@ -13,6 +13,8 @@
 #include "DlgPolygon.h"
 
 #define CGAZOVIEW_NPOLYGON 12
+#define CGV_HSCROLL_RANGE 4096
+#define CGV_VSCROLL_RANGE 4096
 
 class CGazoView : public CView
 {
@@ -87,6 +89,7 @@ protected:
 	bool bPolygonMove;
 	CPoint pntPolygon[CGAZOVIEW_NPOLYGON+1];
 	int iPickedPolygonPnt;
+	CPoint pntMouse;//190628
 private:
 	int ixdim, iydim;
 	HCURSOR hCursor;
@@ -113,6 +116,7 @@ public:
 	//afx_msg void OnUpdateViewBoxaxislabel(CCmdUI *pCmdUI);
 	afx_msg void OnAnalysisPolygonlasso();
 	afx_msg void OnUpdateAnalysisPolygonlasso(CCmdUI *pCmdUI);
+	virtual void OnInitialUpdate();
 };
 
 #ifndef _DEBUG  // gazoView.cpp ファイルがデバッグ環境の時使用されます。

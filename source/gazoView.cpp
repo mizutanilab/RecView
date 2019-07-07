@@ -85,6 +85,7 @@ CGazoView::CGazoView()
 	iPickedPolygonPnt = -1;
 	InitPolygon(200, 200, 100, 100);
 	dlgPolygon.SetView(this);
+	pntMouse.SetPoint(0, 0);
 }
 
 CGazoView::~CGazoView()
@@ -375,8 +376,8 @@ void CGazoView::OnDraw(CDC* pDC)
 	int iypos = GetScrollPos(SB_VERT);
 	int ixWidthImg = (int)(ixdim * rMagnify);
 	int iyWidthImg = (int)(iydim * rMagnify);
-	int ix0img = pCenter.x - (int)(ixWidthImg * ixpos / 100);
-	int iy0img = pCenter.y - (int)(iyWidthImg * iypos / 100);
+	int ix0img = pCenter.x - (int)(ixWidthImg * ixpos / CGV_HSCROLL_RANGE);
+	int iy0img = pCenter.y - (int)(iyWidthImg * iypos / CGV_VSCROLL_RANGE);
 	//CString text; text.Format("sc %d %d %d %d", iypos, iy0img, ixWidthImg, iyWidthImg);
 	//CMainFrame* pf = (CMainFrame*) AfxGetMainWnd();
 	//pf->m_wndStatusBar.SetPaneText(0, text);
@@ -435,13 +436,14 @@ void CGazoView::OnDraw(CDC* pDC)
 		mPen1.DeleteObject();//190122
 	}
 	if (bPolygonEnabled) {//180424
+		CPen mPen1( PS_SOLID, 1, RGB(255,255,0) );
+		CPen* pOldPen = pDC->SelectObject(&mPen1);
 		for (int i=0; i<CGAZOVIEW_NPOLYGON; i++) {
 			pntPolygon[i].x = (int)(iPolygonX[i] * rMagnify + ix0img);
 			pntPolygon[i].y = (int)(iPolygonY[i] * rMagnify + iy0img);
+			pDC->Ellipse(pntPolygon[i].x - 5, pntPolygon[i].y - 5, pntPolygon[i].x + 5, pntPolygon[i].y + 5);
 		}
 		pntPolygon[CGAZOVIEW_NPOLYGON] = pntPolygon[0];
-		CPen mPen1( PS_SOLID, 1, RGB(255,255,0) );
-		CPen* pOldPen = pDC->SelectObject(&mPen1);
 		pDC->Polyline(pntPolygon, CGAZOVIEW_NPOLYGON+1);
 		pDC->SelectObject(pOldPen);
 	}
@@ -558,8 +560,8 @@ void CGazoView::GetCoord(CPoint* pPnt) {
 	int iypos = GetScrollPos(SB_VERT);
 	int ixWidthImg = (int)(ixdim * rMagnify);
 	int iyWidthImg = (int)(iydim * rMagnify);
-	int ix0img = pCenter.x - (int)(ixWidthImg * ixpos / 100);
-	int iy0img = pCenter.y - (int)(iyWidthImg * iypos / 100);
+	int ix0img = pCenter.x - (int)(ixWidthImg * ixpos / CGV_HSCROLL_RANGE);
+	int iy0img = pCenter.y - (int)(iyWidthImg * iypos / CGV_VSCROLL_RANGE);
 	//
 	pPnt->x = (int)((pPnt->x - ix0img) / rMagnify);
 	pPnt->y = (int)((pPnt->y - iy0img) / rMagnify);
@@ -609,8 +611,8 @@ void CGazoView::OnMouseMove(UINT nFlags, CPoint point)
 		int iypos = GetScrollPos(SB_VERT);
 		int ixWidthImg = (int)(ixdim * rMagnify);
 		int iyWidthImg = (int)(iydim * rMagnify);
-		int ix0img = pCenter.x - (int)(ixWidthImg * ixpos / 100);
-		int iy0img = pCenter.y - (int)(iyWidthImg * iypos / 100);
+		int ix0img = pCenter.x - (int)(ixWidthImg * ixpos / CGV_HSCROLL_RANGE);
+		int iy0img = pCenter.y - (int)(iyWidthImg * iypos / CGV_VSCROLL_RANGE);
 		if (bPolygonMove) {
 			int ipx0 = (int)( (pntLButton.x + point.x - ix0img) / rMagnify) - iPolygonX[0];
 			int ipy0 = (int)( (pntLButton.y + point.y - iy0img) / rMagnify) - iPolygonY[0];
@@ -638,8 +640,8 @@ void CGazoView::OnMouseMove(UINT nFlags, CPoint point)
 		int iypos = GetScrollPos(SB_VERT);
 		int ixWidthImg = (int)(ixdim * rMagnify);
 		int iyWidthImg = (int)(iydim * rMagnify);
-		int ix0img = pCenter.x - (int)(ixWidthImg * ixpos / 100);
-		int iy0img = pCenter.y - (int)(iyWidthImg * iypos / 100);
+		int ix0img = pCenter.x - (int)(ixWidthImg * ixpos / CGV_HSCROLL_RANGE);
+		int iy0img = pCenter.y - (int)(iyWidthImg * iypos / CGV_VSCROLL_RANGE);
 		if (bBoxMove && (iBoxSizeX >= 0) &&(iBoxSizeY >= 0)) {
 			iBoxCentX = (int)( (pntLButton.x + point.x - ix0img) / rMagnify);
 			iBoxCentY = (int)( (pntLButton.y + point.y - iy0img) / rMagnify);
@@ -680,8 +682,8 @@ void CGazoView::OnMouseMove(UINT nFlags, CPoint point)
 		if (rMagnify < 1) rMagnify = 1.0 / (2 - rMagnify);
 		const int iprevx = GetScrollPos(SB_HORZ);
 		const int iprevy = GetScrollPos(SB_VERT);
-		const int ixpos = iScrollH - (int)(100 * (point.x - pntLButton.x) / (rMagnify * ixdim));
-		const int iypos = iScrollV - (int)(100 * (point.y - pntLButton.y) / (rMagnify * iydim));
+		const int ixpos = iScrollH - (int)(CGV_HSCROLL_RANGE * (point.x - pntLButton.x) / (rMagnify * ixdim));
+		const int iypos = iScrollV - (int)(CGV_VSCROLL_RANGE * (point.y - pntLButton.y) / (rMagnify * iydim));
 		if ((iprevx != ixpos)||(iprevy != iypos)) {
 			SetScrollPos(SB_HORZ, ixpos);
 			SetScrollPos(SB_VERT, iypos);
@@ -690,6 +692,7 @@ void CGazoView::OnMouseMove(UINT nFlags, CPoint point)
 	}
 	
 	{//180424 } else {
+		pntMouse = point;
 		CPoint pnt = point;
 		GetCoord(&pnt);
 		int ix = (int)pnt.x;
@@ -727,8 +730,8 @@ void CGazoView::OnMouseMove(UINT nFlags, CPoint point)
 		int iypos = GetScrollPos(SB_VERT);
 		int ixWidthImg = (int)(ixdim * rMagnify);
 		int iyWidthImg = (int)(iydim * rMagnify);
-		int ix0img = pCenter.x - (int)(ixWidthImg * ixpos / 100);
-		int iy0img = pCenter.y - (int)(iyWidthImg * iypos / 100);
+		int ix0img = pCenter.x - (int)(ixWidthImg * ixpos / CGV_HSCROLL_RANGE);
+		int iy0img = pCenter.y - (int)(iyWidthImg * iypos / CGV_VSCROLL_RANGE);
 		pntRedTo.x = (int)((point.x - ix0img) / rMagnify);
 		pntRedTo.y = (int)((point.y - iy0img) / rMagnify);
 		InvalidateRect(NULL, FALSE);
@@ -741,9 +744,9 @@ void CGazoView::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
 	int ipos = GetScrollPos(SB_VERT);
 	switch (nSBCode) {
 		case SB_LINEDOWN: {}
-		case SB_PAGEDOWN: {ipos++; break;}
+		case SB_PAGEDOWN: {ipos+= CGV_VSCROLL_RANGE/100; break;}
 		case SB_LINEUP: {}
-		case SB_PAGEUP: {ipos--; break;}
+		case SB_PAGEUP: {ipos-= CGV_VSCROLL_RANGE/100; break;}
 		case SB_THUMBTRACK: {}
 		case SB_THUMBPOSITION: {ipos = nPos; break;}
 		case SB_ENDSCROLL: {break;}
@@ -767,9 +770,9 @@ void CGazoView::OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
 	int ipos = GetScrollPos(SB_HORZ);
 	switch (nSBCode) {
 		case SB_LINERIGHT: {}
-		case SB_PAGERIGHT: {ipos++; break;}
+		case SB_PAGERIGHT: {ipos+= CGV_HSCROLL_RANGE/100; break;}
 		case SB_LINELEFT: {}
-		case SB_PAGELEFT: {ipos--; break;}
+		case SB_PAGELEFT: {ipos-= CGV_HSCROLL_RANGE/100; break;}
 		case SB_THUMBTRACK: {}
 		case SB_THUMBPOSITION: {ipos = nPos; break;}
 		case SB_ENDSCROLL: {break;}
@@ -808,8 +811,8 @@ void CGazoView::OnLButtonDown(UINT nFlags, CPoint point)
 			int iypos = GetScrollPos(SB_VERT);
 			int ixWidthImg = (int)(ixdim * rMagnify);
 			int iyWidthImg = (int)(iydim * rMagnify);
-			int ix0img = pCenter.x - (int)(ixWidthImg * ixpos / 100);
-			int iy0img = pCenter.y - (int)(iyWidthImg * iypos / 100);
+			int ix0img = pCenter.x - (int)(ixWidthImg * ixpos / CGV_HSCROLL_RANGE);
+			int iy0img = pCenter.y - (int)(iyWidthImg * iypos / CGV_VSCROLL_RANGE);
 			CPoint pnt;
 			pnt.x = (int)((point.x - ix0img) / rMagnify);
 			pnt.y = (int)((point.y - iy0img) / rMagnify);
@@ -843,8 +846,8 @@ void CGazoView::OnLButtonDown(UINT nFlags, CPoint point)
 				int iypos = GetScrollPos(SB_VERT);
 				int ixWidthImg = (int)(ixdim * rMagnify);
 				int iyWidthImg = (int)(iydim * rMagnify);
-				int ix0img = pCenter.x - (int)(ixWidthImg * ixpos / 100);
-				int iy0img = pCenter.y - (int)(iyWidthImg * iypos / 100);
+				int ix0img = pCenter.x - (int)(ixWidthImg * ixpos / CGV_HSCROLL_RANGE);
+				int iy0img = pCenter.y - (int)(iyWidthImg * iypos / CGV_VSCROLL_RANGE);
 				bBoxMove = true;
 				pntLButton = CPoint((int)(iBoxCentX * rMagnify + ix0img), 
 									(int)(iBoxCentY * rMagnify + iy0img)) - point;
@@ -884,8 +887,8 @@ void CGazoView::OnLButtonDown(UINT nFlags, CPoint point)
 			int iypos = GetScrollPos(SB_VERT);
 			int ixWidthImg = (int)(ixdim * rMagnify);
 			int iyWidthImg = (int)(iydim * rMagnify);
-			int ix0img = pCenter.x - (int)(ixWidthImg * ixpos / 100);
-			int iy0img = pCenter.y - (int)(iyWidthImg * iypos / 100);
+			int ix0img = pCenter.x - (int)(ixWidthImg * ixpos / CGV_HSCROLL_RANGE);
+			int iy0img = pCenter.y - (int)(iyWidthImg * iypos / CGV_VSCROLL_RANGE);
 			iBoxSizeX = 1;
 			iBoxSizeY = 1;
 			iBoxAngle = 0;
@@ -966,6 +969,38 @@ BOOL CGazoView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 			InvalidateRect(NULL, FALSE);
 			//CView::OnVScroll(nSBCode, nPos, pScrollBar);
 		}*/
+		//190628==>
+		TReal rMagnify = iMagnify;
+		if (rMagnify < 1) rMagnify = 1.0 / (2 - rMagnify);
+		CRect rect;
+		GetClientRect(&rect);
+		CPoint pCenter = rect.CenterPoint();
+		int ixpos = GetScrollPos(SB_HORZ);
+		int iypos = GetScrollPos(SB_VERT);
+		double dx0img = pCenter.x - ixdim * rMagnify * ixpos / CGV_HSCROLL_RANGE;
+		double dy0img = pCenter.y - iydim * rMagnify * iypos / CGV_VSCROLL_RANGE;
+		const double dConstX = (pntMouse.x - dx0img) / (ixdim * rMagnify);
+		const double dConstY = (pntMouse.y - dy0img) / (iydim * rMagnify);
+		int iMagnifyNext = iMagnify;
+		bool bScroll = true;
+		if (zDelta < 0) {
+			iMagnifyNext--;
+			if (iMagnifyNext < -100) {iMagnifyNext = -100; bScroll = false;}
+		} else if (zDelta > 0) {
+			iMagnifyNext++;
+			TReal rMagnifyNext = iMagnifyNext;
+			if (rMagnifyNext < 1) rMagnifyNext = 1.0 / (2 - rMagnifyNext);
+			if (((int)(ixdim * rMagnifyNext) > 32767) || ((int)(iydim * rMagnifyNext) > 32767)) { iMagnifyNext--; bScroll = false; }
+		}
+		if (bScroll) {
+			rMagnify = iMagnifyNext;
+			if (rMagnify < 1) rMagnify = 1.0 / (2 - rMagnify);
+			ixpos = (int)(((double)(pCenter.x - pntMouse.x) / (ixdim * rMagnify) + dConstX) * CGV_HSCROLL_RANGE + 0.5);
+			iypos = (int)(((double)(pCenter.y - pntMouse.y) / (iydim * rMagnify) + dConstY) * CGV_VSCROLL_RANGE + 0.5);
+			SetScrollPos(SB_HORZ, ixpos);
+			SetScrollPos(SB_VERT, iypos);
+		}
+		//==>190628
 		if (zDelta < 0) OnToolbarMin();
 		else if (zDelta > 0) OnToolbarMag();
 	}
@@ -991,8 +1026,8 @@ void CGazoView::OnRButtonDown(UINT nFlags, CPoint point)
 	int iypos = GetScrollPos(SB_VERT);
 	int ixWidthImg = (int)(ixdim * rMagnify);
 	int iyWidthImg = (int)(iydim * rMagnify);
-	int ix0img = pCenter.x - (int)(ixWidthImg * ixpos / 100);
-	int iy0img = pCenter.y - (int)(iyWidthImg * iypos / 100);
+	int ix0img = pCenter.x - (int)(ixWidthImg * ixpos / CGV_HSCROLL_RANGE);
+	int iy0img = pCenter.y - (int)(iyWidthImg * iypos / CGV_VSCROLL_RANGE);
 	pntRedFrom.x = (int)((point.x - ix0img) / rMagnify);
 	pntRedFrom.y = (int)((point.y - iy0img) / rMagnify);
 	pntRedTo = pntRedFrom;
@@ -1038,7 +1073,7 @@ void CGazoView::OnAnalysisPolygonlasso()//180425
 		bPolygonEnabled = true;
 		if (bBoxEnabled) {
 			InitPolygon(iBoxCentX, iBoxCentY, iBoxSizeX, iBoxSizeY);
-			bBoxEnabled = false;
+			//190628 bBoxEnabled = false;
 		}
 		if (!dlgPolygon.m_hWnd) dlgPolygon.Create(IDD_POLYGON);
 		if (dlgPolygon.IsWindowVisible()) dlgPolygon.SetForegroundWindow();
@@ -1091,4 +1126,14 @@ bool CGazoView::PointInPolygon(CPoint point) {//image coords
 //		}
 //	}
 //	return (icount & 0x01);
+}
+
+
+void CGazoView::OnInitialUpdate()
+{//190628
+	CView::OnInitialUpdate();
+
+	// TODO: ここに特定なコードを追加するか、もしくは基底クラスを呼び出してください。
+	SetScrollRange(SB_HORZ, 0, CGV_HSCROLL_RANGE);
+	SetScrollRange(SB_VERT, 0, CGV_VSCROLL_RANGE);
 }

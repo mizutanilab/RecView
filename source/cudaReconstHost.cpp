@@ -639,8 +639,22 @@ void CudaReconstHost(RECONST_INFO* ri, int idev, bool bReport, bool bEnStream) {
 	//reset slice
 	//cudaStream_t stream1, stream2;
 	if (bEnStream) {//190529
-		if (ri->stream1 == NULL) cudaStreamCreate(&(ri->stream1));
-		if (ri->stream2 == NULL) cudaStreamCreate(&(ri->stream2));
+		//if (ri->stream1 == NULL) cudaStreamCreate(&(ri->stream1));
+		//if (ri->stream2 == NULL) cudaStreamCreate(&(ri->stream2));
+		//190707===>
+		cudaError_t cuerr1 = cudaSuccess;
+		cudaError_t cuerr2 = cudaSuccess;
+		if (ri->stream1 == NULL) cuerr1 = cudaStreamCreate(&(ri->stream1));
+		if (ri->stream2 == NULL) cuerr2 = cudaStreamCreate(&(ri->stream2));
+		if ((cuerr1 != cudaSuccess) || (cuerr2 != cudaSuccess)) {
+			if (cuerr1 == cudaSuccess) cudaStreamDestroy(ri->stream1);
+			if (cuerr2 == cudaSuccess) cudaStreamDestroy(ri->stream2);
+			ri->stream1 = NULL;
+			ri->stream2 = NULL;
+			bEnStream = false;
+			error.Log(28807);
+		}
+		//===>190707
 	}
 	cudaStream_t *pCurrentStream = &(ri->stream1);
 	if (cudaSuccess != cudaMemsetAsync(ri->d_ifp, 0, mem_size_ifp, (bDeconv && bEnStream) ? ri->stream1 : cudaStreamDefault)) error.Log(28806);

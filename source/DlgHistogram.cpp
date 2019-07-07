@@ -829,14 +829,19 @@ void CDlgHistogram::OnBnClickedHistgEnpolygon()
 {
 	UpdateData();
 	EnableCtrl();
-	UpdateView();
+	//190628 UpdateView();
 	if (m_bEnablePolygon) {
 		POSITION pos = pd->GetFirstViewPosition();
 		while (pos != NULL) {
 			CGazoView* pv = (CGazoView*) pd->GetNextView( pos );
 			if (pv) {
-				if (pv->dlgPolygon.sPolygonList.IsEmpty()) AfxMessageBox("No polygon data stored");
+				//190628
+				if (!(pv->dlgPolygon.m_hWnd)) pv->dlgPolygon.Create(IDD_POLYGON);
+				pv->dlgPolygon.ShowWindow(SW_SHOW); 
+				pv->dlgPolygon.UpdateCurrentPolygon();
+				//190628 if (pv->dlgPolygon.sPolygonList.IsEmpty()) AfxMessageBox("No polygon data stored");
 			}
 		}
 	}
+	UpdateView();
 }
