@@ -464,6 +464,7 @@ void CDlgReconst::OnCancel()
 	iContext = CDLGRECONST_CONTEXT_NONE;
 	//delete GPU memory if any 190107
 	pd->GPUMemFree();
+	//190708 pd->GPUMemFree(CDLGPROPERTY_PROCTYPE_ND, true);
 	//CGazoApp* pApp = (CGazoApp*)AfxGetApp();
 	//if (pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_CUDA) {
 	//	int nCPU = (int)(pApp->dlgProperty.iCUDA);

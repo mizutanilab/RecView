@@ -15,6 +15,7 @@
 //Host routine
 extern "C" void CudaReconstHost(RECONST_INFO* ri, int idev, bool bReport, bool bEnStream);
 extern "C" void CudaReconstMemFree(RECONST_INFO* ri);
+extern "C" void CudaReconstResourceFree(RECONST_INFO* ri, bool bCudaDeviceReset);//190710
 extern "C" void CudaReconstHostFFT(RECONST_INFO* ri, int idev, bool bReport);
 extern "C" int GetCudaDeviceCount(int iMinComputeCapability);
 extern "C" int GetCudaMaxThreadsPerBlock(int iDevice);
@@ -53,6 +54,9 @@ extern "C"
 void CudaLsqfit(short* d_ref, short* d_qry, int ixref, int iyref, int ixqry, int iyqry,
 					int ix, int iy, unsigned __int64* d_result);
 
+
+extern "C" cudaError_t CUDA_MALLOC_HOST_INT(int** ptr, size_t size);//190710
+extern "C" cudaError_t CUDA_FREE_HOST(void* ptr);
 
 //struct SCmplx {
 //	float re;

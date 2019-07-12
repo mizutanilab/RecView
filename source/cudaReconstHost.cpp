@@ -177,6 +177,21 @@ void CudaReconstMemFree(RECONST_INFO* ri) {
 #endif
 }
 
+void CudaReconstResourceFree(RECONST_INFO* ri, bool bCudaDeviceReset) {//190710
+	cudaSetDevice(ri->iStartSino);
+	if (ri->stream1) { cudaStreamDestroy(ri->stream1); ri->stream1 = NULL; }//190529
+	if (ri->stream2) { cudaStreamDestroy(ri->stream2); ri->stream2 = NULL; }//190529
+	CudaReconstMemFree(ri);
+	if (bCudaDeviceReset) {//190708
+		cudaDeviceSynchronize();
+		cudaDeviceReset();
+	}
+}
+
+cudaError_t CUDA_MALLOC_HOST_INT(int** ptr, size_t size) {return cudaMallocHost(ptr, size);}//190710
+
+cudaError_t CUDA_FREE_HOST(void* ptr) { return cudaFreeHost(ptr); }//190710
+
 #ifdef CUDAFFT
 void CudaReconstHostFFT(RECONST_INFO* ri, int idev, bool bReport) {
 	if (cudaSuccess != cudaSetDevice( idev )) {

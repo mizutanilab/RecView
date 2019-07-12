@@ -29,14 +29,26 @@
 
 //CUDA declaration
 #include "cudaReconst.h"
-#ifdef _WIN64
-#include <cuda_runtime.h>
-#else
-extern "C" cudaError_t cudaFreeHost(void* ptr);//190110
-extern "C" cudaError_t cudaHostAlloc(void** ptr, size_t size, unsigned int flags);//190110
-extern "C" cudaError_t cudaMallocHost(int** ptr, size_t size);
-extern "C" cudaError_t cudaStreamDestroy(cudaStream_t stream);//190707
-#endif
+//#ifdef _MSC_VER
+//	#if _MSC_VER >=1910 //VS2017 or later
+//		#ifdef _WIN64
+//			#include <cuda_runtime.h>
+//		#else
+//			extern "C" cudaError_t cudaFreeHost(void* ptr);//190110
+//			extern "C" cudaError_t cudaHostAlloc(void** ptr, size_t size, unsigned int flags);//190110
+//			extern "C" cudaError_t cudaMallocHost(int** ptr, size_t size);
+//			extern "C" cudaError_t cudaStreamDestroy(cudaStream_t stream);//190707
+//			extern "C" cudaError_t cudaSetDevice(int device);//190710
+//			extern "C" cudaError_t cudaDeviceSynchronize(void);
+//			extern "C" cudaError_t cudaDeviceReset(void);
+//		#endif
+//	#else
+//		#include <cuda_runtime.h>
+//	#endif
+//#else
+//	#include <cuda_runtime.h>
+//#endif
+
 //OpenCL
 #include "clReconst.h"
 
@@ -114,6 +126,8 @@ ON_COMMAND(IDM_TOMO_HORIZCENT, &CGazoDoc::OnTomoHorizcent)
 	ON_COMMAND(ID_ANALYSIS_RADIALPROFILE, &CGazoDoc::OnAnalysisRadialprofile)
 	ON_COMMAND(ID_TOOLBAR_HISTG, &CGazoDoc::OnTomoHistg)
 	ON_UPDATE_COMMAND_UI(ID_TOOLBAR_HISTG, &CGazoDoc::OnUpdateTomoHistg)
+	ON_COMMAND(ID_ANALYSIS_SUBTRACT, &CGazoDoc::OnAnalysisSubtract)
+	ON_UPDATE_COMMAND_UI(ID_ANALYSIS_SUBTRACT, &CGazoDoc::OnUpdateAnalysisSubtract)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -280,15 +294,21 @@ void CGazoDoc::DeleteAll()
 	//}
 }
 
-void CGazoDoc::GPUMemFree(int iProcessorType) {
+void CGazoDoc::GPUMemFree(int iProcessorType, bool bCudaDeviceReset) {
 	CGazoApp* pApp = (CGazoApp*)AfxGetApp();
 	iProcessorType = (iProcessorType == CDLGPROPERTY_PROCTYPE_ND) ? pApp->dlgProperty.m_ProcessorType : iProcessorType;
 	if (iProcessorType == CDLGPROPERTY_PROCTYPE_CUDA) {
 		int nCPU = (int)(pApp->dlgProperty.iCUDA);
 		for (int i = 0; i < nCPU; i++) { 
-			if (ri[i].stream1) { cudaStreamDestroy(ri[i].stream1); ri[i].stream1 = NULL; }//190529
-			if (ri[i].stream2) { cudaStreamDestroy(ri[i].stream2); ri[i].stream2 = NULL; }//190529
-			CudaReconstMemFree(&(ri[i]));
+			CudaReconstResourceFree(&(ri[i]), bCudaDeviceReset);//190710
+			//if (ri[i].stream1) { cudaStreamDestroy(ri[i].stream1); ri[i].stream1 = NULL; }//190529
+			//if (ri[i].stream2) { cudaStreamDestroy(ri[i].stream2); ri[i].stream2 = NULL; }//190529
+			//CudaReconstMemFree(&(ri[i]));
+			//if (bCudaDeviceReset) {//190708
+			//	cudaSetDevice(ri[i].iStartSino);
+			//	cudaDeviceSynchronize();
+			//	cudaDeviceReset();
+			//}
 		}
 	}
 	else if (iProcessorType == CDLGPROPERTY_PROCTYPE_ATISTREAM) {
@@ -1748,7 +1768,7 @@ TErr CGazoDoc::BatchReconst(RECONST_QUEUE* rq) {
 	}
 	pf->m_wndStatusBar.SetPaneText(0, "Ready");
 	//100515==> delete GPU Memory if any
-	GPUMemFree();
+	GPUMemFree(CDLGPROPERTY_PROCTYPE_ND, true);
 	//if (pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_CUDA) {
 	//	int nCPU = (int)(pApp->dlgProperty.iCUDA);
 	//	for (int i=0; i<nCPU; i++) {CudaReconstMemFree(&(ri[i]));}
@@ -3597,20 +3617,20 @@ TErr CGazoDoc::DeconvBackProj(RECONST_QUEUE* rq, double center, int iMultiplex, 
 			try {
 				ppiReconst = new int*[nCPU - 1];
 				for (int i = 0; i < nCPU - 1; i++) {
-					if (cudaMallocHost(&(ppiReconst[i]), maxReconst * sizeof(int)) != cudaSuccess) AfxThrowMemoryException();
+					if (CUDA_MALLOC_HOST_INT(&(ppiReconst[i]), maxReconst * sizeof(int)) != cudaSuccess) AfxThrowMemoryException();
 					memset(ppiReconst[i], 0, sizeof(int) * maxReconst);
 				}
 			}
 			catch (CException* e) {
 				e->Delete();
 				if (ppiReconst) {
-					for (int i = 0; i < nCPU - 1; i++) { if (ppiReconst[i]) cudaFreeHost(ppiReconst[i]); }
+					for (int i = 0; i < nCPU - 1; i++) { if (ppiReconst[i]) CUDA_FREE_HOST(ppiReconst[i]); }
 					delete[] ppiReconst;
 				}
 				return 21023;
 			}
 		} else {//(pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_CUDA)
-			//190707==>uncommented ??why this setion was commented out??
+			//190707==>uncommented, though each thread calculates separate iy0-iy1 section.
 			try {
 				ppiReconst = new int*[nCPU - 1];
 				for (int i = 0; i < nCPU - 1; i++) {
@@ -3679,7 +3699,7 @@ TErr CGazoDoc::DeconvBackProj(RECONST_QUEUE* rq, double center, int iMultiplex, 
 		if ((i >= 1) && ppiReconst) {
 			if (ppiReconst[i-1]) {
 				for (int j = 0; j < maxReconst; j++) { iReconst[j] += (ppiReconst[i-1])[j]; }
-				if (pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_CUDA) cudaFreeHost(ppiReconst[i-1]);
+				if (pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_CUDA) CUDA_FREE_HOST(ppiReconst[i-1]);
 				else delete[] ppiReconst[i - 1];
 			}
 		}
@@ -6202,3 +6222,88 @@ void CGazoDoc::OnUpdateMenuOverlay(CCmdUI *pCmdUI)
 	else pCmdUI->Enable(true);
 }
 
+
+
+void CGazoDoc::OnAnalysisSubtract()
+{//190708
+	CDocTemplate* pDocTemplate = GetDocTemplate();
+	if (!pDocTemplate) return;
+	POSITION pos = pDocTemplate->GetFirstDocPosition();
+	if (pos == NULL) return;
+	CGazoDoc* pd1 = NULL;
+	CString sdoc = "";
+	while (pd1 = (CGazoDoc*)pDocTemplate->GetNextDoc(pos)) {
+		if (pd1 != this) sdoc += pd1->GetTitle() + "\r\n";
+		if (pos == NULL) break;
+	}
+	if (sdoc.IsEmpty()) { AfxMessageBox("Open image first"); return; }
+	CDlgFrameList dlg;
+	dlg.m_sDocList = sdoc;
+	if (dlg.DoModal() == IDCANCEL) return;
+	if (dlg.iDocPos < 0) { AfxMessageBox("No image selected"); return; }
+	pos = pDocTemplate->GetFirstDocPosition();
+	if (pos == NULL) {AfxMessageBox("No images opened"); return;}
+	pd1 = NULL;
+	int i = 0;
+	while (pd1 = (CGazoDoc*)pDocTemplate->GetNextDoc(pos)) {
+		if (pd1 != this) {
+			if (i == dlg.iDocPos) break;
+		}
+		if (pos == NULL) break;
+		i++;
+	}
+	if (pd1 == NULL) { AfxMessageBox("No such image found"); return; }
+	if ((ixdim != pd1->ixdim)||(iydim != pd1->iydim)) { AfxMessageBox("Image size does not match"); return; }
+	if (bColor != pd1->bColor) { AfxMessageBox("Color mode does not match"); return; }
+	//prepare window
+	CGazoView* pcv = (CGazoView*)(((CGazoApp*)AfxGetApp())->RequestNew());
+	CGazoDoc* pcd = pcv->GetDocument();
+	try {
+		pcd->pPixel = new int[ixdim * iydim];
+	}
+	catch (CException* e) {
+		if (pcd->pPixel) { delete[] pcd->pPixel; pcd->pPixel = NULL; }
+		e->Delete();
+		return;
+	}
+	pcd->maxPixel = ixdim * iydim;
+	pcd->ixdim = ixdim;
+	pcd->iydim = iydim;
+	pcd->parentDoc = this;
+	pcd->SetModifiedFlag(TRUE);
+	pcd->pixBase = pixBase;
+	pcd->pixDiv = pixDiv;
+	pcd->fCenter = fCenter;
+	pcd->SetTitle("Calculating..");
+	pcd->bColor = bColor;
+	//subtract
+	const int kmax = bColor ? 3 : 1;
+	for (int k = 0; k < kmax; k++) {
+		for (int i = 0; i < ixdim; i++) {
+			for (int j = 0; j < iydim; j++) {
+				if (bColor) {
+					int ipix0 = (pPixel[i + j * ixdim] >> (k*8)) & 0xff;
+					int ipix1 = (pd1->pPixel[i + j * ixdim] >> (k * 8)) & 0xff;
+					pcd->pPixel[i + j * ixdim] |= ((ipix0 - ipix1) << (k * 8));
+				} else {
+					pcd->pPixel[i + j * ixdim] = pPixel[i + j * ixdim] - pd1->pPixel[i + j * ixdim];
+				}
+			}
+		}
+	}
+	//show
+	pcd->UpdateView(/*bInit=*/true);
+	CString title;
+	title.Format("{%s} - {%s}", GetTitle(), pd1->GetTitle());
+	pcd->SetTitle(title);
+	pcd->dataPath = dataPath;
+	pcd->dataPrefix = dataPrefix;
+	//
+	return;
+}
+
+
+void CGazoDoc::OnUpdateAnalysisSubtract(CCmdUI *pCmdUI)
+{//190708
+	// TODO:ここにコマンド更新 UI ハンドラー コードを追加します。
+}

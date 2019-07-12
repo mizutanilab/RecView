@@ -11,6 +11,7 @@ extern "C" TErr CudaReconstMemAlloc(RECONST_INFO* ri, int idev) {
 
 extern "C" void CudaReconstMemFree(RECONST_INFO* ri) {
 }
+extern "C" void CudaReconstResourceFree(RECONST_INFO* ri, bool bCudaDeviceReset) {}//190710
 
 extern "C" void CudaReconstHostFFT(RECONST_INFO* ri, int idev, bool bReport) {
 }
@@ -61,10 +62,17 @@ extern "C" int GetCudaClockRate(int iDevice, int* piClockRate) {
 	return CUDA_ERROR_DEVICE_GETPROPERTY;
 }
 
-extern "C" cudaError_t cudaFreeHost(void* ptr) { return cudaSuccess; }//190108
+//extern "C" cudaError_t cudaFreeHost(void* ptr) { return cudaSuccess; }//190108
 
-extern "C" cudaError_t cudaHostAlloc(void** ptr, size_t size, unsigned int flags) { return cudaSuccess; }//190108
+//extern "C" cudaError_t cudaHostAlloc(void** ptr, size_t size, unsigned int flags) { return cudaSuccess; }//190108
 
-extern "C" cudaError_t cudaMallocHost(int** ptr, size_t size) { return cudaSuccess; }//190110
+//extern "C" cudaError_t cudaMallocHost(int** ptr, size_t size) { return cudaSuccess; }//190110
 
-extern "C" cudaError_t cudaStreamDestroy(cudaStream_t stream) { return cudaSuccess; }//190707
+//extern "C" cudaError_t cudaStreamDestroy(cudaStream_t stream) { return cudaSuccess; }//190707
+
+//extern "C" cudaError_t cudaSetDevice(int device) { return cudaSuccess; };//190710
+//extern "C" cudaError_t cudaDeviceSynchronize(void) { return cudaSuccess; };
+//extern "C" cudaError_t cudaDeviceReset(void) { return cudaSuccess; };
+
+extern "C" cudaError_t CUDA_MALLOC_HOST_INT(int** ptr, size_t size) { return cudaSuccess; }//190710
+extern "C" cudaError_t CUDA_FREE_HOST(void* ptr) { return cudaSuccess; }//190710

@@ -210,6 +210,7 @@ BEGIN
         MENUITEM "Show Fourier transform",      IDM_TOMO_FOURIER
         MENUITEM "PSF convolution...",          ID_TOMOGRAPHY_GAUSSIANCONVOLUTION
         MENUITEM "Add noise...",                ID_ANALYSIS_ADDNOISE
+        MENUITEM "Subtract...",                 ID_ANALYSIS_SUBTRACT
         MENUITEM "Overlay...",                  32821
         MENUITEM "Enlarge/reduce..",            ID_ANALYSIS_ENLARGE
         MENUITEM "Radial profile...",           ID_ANALYSIS_RADIALPROFILE

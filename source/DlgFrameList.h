@@ -28,6 +28,8 @@ public:
 	CTreeCtrl m_treeFrames;
 	CGazoDoc* pd;
 	CString m_sFramesToExclude;
+	CString m_sDocList;//190708
+	int iDocPos;//190708
 	int* m_piRevList;
 	__int64 m_lHDF5DataSize[3];
 	virtual BOOL OnInitDialog();

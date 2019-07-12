@@ -21,6 +21,8 @@ CDlgFrameList::CDlgFrameList(CWnd* pParent /*=NULL*/)
 	m_lHDF5DataSize[1] = 0;
 	m_lHDF5DataSize[2] = 0;
 	m_dwSelectedFrame = 0;
+	m_sDocList.Empty();//190708
+	iDocPos = -1;//190708
 }
 
 CDlgFrameList::~CDlgFrameList()
@@ -249,6 +251,18 @@ BOOL CDlgFrameList::OnInitDialog()
 				m_treeFrames.SetCheck(hItem, bCheck);
 			}
 		}
+	} else if (!m_sDocList.IsEmpty()) {//190708
+		int ipos = 0, i = 0;
+		HTREEITEM hItem;
+		for (;;) {
+			CString sItem = m_sDocList.Tokenize(_T("\r\n"), ipos);
+			if (sItem.IsEmpty()) break;
+			hItem = m_treeFrames.InsertItem(sItem);
+			m_treeFrames.SetItemData(hItem, i);
+			m_treeFrames.SetCheck(hItem, FALSE);
+			i++;
+		}
+		this->SetWindowText("Select image");
 	}
 
 	return TRUE;  // return TRUE unless you set the focus to a control
@@ -324,6 +338,15 @@ void CDlgFrameList::OnOK()
 			}
 		}
 		if (pd->bDebug) AfxMessageBox(m_sFramesToExclude);
+	} else if (!m_sDocList.IsEmpty()) {//190708
+		HTREEITEM hItem = m_treeFrames.GetNextItem(TVGN_ROOT, TVGN_CHILD);
+		while (hItem) {
+			if (m_treeFrames.GetCheck(hItem)) {
+				iDocPos = m_treeFrames.GetItemData(hItem);
+				break;
+			}
+			hItem = m_treeFrames.GetNextItem(hItem, TVGN_NEXT);
+		}
 	}
 
 	CDialog::OnOK();

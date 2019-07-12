@@ -79,7 +79,7 @@ public:
 	void DeleteAll();
 	void InitAll();
 	void ClearAll();
-	void GPUMemFree(int iProcessorType = CDLGPROPERTY_PROCTYPE_ND);//190124
+	void GPUMemFree(int iProcessorType = CDLGPROPERTY_PROCTYPE_ND, bool bCudaDeviceReset = false);//190124
 	void GetDimension(int* ix, int* iy);
 	void SetDimension(int ix, int iy);
 	CString GetLogPath();
@@ -271,6 +271,8 @@ public:
 	afx_msg void OnUpdateMenuOverlay(CCmdUI *pCmdUI);
 	afx_msg void OnAnalysisEnlarge();
 	afx_msg void OnAnalysisRadialprofile();
+	afx_msg void OnAnalysisSubtract();
+	afx_msg void OnUpdateAnalysisSubtract(CCmdUI *pCmdUI);
 };
 
 /////////////////////////////////////////////////////////////////////////////

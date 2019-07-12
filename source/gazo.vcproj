@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="gazo"
+	Name="gazo2008"
 	ProjectGUID="{69E97353-E324-499E-9DDC-AB252A7BB6A5}"
 	RootNamespace="gazo"
 	Keyword="MFCProj"
@@ -296,7 +296,7 @@
 				OutputFile=".\Release/gazo.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="&quot;C:/ProgramData/NVIDIA Corporation/NVIDIA GPU Computing SDK/C/common/lib&quot;"
+				AdditionalLibraryDirectories=""
 				ProgramDatabaseFile=".\Release/gazo.pdb"
 				SubSystem="2"
 				RandomizedBaseAddress="1"
@@ -1539,6 +1539,24 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
+					Name="CUDA_Release|Win32"
+					>
+					<Tool
+						Name="Cudart Build Rule"
+						Arch1="20"
+						Arch2="30"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="CUDA_Release|x64"
+					>
+					<Tool
+						Name="Cudart Build Rule"
+						Arch1="20"
+						Arch2="30"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
 					Name="OpenCL_Release|Win32"
 					ExcludedFromBuild="true"
 					>
@@ -2476,7 +2494,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\projx32.asm"
+				RelativePath=".\projx32VS2008.asm"
 				>
 				<FileConfiguration
 					Name="Debug|x64"
@@ -2504,7 +2522,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\projx64.asm"
+				RelativePath=".\projx64VS2008.asm"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -2527,7 +2545,7 @@
 					>
 					<Tool
 						Name="VCCustomBuildTool"
-						CommandLine="ml64.exe /DWIN_X64 /Zi /c /Cp /Fl /Fo$(IntDir)\$(InputName).obj projx64.asm&#x0D;&#x0A;"
+						CommandLine="ml64.exe /DWIN_X64 /Zi /c /Cp /Fl /Fo$(IntDir)\$(InputName).obj projx64VS2008.asm&#x0D;&#x0A;"
 						Outputs="$(IntDir)\$(InputName).obj"
 					/>
 				</FileConfiguration>
@@ -2544,7 +2562,7 @@
 					>
 					<Tool
 						Name="VCCustomBuildTool"
-						CommandLine="ml64.exe /DWIN_X64 /Zi /c /Cp /Fl /Fo$(IntDir)\$(InputName).obj projx64.asm&#x0D;&#x0A;"
+						CommandLine="ml64.exe /DWIN_X64 /Zi /c /Cp /Fl /Fo$(IntDir)\$(InputName).obj projx64VS2008.asm&#x0D;&#x0A;"
 						Outputs="$(IntDir)\$(InputName).obj"
 					/>
 				</FileConfiguration>

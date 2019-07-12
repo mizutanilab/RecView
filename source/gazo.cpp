@@ -121,8 +121,12 @@ CGazoApp::CGazoApp()
 			bSIMD = true;
 	}
 	if (idmax >= 7) {
+#ifdef _MSC_VER
+#if _MSC_VER >=1910 //VS2017 or later
 		__cpuidex(CPUInfo, 7, 0);
 		if (CPUInfo[1] & (1 << 5)) bAVX2 = true;
+#endif
+#endif
 	}
 	sCPUname.Empty();
 	__cpuid(CPUInfo, 0x80000000);
@@ -165,7 +169,18 @@ CGazoApp::CGazoApp()
 	int iCUDAwarp = 32;
 	int iCUDAcount = 0;
 	sCudaGPUname.Empty();
-#ifdef _WIN64
+#ifdef _MSC_VER
+	#if _MSC_VER >=1910 //VS2017 or later
+		#ifdef _WIN64
+			#define GZ_USE_CUDA
+		#endif
+	#else
+		#define GZ_USE_CUDA
+	#endif
+#else
+	#define GZ_USE_CUDA
+#endif
+#ifdef GZ_USE_CUDA
 	//estimate CPU score
 	//struct _timeb tstruct; double tm0;
 	//_ftime_s(&tstruct);
