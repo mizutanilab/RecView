@@ -31,7 +31,8 @@ RecView is provided under the BSD 2-Clause License.
 </ul>
 
 ## Release notes
-The binary folder contains 64-bit (x64) and 32-bit (x86) executables complied using Visual Studio 2017 C++ and CUDA Toolkit 10.0. If your PC is running 64-bit Windows and has an NVIDIA Tesla, GeForce, or Quadro GPU processor with 'compute capability' of 3.0 or higher (Kepler or later), the reonstruction calculation can be executed on the GPU. The present version can also be compiled with Visual Studio 2008 and CUDA Toolkit 5.5 by using gazoVS2008.sln file. An x64CUDA executable built with VS2008 is available from the binary folder. This exe can run on GPUs with 'compute capability' of 2.0 (Fermi). The former version under the 'VS2008' folder will be removed soon. 
+The binary folder contains 64-bit (x64) and 32-bit (x86) executables complied using Visual Studio 2017 C++ and CUDA Toolkit 10.0. If your PC is running 64-bit Windows and has an NVIDIA Tesla, GeForce, or Quadro GPU processor with 'compute capability' of 3.0 or higher (Kepler or later), the reonstruction calculation can be executed on the GPU. <br>
+The present version can also be compiled with Visual Studio 2008 and CUDA Toolkit 5.5 by using gazoVS2008.sln file. An x64CUDA executable built with VS2008 is available from the binary folder. This exe can run on GPUs with 'compute capability' of 2.0 (Fermi). A CUDA executable for x86 platform can be built with VS2008. The former version under the 'VS2008' folder will be removed soon. 
 
 A test dataset in TIFF format is available from the binary folder. 
 
@@ -169,13 +170,13 @@ frame#      time(msec)     angle(deg) 0=flatfield/1=sample
         <LI>Another configuration 'CUDAFFT_Release' is also provided in the solution file. In this configuration, Fourier transform calculations in the deconvolution step can be executed on the GPU, though its elapsed time is comparable to that of the x86/x64 CPU. Dynamic link libraries ('cudart64_100.dll' and 'cufft64_100.dll') must be placed in the folder where the CUDAFFT executable is placed. The library files are available as part of the CUDA Toolkit.</LI>
       </UL><br>
   <LI><b>Tips to run on legacy GPUs.</b></LI>
-      <OL>
+      <UL>
          <LI>Use an executable built with VS2008 and CUDA Toolkit 5.5.</LI>
          <LI>Select the high performance mode (not the power saving mode) in the NVIDIA control panel and also in the Windows control panel.</LI>
          <LI><b>Clean-install</b> the latest NVIDIA driver. </LI>
          <LI>Disable screen saver. </LI>
          <LI>Set TdrDisplay and TdrDdiDisplay to 60 (0x3c) in DWORD (back up your system before change its registry).</LI>
-      </OL><br>
+      </UL><br>
 </OL>
 
 ## Contact
