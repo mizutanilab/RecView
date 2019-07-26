@@ -37,7 +37,7 @@ The present version can also be compiled with Visual Studio 2008 and CUDA Toolki
 A test dataset in TIFF format is available from the binary folder. 
 
 <UL>
-  <LI>Build-190713. A bugfix in multithreading. Some improved GUI functions were implemented. CUDA stream is now enabled by default.  The source code can now be compiled with Visual Studio 2008 and CUDA Toolkit 5.5.  
+  <LI>Build-190713. A bugfix in multithreading. Some improved GUI functions were implemented. CUDA stream is enabled by default.  The source code can now be compiled also by using Visual Studio 2008 and CUDA Toolkit 5.5.  
   <LI>Build-190530. A checkbox to enablie/disable CUDA stream pipelining was implemented in the Tomography-Computing config dialog.  
   <LI>Build-190118. CUDA routines were revised by using the 'stream' pipelining to parallelize the calculation. Performances are: 
     <UL>
