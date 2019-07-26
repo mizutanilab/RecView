@@ -37,8 +37,8 @@ The present version can also be compiled with Visual Studio 2008 and CUDA Toolki
 A test dataset in TIFF format is available from the binary folder. 
 
 <UL>
-  <LI>Build-190713. A bugfix in multithreading. Some improved GUI functions were implemented. CUDA stream is now enabled by default.  The source code can now be compiled with Visual Studio 2008 and CUDA Toolkit 5.5. For legacy GPUs, such as Kepler generation boards, we strongly recommed to use executable built with VS2008. 
-  <LI>Build-190530. A checkbox to enablie/disable CUDA stream pipelining was implemented in the Tomography-Computing config dialog. The default is disabled. This is because our legacy Quadro K4200 card causes driver errors repeatedly when used with the stream. 
+  <LI>Build-190713. A bugfix in multithreading. Some improved GUI functions were implemented. CUDA stream is now enabled by default.  The source code can now be compiled with Visual Studio 2008 and CUDA Toolkit 5.5.  
+  <LI>Build-190530. A checkbox to enablie/disable CUDA stream pipelining was implemented in the Tomography-Computing config dialog.  
   <LI>Build-190118. CUDA routines were revised by using the 'stream' pipelining to parallelize the calculation. Performances are: 
     <UL>
     <LI>Tau (Quadro K5000, 1536 cores, 706 MHz) = 0.130 nsec (0.98 sec for a 2048x2048 slice from 1800 projections)
@@ -168,14 +168,6 @@ frame#      time(msec)     angle(deg) 0=flatfield/1=sample
         <LI>If your local PC has NVIDIA GPU, download the latest GPU driver from the <a href="https://www.nvidia.co.jp/Download/index.aspx">NVIDIA driver site</a> and install. It is not recommended to update the driver using Device Manager of Windows Control Panel.</LI>
         <LI>Open Visual Studio solution file 'gazo.sln'. Choose your platform (x64 or Win32) and build configuration (Release or CUDA_Release) from the toolbar and generate executable from the 'Build' menu. You can find an .exe file under the 'x64' or 'Win32' folder. The recent CUDA Toolkit seems not compatible with the Win32 (x86) platform.</LI>
         <LI>Another configuration 'CUDAFFT_Release' is also provided in the solution file. In this configuration, Fourier transform calculations in the deconvolution step can be executed on the GPU, though its elapsed time is comparable to that of the x86/x64 CPU. Dynamic link libraries ('cudart64_100.dll' and 'cufft64_100.dll') must be placed in the folder where the CUDAFFT executable is placed. The library files are available as part of the CUDA Toolkit.</LI>
-      </UL><br>
-  <LI><b>Tips to run on legacy GPUs.</b></LI>
-      <UL>
-         <LI>Use an executable built with VS2008 and CUDA Toolkit 5.5.</LI>
-         <LI>Select the high performance mode (not the power saving mode) in the NVIDIA control panel and also in the Windows control panel.</LI>
-         <LI><b>Clean-install</b> the latest NVIDIA driver. </LI>
-         <LI>Disable screen saver. </LI>
-         <LI>Set TdrDisplay and TdrDdiDisplay to 60 (0x3c) in DWORD (back up your system before change its registry).</LI>
       </UL><br>
 </OL>
 
