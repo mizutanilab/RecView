@@ -49,7 +49,6 @@ void CDlgProperty::Init(int icpu, bool bsimd, bool bavx2,
 	iATIstreamUnitwork = iATIunitwork;
 	iATIstreamNwork = ATISTREAM_MAXWORK;
 	iATIstream = maxATIstream;
-	//090724 iMemory = 20;
 	switch (iProcessorType) {
 	case CDLGPROPERTY_PROCTYPE_CUDA: {m_ProcessorType = iProcessorType; break;}
 	case CDLGPROPERTY_PROCTYPE_ATISTREAM: {m_ProcessorType = iProcessorType; break;}
@@ -65,7 +64,9 @@ void CDlgProperty::Init(int icpu, bool bsimd, bool bavx2,
 	case CDLGPROPERTY_PROCTYPE_ATISTREAM: {m_EnReport = FALSE; break;}
 	default: {m_EnReport = TRUE; break;}
 	}
-	iMemory = 80;
+	//090724 iMemory = 20;
+	//190729 iMemory = 80;
+	iMemory = 40;
 }
 
 void CDlgProperty::DoDataExchange(CDataExchange* pDX)
@@ -263,7 +264,7 @@ void CDlgProperty::OnOK()
 		case 2: {iMemory = 40; break;}
 		case 3: {iMemory = 60; break;}
 		case 5: {iMemory = 100; break;}
-		default: {iMemory = 80;}
+		default: {iMemory = 40;}
 	}
 	iCPU = m_CPU.GetCurSel() + 1;
 	//
