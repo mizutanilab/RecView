@@ -183,6 +183,5 @@ Kitakaname 4-1-1, Hiratsuka, Kanagawa 259-1292, Japan
 E-mail ryuta(at)tokai.ac.jp  
 https://mizutanilab.github.io/<br>
 <A href="http://www.linkedin.com/pub/ryuta-mizutani/79/832/115">Linkedin</A> - 
-<A href="http://www.facebook.com/people/Ryuta-Mizutani/100005433369640">Facebook</A> - 
 <A href="http://www.youtube.com/user/mizutaniLab">YouTube</A>
 <BR>
