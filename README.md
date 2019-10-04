@@ -37,6 +37,7 @@ The present version can also be compiled with Visual Studio 2008 and CUDA Toolki
 A test dataset in TIFF format is available from the binary folder. 
 
 <UL>
+  <LI>Build-191001. A bugfix in the CUDA memory freeing routine. 
   <LI>Build-190729. Default memory usage in the Computing config dialog is now set to 40%. This minimizes memory paging and boosts the batch recon calculation. 
     <UL>
     <LI>Tau (Quadro P4000, 1792 cores, 1.48 GHz) = 0.161 nsec (1.22 sec for a 2048x2048 slice from 1800 projections)
