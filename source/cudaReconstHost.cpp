@@ -142,19 +142,35 @@ TErr CudaReconstMemAlloc(RECONST_INFO* ri, int idev) {
 void CudaReconstMemFree(RECONST_INFO* ri) {
 	cudaSetDevice( ri->iStartSino );//100515
 	//
-	if (ri->d_ifp != NULL) cudaFree(ri->d_ifp);
+	if (ri->d_ifp != NULL) {
+		if (cudaFree(ri->d_ifp) == cudaSuccess) {
+			ri->d_ifp = NULL;
+			ri->max_d_ifp = 0;
+			//AfxMessageBox("191001cudaSuccess1");
+		}
+	}
 	//130923 if (ri->d_ifp != NULL) cutilSafeCall(cudaFree(ri->d_ifp));
-	ri->d_ifp = NULL;
-	ri->max_d_ifp = 0;
-	if (ri->d_strip != NULL) cudaFree(ri->d_strip);
-	ri->d_strip = NULL;
-	ri->max_d_strip = 0;
-	if (ri->d_px != NULL) cudaFree(ri->d_px);
-	ri->d_px = NULL;
-	ri->max_d_px = 0;
-	if (ri->d_igp != NULL) cudaFree(ri->d_igp);
-	ri->d_igp = NULL;
- 	ri->max_d_igp = 0;
+	if (ri->d_strip != NULL) {
+		if (cudaFree(ri->d_strip) == cudaSuccess) {
+			ri->d_strip = NULL;
+			ri->max_d_strip = 0;
+			//AfxMessageBox("191001cudaSuccess2");
+		}
+	}
+	if (ri->d_px != NULL) {
+		if (cudaFree(ri->d_px) == cudaSuccess) {
+			ri->d_px = NULL;
+			ri->max_d_px = 0;
+			//AfxMessageBox("191001cudaSuccess3");
+		}
+	}
+	if (ri->d_igp != NULL) {
+		if (cudaFree(ri->d_igp) == cudaSuccess) {
+			ri->d_igp = NULL;
+			ri->max_d_igp = 0;
+			//AfxMessageBox("191001cudaSuccess4");
+		}
+	}
 //AfxMessageBox("CudaReconstMemFree190116");
 //	if (ri->h_igp != NULL) cudaFreeHost(ri->h_igp);
 //	ri->h_igp = NULL;
@@ -165,15 +181,24 @@ void CudaReconstMemFree(RECONST_INFO* ri) {
 //	ri->d_fsin = NULL;
 //	ri->max_d_fcos = 0;
 #ifdef CUDAFFT
-	if (ri->d_p != NULL) cudaFree(ri->d_p);
-	ri->d_p = NULL;
-	ri->max_d_p = 0;
-	if (ri->d_filt != NULL) cudaFree(ri->d_filt);
-	ri->d_filt = NULL;
-	ri->max_d_filt = 0;
-	if (ri->fftplan != NULL) cufftDestroy(ri->fftplan);
-	ri->fftplan = NULL;
-	ri->ifftdim = 0;
+	if (ri->d_p != NULL) {
+		if (cudaFree(ri->d_p) == cudaSuccess) {
+			ri->d_p = NULL;
+			ri->max_d_p = 0;
+		}
+	}
+	if (ri->d_filt != NULL) {
+		if (cudaFree(ri->d_filt) == cudaSuccess) {
+			ri->d_filt = NULL;
+			ri->max_d_filt = 0;
+		}
+	}
+	if (ri->fftplan != NULL) {
+		if (cufftDestroy(ri->fftplan) == CUFFT_SUCCESS) {
+			ri->fftplan = NULL;
+			ri->ifftdim = 0;
+		}
+	}
 #endif
 }
 

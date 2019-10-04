@@ -276,13 +276,17 @@ void CGazoDoc::DeleteAll()
 	if (dlgRefraction.m_hWnd) dlgRefraction.DestroyWindow();
 	if (dlgHist.m_hWnd) dlgHist.DestroyWindow();
 	if (dlgOverlay.m_hWnd) dlgOverlay.DestroyWindow();
+
+	GPUMemFree();//191001
+
 	InitAll();
+
 	//100515
 	//for (int i=0; i<MAX_CPU; i++) {
 	//	CudaReconstMemFree(&(ri[i]));
 	//}
 	//190107
-	GPUMemFree();
+	//191001 GPUMemFree();
 	//CGazoApp* pApp = (CGazoApp*)AfxGetApp();
 	//if (pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_CUDA) {
 	//	int nCPU = (int)(pApp->dlgProperty.iCUDA);
@@ -300,6 +304,8 @@ void CGazoDoc::GPUMemFree(int iProcessorType, bool bCudaDeviceReset) {
 	if (iProcessorType == CDLGPROPERTY_PROCTYPE_CUDA) {
 		int nCPU = (int)(pApp->dlgProperty.iCUDA);
 		for (int i = 0; i < nCPU; i++) { 
+			//CString line; line.Format("191001 CudaResourceFree %d %d %s", ri, i, bCudaDeviceReset ? "reset" : "no reset");
+			//AfxMessageBox(line);
 			CudaReconstResourceFree(&(ri[i]), bCudaDeviceReset);//190710
 			//if (ri[i].stream1) { cudaStreamDestroy(ri[i].stream1); ri[i].stream1 = NULL; }//190529
 			//if (ri[i].stream2) { cudaStreamDestroy(ri[i].stream2); ri[i].stream2 = NULL; }//190529
