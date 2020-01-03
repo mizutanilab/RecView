@@ -1,1 +1,0 @@
- --import %laneid,%ctaid,%nctaid,%smid,A7,%pm3,%pm2,%pm1,__CC-temp__0__,%pm0,%tid,%clock,%warpid,%ntid,%gridid --export _Z11projKernel8Piiiii,_Z11projKernel4Piiiii,_Z10filtKernelP6float2Pfi,_Z10intpKernelP6float2Psiiif,_Z15p2igpCopyKernelP6float2Piiif,_Z10sinoKernelPsS_S_if
