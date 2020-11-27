@@ -738,7 +738,48 @@ TErr CGazoApp::CalcAvgImage(CString path, CString* files, int nfiles) {
 
 void CGazoApp::OnTomoLsqfit()
 {
+	CString sPathName[] = { "", "" };
+	POSITION pos = GetFirstDocTemplatePosition();
+	while (pos) {
+		CDocTemplate* pTemplate = (CDocTemplate*)GetNextDocTemplate(pos);
+		POSITION pos2 = pTemplate->GetFirstDocPosition();
+		while (pos2) {
+			CDocument* pd;
+			if ((pd = pTemplate->GetNextDoc(pos2)) != NULL) {
+				if (sPathName[0].IsEmpty()) sPathName[0] = pd->GetPathName();
+				else if (sPathName[1].IsEmpty()) sPathName[1] = pd->GetPathName();
+				else break;
+			}
+		}
+	}
+	const int nframes = 20;
+	TCHAR path_buffer[_MAX_PATH];
+	TCHAR drive[_MAX_DRIVE]; TCHAR dir[_MAX_DIR]; TCHAR fnm[_MAX_FNAME]; TCHAR ext[_MAX_EXT];
+	for (int j = 0; j <= 1; j++) {
+		_stprintf_s(path_buffer, _MAX_PATH, sPathName[j]);
+		_tsplitpath_s(path_buffer, drive, _MAX_DRIVE, dir, _MAX_DIR, fnm, _MAX_FNAME, ext, _MAX_EXT);
+		CString sfnm = fnm;
+		CString sSuffix = sfnm.SpanExcluding("0123456789");
+		const int ifmt = sfnm.GetLength() - sSuffix.GetLength();
+		if (ifmt < 0) break;
+		CString fmt; fmt.Format("%s%%0%dd", sSuffix, ifmt);
+		int idx0 = atoi(sfnm.Mid(sSuffix.GetLength()));
+		sPathName[j].Empty();
+		for (int i = 0; i < nframes; i++) {
+			sfnm.Format(fmt, i + idx0);
+			_stprintf_s(fnm, _MAX_FNAME, sfnm);
+			_tmakepath_s(path_buffer, _MAX_PATH, drive, dir, fnm, ext);
+			sPathName[j] += path_buffer;
+			sPathName[j] += "\r\n";
+		}
+	}
+	AfxMessageBox(sPathName[0] + "\r\n-----\r\n" + sPathName[1]);
 	CDlgLsqfit dlg;
+	dlg.m_RefList = sPathName[0];
+	dlg.m_QryList = sPathName[1];
+	dlg.nRefFiles = nframes;
+	dlg.nQryFiles = nframes;
+	dlg.UpdateNfiles();
 	dlg.DoModal();
 }
 

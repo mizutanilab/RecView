@@ -208,6 +208,7 @@ private:
 	int m_iFlag;
 	CString m_sFramesToExclude;
 	__int64 m_lHDF5DataSize0;
+	CString m_sHisAvgFiles;//201125
 
 // 生成されたメッセージ マップ関数
 protected:

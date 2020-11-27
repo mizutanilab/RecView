@@ -232,7 +232,9 @@ void CudaReconstHostFFT(RECONST_INFO* ri, int idev, bool bReport) {
 	const int ixdimp = ixdim * iIntpDim;
 	const int imargin = 0;
 	const int igpdimx = (ixdimp + imargin * 2) * DBPT_GINTP;
-	const int intcenter = (int)(ri->center);
+	const int intcenter = (int)(fCenter);//201124
+	//201124 round center at 0.001 figure: center 1035.499955 caused an unexpected shift in cuda routine
+	//const int intcenter = (int)(ri->center);
 	int idim_ifp = ixdimp * ixdimp;
 	const unsigned int mem_size_ifp = sizeof(int) * idim_ifp;
 	const unsigned int mem_size_filt = sizeof(float) * ndim;
@@ -650,7 +652,9 @@ void CudaReconstHost(RECONST_INFO* ri, int idev, bool bReport, bool bEnStream) {
 	const int ipxdim = ixdimp * igpdimy;
 	const int ixdimh = ixdimp / 2;
 	const int ihoffset = ndim / 2 - 1 - ixdimh;
-	const int intcenter = (int)(ri->center);
+	const int intcenter = (int)(fCenter);//201124
+	//201124 round center at 0.001 figure: center 1035.499955 caused an unexpected shift in cuda routine
+	//const int intcenter = (int)(ri->center);
 	const bool bDeconv = ((ri->dReconFlags & RQFLAGS_SINOGRAMKEPT) == 0) || (ri->d_ifp == NULL) || (ri->max_d_ifp < mem_size_ifp);
 	//memory allocation
 	CCmplx* p = NULL;

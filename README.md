@@ -37,6 +37,7 @@ The present version can also be compiled with Visual Studio 2008 and CUDA Toolki
 A test dataset in TIFF format is available from the binary folder. 
 
 <UL>
+  <LI>Build-201127. Updates for 'syncreadout' format of the Hamamatsu camera and also for several other minor functional improvements. 
   <LI>Build-191001. A bugfix in the CUDA memory freeing routine. 
   <LI>Build-190729. Default memory usage in the Computing config dialog is now set to 40%. This minimizes memory paging and boosts the batch recon calculation. 
     <UL>

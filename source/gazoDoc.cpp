@@ -192,6 +192,7 @@ void CGazoDoc::ClearAll() {
 	bColor = false;
 	m_sFramesToExclude.Empty();
 	m_lHDF5DataSize0 = 0;
+	m_sHisAvgFiles.Empty();//201125
 }
 
 void CGazoDoc::InitAll() {
@@ -1696,6 +1697,8 @@ TErr CGazoDoc::BatchReconst(RECONST_QUEUE* rq) {
 				deltaCent = (fc2 - fc1) / (iy2 - iy1);
 				fc = fc1 + deltaCent * (i - iy1);
 			}
+			//201124 round center at 0.001 figure: center 1035.499955 caused an unexpected shift in cuda routine
+			//fc = round(fc * 1000.) * 0.001;
 			if ( err = GenerateSinogram(rq, i, fc, deltaCent, iMultiplex) ) {error.Log(err); return err;}
 			//if (dlgReconst.m_hWnd) dlgReconst.m_Progress.SetPos(iProgressEnd/2);
 			if (dlgReconst.iStatus == CDLGRECONST_STOP) {
@@ -1711,10 +1714,11 @@ TErr CGazoDoc::BatchReconst(RECONST_QUEUE* rq) {
 				if (iLayer + iBinning-1 > iydim-1) break;
 				if (iy1 == iy2) fc = fc1;
 				else fc = fc1 + (fc2 - fc1) * (iLayer - iy1) / (iy2 - iy1);
+				//201124 round center at 0.001 figure: center 1035.499955 caused an unexpected shift in cuda routine
+				//fc = round(fc * 1000.) * 0.001;
 				fn.Format(" layer %d center %.3f", iLayer, fc);
 				pf->m_wndStatusBar.SetPaneText(1, "Backprojection " + dataName + fn);
 				double tcpu = 0; float pixelBase = 0, pixelDiv = 1;
-				//161022 if ( err = DeconvBackProj(rq, fc, iMultiplex, j,//&ifp, &nifp, 
 				if ( err = DeconvBackProj(rq, fc, iMultiplex, j/iBinning, 
 											&numOfSampleSinogr, &tcpu, &pixelBase, &pixelDiv) ) {
 					error.Log(err);
@@ -2211,6 +2215,8 @@ TErr CGazoDoc::SetFramesToExclude() {
 		}
 	} else {
 		//dlgReconst.m_iDlgFL_SampleFrameStart = 1 because an averaged white frame is at the beginning
+		//201125 dummy frames in dark and flat series are not listed here but detected in DlgFrameList::OnInitDialog
+		//because the detection is not necessary for the recon calc (CalcAvgFromHis reads convList) but needed for consistent displaying in DlgFrameList
 		for (int i=0; i<(int)ipos; i++) {
 			if ((bInc[i] & CGAZODOC_BINC_SAMPLE)&&(fdeg[i] == fdegStart)) {dlgReconst.m_iDlgFL_SampleFrameStart = i; break;}
 		}
@@ -2291,6 +2297,7 @@ TErr CGazoDoc::SetConvList(CString sDataPath, CString sFilePrefix, CString sFile
 	//char cfname[20];
 	TErr err;
 	CString token[CGAZOAPP_CMD_MAXTOKEN];
+	m_sHisAvgFiles.Empty();//201125
 	while (stdioConv.ReadString(line)) {
 		if (line.IsEmpty()) continue;
 		const CString cmd = line.SpanExcluding("\t ");
@@ -2331,6 +2338,7 @@ TErr CGazoDoc::SetConvList(CString sDataPath, CString sFilePrefix, CString sFile
 				convList[idx] = "a " + token[narg-1];
 				err = CalcAvgFromHis(sDataPath, sFilePrefix + sFileSuffix, token, narg, iDatasetSel);
 				if (err) return err;
+				for (int i = 0; i < narg-1; i++) m_sHisAvgFiles += token[i] + " ";//201125
 				break;}
 			case CGAZOAPP_CMD_REN: {
 				convList[idx] = "r " + token[0].SpanExcluding(".").Mid(1);
@@ -2374,6 +2382,7 @@ TErr CGazoDoc::SetConvList(CString sDataPath, CString sFilePrefix, CString sFile
 		if (convList[i].IsEmpty()) return 21019;
 	}
 //	CString line2; line2.Format("%s\r\n%s\r\n%s\r\n%d", sDataPath, sFilePrefix, sFileSuffix, iDatasetSel); AfxMessageBox(line2);
+//	CString line2; line2.Format("201125 %s", m_sHisAvgFiles); AfxMessageBox(line2);
 	return 0;
 }
 
@@ -2420,6 +2429,7 @@ int CGazoDoc::CountFrameFromConvBat(CString sDataPath) {
 		CString line;
 		CString token;
 		int nframe = 0;
+		int maxframeno = 0;//201125
 		while (stdioConv.ReadString(line)) {
 			if (line.IsEmpty()) continue;
 			const CString cmd = line.SpanExcluding("\t ");
@@ -2431,8 +2441,11 @@ int CGazoDoc::CountFrameFromConvBat(CString sDataPath) {
 			while (!line.IsEmpty()) {
 				token = line.SpanExcluding("\t ");
 				if (token.IsEmpty()) break;
-				if (token.GetAt(0) == 'a') nframe++;
-				else if (token.SpanExcluding(".") == "dark") bDarkAvg = true;
+				if (token.GetAt(0) == 'a') {
+					nframe++;
+					int num = atoi(token.SpanExcluding(".").Mid(1));//201125
+					maxframeno = num > maxframeno ? num : maxframeno;//201125
+				} else if (token.SpanExcluding(".") == "dark") bDarkAvg = true;
 				line = line.Mid(token.GetLength());
 				line.TrimLeft();
 			}
@@ -2440,19 +2453,24 @@ int CGazoDoc::CountFrameFromConvBat(CString sDataPath) {
 		}
 		//120720 fclose(fconv);
 		stdioConv.Close();
-		iFramePerDataset = (nframe > 0) ? nframe : -1;
+		//201125 iFramePerDataset = (nframe > 0) ? nframe : -1;
+		iFramePerDataset = (maxframeno > 0) ? maxframeno : -1;
 	}
 	//141229 Get number of dataset
 	if ((maxHisFrame >= 0)&&(iFramePerDataset != 0)&&(iFramePerDataset - nDarkFrame != 0)&&(dlgReconst.m_nDataset <= 1)) {
-		if (maxHisFrame % iFramePerDataset == 0) {
+		//201125if (maxHisFrame % iFramePerDataset == 0) {
+		if ((maxHisFrame % iFramePerDataset) < ((maxHisFrame - nDarkFrame) % (iFramePerDataset - nDarkFrame))) {
 			dlgReconst.m_nDataset = maxHisFrame / iFramePerDataset;
+			iFramePerDataset = maxHisFrame / dlgReconst.m_nDataset;//201125 
 			nDarkFrame = 0;
-		} else if ((maxHisFrame - nDarkFrame) % (iFramePerDataset - nDarkFrame) == 0) {
+		//201125 } else if ((maxHisFrame - nDarkFrame) % (iFramePerDataset - nDarkFrame) == 0) {
+		} else {
 			dlgReconst.m_nDataset = (maxHisFrame - nDarkFrame) / (iFramePerDataset - nDarkFrame);
+			iFramePerDataset = (maxHisFrame - nDarkFrame) / dlgReconst.m_nDataset + nDarkFrame;//201125
 		}
 	}
-		//CString msg; msg.Format("nDataset:%d\r\nmaxHisFrame:%d\r\niFramePerDataset:%d\r\nnDarkFrame:%d", 
-		//	dlgReconst.m_nDataset, maxHisFrame, iFramePerDataset, nDarkFrame); AfxMessageBox(msg);
+	//CString msg; msg.Format("201125 nDataset:%d\r\nmaxHisFrame:%d\r\niFramePerDataset:%d\r\nnDarkFrame:%d", 
+	//		dlgReconst.m_nDataset, maxHisFrame, iFramePerDataset, nDarkFrame); AfxMessageBox(msg);
 	return iFramePerDataset;
 }
 
@@ -3564,6 +3582,8 @@ TErr CGazoDoc::DeconvBackProj(RECONST_QUEUE* rq, double center, int iMultiplex, 
 	//090213 const int ixdimp = ixdim * ipintp;
 	const int ixdimp = ixlen * ipintp;
 	const int ixdim2 = ixdimp * ixdimp;
+	//201124 round center at 0.001 figure: center 1035.499955 caused an unexpected shift in cuda routine
+	//center = round(center * 1000.) * 0.001;
 	if (rq->bOffsetCT) {
 		if (center <= rq->iRawSinoXdim / 2.) {
 			//center = rq->iSinoXdim - center - 1.5;//100212 Trimming not considered

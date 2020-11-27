@@ -7,6 +7,8 @@
 #include "cerror.h"
 #include "gazoDoc.h"
 #include "MainFrm.h"
+//201126
+#include "DlgGeneral.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -233,6 +235,8 @@ BEGIN_MESSAGE_MAP(CDlgQueue, CDialog)
 	ON_COMMAND(ID_POPUPQUEUE_DOWN, OnPopupqueueDown)
 	ON_BN_CLICKED(IDC_QUEUE_STOP, OnQueueStop)
 	ON_BN_CLICKED(IDC_QUEUE_FINAL, OnQueueFinal)
+	ON_COMMAND(ID_POPUPQUEUE_APPENDSTOP, OnPopupqueueAppendstop)
+	ON_COMMAND(ID_POPUPQUEUE_APPENDSLEEP, OnPopupqueueAppendsleep)
 	//}}AFX_MSG_MAP
 	ON_BN_CLICKED(IDC_QUEUE_PAUSE, &CDlgQueue::OnBnClickedQueuePause)
 END_MESSAGE_MAP()
@@ -425,6 +429,27 @@ void CDlgQueue::OnOK()
 			else lsqfitResult = pApp->Lsqfit(lq, NULL, this);
 			if (desc.Left(3) == "ND ") desc = desc.Mid(3);
 			m_QueueList.SetItemText(i, 2, lsqfitResult + " " + desc);
+		} else if (m_QueueList.GetItemText(i, 0) == "Stop") {//201126
+			m_QueueList.SetItemText(i, 1, "Finished");
+			break;
+		} else if (m_QueueList.GetItemText(i, 0) == "Sleep") {//201126
+			CString desc = m_QueueList.GetItemText(i, 2);
+			unsigned __int64 ullDur = m_QueueList.GetItemData(i);
+			CTime cTime = CTime::GetCurrentTime();
+			m_QueueList.SetItemText(i, 2, desc + cTime.Format(" started: %m/%d %H:%M:%S"));
+			const time_t tTime0 = cTime.GetTime();
+			unsigned __int64 ullDiff = 0;
+			do {
+				::ProcessMessage();
+				Sleep(10);
+				CTime ctCurr = CTime::GetCurrentTime();
+				ullDiff = (unsigned __int64)(ctCurr.GetTime() - tTime0);
+				if ((doc.dlgReconst.iStatus == CDLGRECONST_STOP)||(this->iStatus == CDLGQUEUE_STOP)) {
+					m_QueueList.SetItemText(i, 2, desc);
+					break;
+				}
+			} while (ullDiff < ullDur);
+			m_QueueList.SetItemText(i, 1, "Finished");
 		}
 		//status control
 		if (doc.dlgReconst.iStatus == CDLGRECONST_STOP) {
@@ -482,6 +507,7 @@ void CDlgQueue::OnRclickQueueList(NMHDR* pNMHDR, LRESULT* pResult)
 			iFirstHold = i; break;
 		}
 	}
+	//CString msg; msg.Format("201126 %d", iFirstHold); AfxMessageBox(msg);
 	bool bProcess = false, bFirst = false, bEnd = false;
 	POSITION pos = m_QueueList.GetFirstSelectedItemPosition();
 	while (pos) {
@@ -501,11 +527,15 @@ void CDlgQueue::OnRclickQueueList(NMHDR* pNMHDR, LRESULT* pResult)
 		pPopup->EnableMenuItem(ID_POPUPQUEUE_DEL, MF_BYCOMMAND | MF_GRAYED);
 		pPopup->EnableMenuItem(ID_POPUPQUEUE_UP, MF_BYCOMMAND | MF_GRAYED);
 		pPopup->EnableMenuItem(ID_POPUPQUEUE_DOWN, MF_BYCOMMAND | MF_GRAYED);
+		pPopup->EnableMenuItem(ID_POPUPQUEUE_APPENDSTOP, MF_BYCOMMAND | MF_GRAYED);//201126
+		pPopup->EnableMenuItem(ID_POPUPQUEUE_APPENDSLEEP, MF_BYCOMMAND | MF_GRAYED);//201126
 		if (iRclickedItem >= 0) {
 			if (!bProcess) {
 				pPopup->EnableMenuItem(ID_POPUPQUEUE_DEL, MF_BYCOMMAND | MF_ENABLED);
 				if (!bFirst) pPopup->EnableMenuItem(ID_POPUPQUEUE_UP, MF_BYCOMMAND | MF_ENABLED);
 				if (!bEnd) pPopup->EnableMenuItem(ID_POPUPQUEUE_DOWN, MF_BYCOMMAND | MF_ENABLED);
+				if (!bEnd) pPopup->EnableMenuItem(ID_POPUPQUEUE_APPENDSTOP, MF_BYCOMMAND | MF_ENABLED);//201126
+				if (!bEnd) pPopup->EnableMenuItem(ID_POPUPQUEUE_APPENDSLEEP, MF_BYCOMMAND | MF_ENABLED);//201126
 			}
 		}
 		pPopup->TrackPopupMenu(TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_LEFTBUTTON,
@@ -516,7 +546,75 @@ void CDlgQueue::OnRclickQueueList(NMHDR* pNMHDR, LRESULT* pResult)
 	*pResult = 0;
 }
 
-void CDlgQueue::OnPopupqueueDel() 
+void CDlgQueue::OnPopupqueueAppendstop() {//201126
+	const int nitem = m_QueueList.GetItemCount();
+	int ipos = nitem;
+	if (iRclickedItem >= 0) {
+		LVITEM item;
+		for (int i = nitem - 1; i >= 0; i--) {
+			item.iItem = i;
+			item.mask = LVIF_STATE;
+			item.stateMask = LVIS_SELECTED;
+			m_QueueList.GetItem(&item);
+			if (item.state & LVIS_SELECTED) {
+				ipos = i+1; break;
+			}
+		}
+	}
+	if (m_QueueList.InsertItem(ipos, "Stop") < 0) return;
+	if (!m_QueueList.SetItemData(ipos, 0)) return;
+	//CString desc;
+	//desc.Format("Stop");
+	if (!m_QueueList.SetItemText(ipos, 2, "")) return;
+	if (!m_QueueList.SetItemText(ipos, 1, "Hold")) return;
+	bIsSaved = false;
+	EnableCtrl();
+	//AfxMessageBox("Appendstop");
+}
+
+void CDlgQueue::OnPopupqueueAppendsleep() {//201126
+	const int nitem = m_QueueList.GetItemCount();
+	int ipos = nitem;
+	if (iRclickedItem >= 0) {
+		LVITEM item;
+		for (int i = nitem - 1; i >= 0; i--) {
+			item.iItem = i;
+			item.mask = LVIF_STATE;
+			item.stateMask = LVIS_SELECTED;
+			m_QueueList.GetItem(&item);
+			if (item.state & LVIS_SELECTED) {
+				ipos = i + 1; break;
+			}
+		}
+	}
+	CDlgGeneral dlg;
+	dlg.m_sCaption1 = "Duration (sec)";
+	dlg.m_sInput1 = "3600";
+	if (dlg.DoModal() == IDCANCEL) {
+		if (IsWindowVisible()) SetForegroundWindow();
+		else ShowWindow(SW_SHOW);
+		return;
+	}
+	const int idur = atoi(dlg.m_sInput1);
+	if (idur <= 0) return;
+	if (m_QueueList.InsertItem(ipos, "Sleep") < 0) return;
+	if (!m_QueueList.SetItemData(ipos, idur)) return;
+	CString desc;
+	const int isec = idur % 60;
+	int imin = idur / 60;
+	int ihour = imin / 60;
+	imin = imin % 60;
+	desc.Format("%d sec (%d:%d:%d)", idur, ihour, imin, isec);
+	if (!m_QueueList.SetItemText(ipos, 2, desc)) return;
+	if (!m_QueueList.SetItemText(ipos, 1, "Hold")) return;
+	bIsSaved = false;
+	EnableCtrl();
+	if (IsWindowVisible()) SetForegroundWindow();
+	else ShowWindow(SW_SHOW);
+	//AfxMessageBox("Appendstop");
+}
+
+void CDlgQueue::OnPopupqueueDel()
 {
 	if (iRclickedItem < 0) return;
 	if (AfxMessageBox("Delete selected queue(s)?", MB_OKCANCEL) == IDCANCEL) return;
@@ -597,6 +695,23 @@ void CDlgQueue::OnPopupqueueUp()
 				m_QueueList.DeleteItem(i);
 				InsertLsqfitItem(i-1, idata, status);
 				if (iDeletedItem < 0) iDeletedItem = i-1;
+			} else if (mode == "Stop") {//201126
+				m_QueueList.DeleteItem(i);
+				if (m_QueueList.InsertItem(i - 1, mode) >= 0) {
+					m_QueueList.SetItemData(i - 1, idata);
+					m_QueueList.SetItemText(i - 1, 2, "");//comment
+					m_QueueList.SetItemText(i - 1, 1, status);
+				}
+				if (iDeletedItem < 0) iDeletedItem = i - 1;
+			} else if (mode == "Sleep") {//201126
+				CString desc = m_QueueList.GetItemText(i, 2);
+				m_QueueList.DeleteItem(i);
+				if (m_QueueList.InsertItem(i - 1, mode) >= 0) {
+					m_QueueList.SetItemData(i - 1, idata);
+					m_QueueList.SetItemText(i - 1, 2, desc);
+					m_QueueList.SetItemText(i - 1, 1, status);
+				}
+				if (iDeletedItem < 0) iDeletedItem = i - 1;
 			}
 		}
 	}
@@ -646,6 +761,23 @@ void CDlgQueue::OnPopupqueueDown()
 				m_QueueList.DeleteItem(i);
 				InsertLsqfitItem(i+1, idata, status);
 				if (iDeletedItem < 0) iDeletedItem = i+1;
+			} else if (mode == "Stop") {//201126
+				m_QueueList.DeleteItem(i);
+				if (m_QueueList.InsertItem(i + 1, mode) >= 0) {
+					m_QueueList.SetItemData(i + 1, idata);
+					m_QueueList.SetItemText(i + 1, 2, "");//comment
+					m_QueueList.SetItemText(i + 1, 1, status);
+				}
+				if (iDeletedItem < 0) iDeletedItem = i + 1;
+			} else if (mode == "Sleep") {//201126
+				CString desc = m_QueueList.GetItemText(i, 2);
+				m_QueueList.DeleteItem(i);
+				if (m_QueueList.InsertItem(i + 1, mode) >= 0) {
+					m_QueueList.SetItemData(i + 1, idata);
+					m_QueueList.SetItemText(i + 1, 2, desc);
+					m_QueueList.SetItemText(i + 1, 1, status);
+				}
+				if (iDeletedItem < 0) iDeletedItem = i + 1;
 			}
 		}
 	}
@@ -836,6 +968,11 @@ TErr CDlgQueue::SaveQueue(CStdioFile* fp) {
 			line.Format("m_ZLow %d\r\n", lq->m_ZLow); fp->WriteString(line);
 			line.Format("m_ZHigh %d\r\n", lq->m_ZHigh); fp->WriteString(line);
 			if (lq->m_bMaxDiameter) fp->WriteString("bMaxDiameter TRUE\r\n"); else fp->WriteString("bMaxDiameter FALSE\r\n");
+		} else if (mode == "Stop") {//201126
+			//
+		} else if (mode == "Sleep") {//201126
+			const int idur = m_QueueList.GetItemData(i);
+			line.Format("Duration %d\r\n", idur); fp->WriteString(line);
 		}
 		fp->WriteString("End\r\n");
 	}
@@ -1011,6 +1148,56 @@ TErr CDlgQueue::LoadQueue(CStdioFile* fp) {
 				}
 			}
 			if (err = AddLsqfitQueue(&lq)) break;
+		} else if (mode == "Stop") {//201126
+			while (fp->ReadString(line)) {
+				CString cmd = line.SpanExcluding(" \t\r\n");
+				//CString param = line.Mid(cmd.GetLength());
+				//param.TrimLeft(); param.TrimRight();
+				//AfxMessageBox(cmd + "/" + param + "/");
+				if (cmd == "End") {
+					break;
+				} else if (!cmd.IsEmpty()) {
+					msg += line;
+				}
+			}
+			int item = m_QueueList.GetItemCount();
+			if (m_QueueList.InsertItem(item, "Stop") >= 0) {
+				m_QueueList.SetItemData(item, 0);
+				m_QueueList.SetItemText(item, 2, "");
+				m_QueueList.SetItemText(item, 1, "Hold");
+				//EnableCtrl();
+			}
+		} else if (mode == "Sleep") {//201126
+			int idur = 0;
+			while (fp->ReadString(line)) {
+				CString cmd = line.SpanExcluding(" \t\r\n");
+				CString param = line.Mid(cmd.GetLength());
+				param.TrimLeft(); param.TrimRight();
+				//AfxMessageBox(cmd + "/" + param + "/");
+				if (cmd == "End") {
+					break;
+				} else if (cmd == "Duration") {
+					if (sscanf_s(param, "%d", &idur) < 1) msg += line;
+				} else if (!cmd.IsEmpty()) {
+					msg += line;
+				}
+			}
+			//add queue
+			//const int idur = m_QueueList.GetItemData(i);
+			//line.Format("Duration %d\r\n", idur); fp->WriteString(line);
+			int item = m_QueueList.GetItemCount();
+			if (m_QueueList.InsertItem(item, "Sleep") >= 0) {
+				m_QueueList.SetItemData(item, idur);
+				CString desc;
+				const int isec = idur % 60;
+				int imin = idur / 60;
+				int ihour = imin / 60;
+				imin = imin % 60;
+				desc.Format("%d sec (%d:%d:%d)", idur, ihour, imin, isec);
+				m_QueueList.SetItemText(item, 2, desc);
+				m_QueueList.SetItemText(item, 1, "Hold");
+				//EnableCtrl();
+			}
 		}
 	}
 	bIsSaved = false;

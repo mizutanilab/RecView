@@ -6,6 +6,8 @@
 #include "DlgFrameList.h"
 #include "gazoDoc.h"
 #include "chdf5.h"
+//201125
+#include "MainFrm.h"
 
 // CDlgFrameList ダイアログ
 
@@ -35,7 +37,6 @@ void CDlgFrameList::DoDataExchange(CDataExchange* pDX)
 	CDialog::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_FRAMELIST_TREE, m_treeFrames);
 }
-
 
 BEGIN_MESSAGE_MAP(CDlgFrameList, CDialog)
 	ON_NOTIFY(NM_CLICK, IDC_FRAMELIST_TREE, &CDlgFrameList::OnNMClickFramelistTree)
@@ -158,7 +159,7 @@ BOOL CDlgFrameList::OnInitDialog()
 			_tsplitpath_s( path_buffer, drive, _MAX_DRIVE, dir, _MAX_DIR, fnm, _MAX_FNAME, ext, _MAX_EXT);
 			_tmakepath_s(path_buffer, _MAX_PATH, drive, dir, NULL, NULL);
 			pd->SetConvList(path_buffer, fnm, ext, pd->dlgReconst.m_iDatasetSel);
-			for (int i=0; i<iList; i++) {m_piRevList[i] = -1;}
+			for (int i=0; i<iList; i++) {m_piRevList[i] = INT_MIN;}
 			const int iConv = pd->maxConvList;
 			if (pd->convList) {
 				for (int i=0; i<iConv; i++) {
@@ -180,7 +181,20 @@ BOOL CDlgFrameList::OnInitDialog()
 					}
 				}
 			}
-			//
+			if (!pd->m_sHisAvgFiles.IsEmpty()) {//201125
+				//uncheck flat and dark files which are not found in conv.bat
+				//this is not necessary for the recon calc (CalcAvgFromHis reads convList) but needed for consistent displaying
+				//CString msg = "";
+				int curPos = 0;
+				CString resToken = pd->m_sHisAvgFiles.Tokenize(_T(" "), curPos);
+				while (resToken != _T("")) {
+					int idx = atoi(resToken.Mid(1).SpanExcluding(".")) - 1;
+					//CString line; line.Format("%d/", idx); msg += line;
+					if ((idx < iList) && (idx >= 0)) m_piRevList[idx] = -1;//-1 indicates frame is included
+					resToken = pd->m_sHisAvgFiles.Tokenize(_T(" "), curPos);
+				}
+				//AfxMessageBox(msg);
+			}//201125
 //			CString msg = "revList161112\r\n", line;
 //			for (int i=iConv-50; i<iConv; i++) {line.Format("%d %s\r\n", i, pd->convList[i]); msg += line;}
 //			for (int i=0; i<80; i++) {line.Format("(%d %d) ", i, m_piRevList[i]); msg += line;}
@@ -201,19 +215,24 @@ BOOL CDlgFrameList::OnInitDialog()
 				}
 				CString sItem;
 				sItem.Format(fmt, iframe);
-				BOOL bCheck = TRUE;
+				//201125 BOOL bCheck = TRUE;
+				BOOL bCheck = FALSE;//201125 default FALSE
 				int iRev = m_piRevList[i];
 				if (iRev >= 0) {
 					CString line; line.Format(" (%.2f)", pd->fdeg[iRev]); sItem += line;
-//					if (!(pd->bInc[i] & CGAZODOC_BINC_SAMPLE)) sItem += " flat";
+					//if (!(pd->bInc[i] & CGAZODOC_BINC_SAMPLE)) sItem += " flat";
 					CString sFrmNum; sFrmNum.Format(fmt, iRev);
 					CString sFrmNum3; sFrmNum3.Format(fmt3, iRev);
-					bCheck = ((m_sFramesToExclude.Find(sFrmNum) >= 0)||(m_sFramesToExclude.Find(sFrmNum3) >= 0)) ? FALSE : TRUE;
+					bCheck = ((m_sFramesToExclude.Find(sFrmNum) >= 0) || (m_sFramesToExclude.Find(sFrmNum3) >= 0)) ? FALSE : TRUE;
 					if (iRev == pd->dlgReconst.m_iDlgFL_SampleFrameStart) sItem += " start";
 					else if (iRev == pd->dlgReconst.m_iDlgFL_SampleFrameEnd) sItem += " end";
 				} else {
+					//uncheck files which are not found in conv.bat
+					if (iRev == -1) bCheck = TRUE;//201125
+					//overwrite with exclude list
 					CString sFrmNum; sFrmNum.Format(fmt2, i);
-					bCheck = (m_sFramesToExclude.Find(sFrmNum) >= 0) ? FALSE : TRUE;
+					//201125 bCheck = (m_sFramesToExclude.Find(sFrmNum) >= 0) ? FALSE : TRUE;
+					if (m_sFramesToExclude.Find(sFrmNum) >= 0) bCheck = FALSE;//201125
 				}
 				hItem = m_treeFrames.InsertItem(sItem);
 				m_treeFrames.SetItemData(hItem, i);
@@ -312,7 +331,7 @@ void CDlgFrameList::OnOK()
 					int idata = m_treeFrames.GetItemData(hItem);
 					CString sFrmNum;
 					if (m_piRevList[idata] >= 0) {
-						if ((m_piRevList[idata] >= pd->dlgReconst.m_iDlgFL_SampleFrameStart)&&
+						if ((m_piRevList[idata] >= pd->dlgReconst.m_iDlgFL_SampleFrameStart) &&
 							(m_piRevList[idata] <= pd->dlgReconst.m_iDlgFL_SampleFrameEnd)) sFrmNum.Format(fmt, m_piRevList[idata]);
 						else sFrmNum.Format(fmt3, m_piRevList[idata]);
 					}
@@ -355,6 +374,29 @@ void CDlgFrameList::OnOK()
 void CDlgFrameList::OnNMClickFramelistTree(NMHDR *pNMHDR, LRESULT *pResult)
 {
 	// TODO: ここにコントロール通知ハンドラ コードを追加します。
+	//201125==>
+	if (!pd) return;
+	const int iList = pd->iFramePerDataset;
+	NMTREEVIEW *pNMTree = (NMTREEVIEW*)pNMHDR;
+	TVHITTESTINFO ht = { 0 };
+	DWORD pos = ::GetMessagePos();
+	ht.pt.x = LOWORD(pos);
+	ht.pt.y = HIWORD(pos);
+	::MapWindowPoints(HWND_DESKTOP, pNMHDR->hwndFrom, &ht.pt, 1);
+	m_treeFrames.HitTest(&ht);
+	CMainFrame* pf = (CMainFrame*)AfxGetMainWnd();
+
+	if (TVHT_ONITEMSTATEICON & ht.flags)
+	{
+		int idata = m_treeFrames.GetItemData(ht.hItem);
+		if ((idata >= 0)&&(idata < iList)) {
+			if (m_piRevList[idata] == INT_MIN) {
+				m_treeFrames.SetCheck(ht.hItem, TRUE);//this disables check
+				if (pf) pf->m_wndStatusBar.SetPaneText(0, "Not listed in conv.bat");
+			}
+		}
+	}
+	//==>201125
 	*pResult = 0;
 }
 
