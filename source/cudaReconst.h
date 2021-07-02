@@ -30,7 +30,7 @@ extern "C" void CudaSinogramHost(RECONST_INFO* ri, int idev, bool bReport);
 //CUDA
 extern "C" void CudaDeconv(int ixdim, int iIntpDim, int ndim, float center, 
 				float* d_filt, short* d_strip, int* d_igp, float2* d_p, cufftHandle* fftplan);
-extern "C" void CudaBackProjStream(int ixdimp, float center, int iCenterOffset, double theta, 
+extern "C" void CudaBackProjStream(int ixdimp, float center, int iCenterOffset, int iIntpDim, double theta,
 				int* d_ifp, int* d_igp, cudaStream_t stream);
 extern "C" void CudaSinoPx2igpStream(int ixdimp, int* d_igp, float* d_px, cudaStream_t stream);
 //extern "C" void CudaBackProj(int ixdim, int iIntpDim, float center, int iCenterOffset, double theta, int* d_ifp, int* d_igp);

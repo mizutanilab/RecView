@@ -46,6 +46,8 @@ END_MESSAGE_MAP()
 
 
 // CDlgFrameList メッセージ ハンドラ
+#define CDLGFRAMELIST_SHISAVGFILES_FLAT -1
+#define CDLGFRAMELIST_SHISAVGFILES_DARK -2
 
 BOOL CDlgFrameList::OnInitDialog()
 {
@@ -57,6 +59,7 @@ BOOL CDlgFrameList::OnInitDialog()
 	//TVS_CHECKBOXES style should not be enabled in the resource editor
 //	const int isino = pd->iLenSinogr;
 //	CString line; line.Format("%d", isino); AfxMessageBox(line);
+	CMainFrame* pf = (CMainFrame*)AfxGetMainWnd();//201125
 
 	if (pd) {
 		if (pd->dataSuffix.MakeUpper() == ".H5") {
@@ -158,7 +161,7 @@ BOOL CDlgFrameList::OnInitDialog()
 			_stprintf_s(path_buffer, _MAX_PATH, pd->GetPathName());
 			_tsplitpath_s( path_buffer, drive, _MAX_DRIVE, dir, _MAX_DIR, fnm, _MAX_FNAME, ext, _MAX_EXT);
 			_tmakepath_s(path_buffer, _MAX_PATH, drive, dir, NULL, NULL);
-			pd->SetConvList(path_buffer, fnm, ext, pd->dlgReconst.m_iDatasetSel);
+			pd->SetConvList(path_buffer, fnm, ext, pd->dlgReconst.m_iDatasetSel, pf);
 			for (int i=0; i<iList; i++) {m_piRevList[i] = INT_MIN;}
 			const int iConv = pd->maxConvList;
 			if (pd->convList) {
@@ -189,8 +192,14 @@ BOOL CDlgFrameList::OnInitDialog()
 				CString resToken = pd->m_sHisAvgFiles.Tokenize(_T(" "), curPos);
 				while (resToken != _T("")) {
 					int idx = atoi(resToken.Mid(1).SpanExcluding(".")) - 1;
+					int ilabel = CDLGFRAMELIST_SHISAVGFILES_FLAT;//flat images
+					//AfxMessageBox(resToken.SpanExcluding("/"));
+					const int islash = resToken.SpanExcluding("/").GetLength();
+					if (resToken.GetLength() > islash) {
+						if (resToken.Mid(islash) == "/dark") ilabel = CDLGFRAMELIST_SHISAVGFILES_DARK;
+					}
 					//CString line; line.Format("%d/", idx); msg += line;
-					if ((idx < iList) && (idx >= 0)) m_piRevList[idx] = -1;//-1 indicates frame is included
+					if ((idx < iList) && (idx >= 0)) m_piRevList[idx] = ilabel;//-1 indicates flat images, -2 is dark
 					resToken = pd->m_sHisAvgFiles.Tokenize(_T(" "), curPos);
 				}
 				//AfxMessageBox(msg);
@@ -228,7 +237,8 @@ BOOL CDlgFrameList::OnInitDialog()
 					else if (iRev == pd->dlgReconst.m_iDlgFL_SampleFrameEnd) sItem += " end";
 				} else {
 					//uncheck files which are not found in conv.bat
-					if (iRev == -1) bCheck = TRUE;//201125
+					if (iRev == CDLGFRAMELIST_SHISAVGFILES_FLAT) { bCheck = TRUE; sItem += " flat";}//201125
+					else if (iRev == CDLGFRAMELIST_SHISAVGFILES_DARK) { bCheck = TRUE; sItem += " dark";}//201125
 					//overwrite with exclude list
 					CString sFrmNum; sFrmNum.Format(fmt2, i);
 					//201125 bCheck = (m_sFramesToExclude.Find(sFrmNum) >= 0) ? FALSE : TRUE;
@@ -413,10 +423,19 @@ void CDlgFrameList::OnTvnSelchangedFramelistTree(NMHDR *pNMHDR, LRESULT *pResult
 //	CString msg; msg.Format("%d==>%d", m_dwSelectedFrame, dwData); AfxMessageBox(msg);
 	if (pd) {
 		if (pd->dataSuffix.MakeUpper() == ".HIS") {
-			if (pd->iLossFrameSet >= 0) {//161231
-				if (pd->iLossFrameSet == pd->dlgReconst.m_iDatasetSel) {
-					if ((int)(dwData - pd->nDarkFrame) > (pd->iFramePerDataset - pd->nDarkFrame) / 2) {dwData--;}
-				} else if (pd->iLossFrameSet < pd->dlgReconst.m_iDatasetSel) {dwData--;}
+			if (pd->ullLossFrameSet != 0) {//210618
+				int nlostbefore = 0;
+				for (int i=0; i< pd->dlgReconst.m_iDatasetSel; i++) {
+					nlostbefore += ((pd->ullLossFrameSet) >> (i * 4)) & 0x0f;
+				}
+				dwData -= nlostbefore;
+				const int nlost = ((pd->ullLossFrameSet) >> (pd->dlgReconst.m_iDatasetSel * 4)) & 0x0f;
+				//if (nlost) {
+				//	CString msg; 
+				//	msg.Format("210618 %d %I64x %d %I64d", nlost, pd->ullLossFrameSet, pd->dlgReconst.m_iDatasetSel, ((pd->ullLossFrameSet) >> (pd->dlgReconst.m_iDatasetSel * 4)) & 0x0f);
+				//	AfxMessageBox(msg);
+				//}
+				if ((int)(dwData - pd->nDarkFrame) > (pd->iFramePerDataset - pd->nDarkFrame) / 2) {dwData -= nlost;}
 			}
 			if (pd->nDarkFrame > 0) {//if dark frames were taken only in the first set.
 				dwData += (pd->iFramePerDataset - pd->nDarkFrame) * pd->dlgReconst.m_iDatasetSel;

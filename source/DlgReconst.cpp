@@ -208,7 +208,7 @@ void CDlgReconst::DoDataExchange(CDataExchange* pDX)
 	DDX_Check(pDX, IDC_RECONST_OFFCT, m_bOffsetCT);
 	DDX_Text(pDX, IDC_RECONST_OFFAXIS, m_OffsetAxis);
 	DDX_Text(pDX, IDC_RECONST_TILT, m_TiltAngle);//100320
-	DDV_MinMaxFloat(pDX, m_TiltAngle, -180, 180);
+	DDV_MinMaxFloat(pDX, m_TiltAngle, -360, 360);
 	DDX_Control(pDX, IDC_RECONST_HISDATASET2, m_HisDataset);
 	DDX_Text(pDX, IDC_RECONST_SUFFIX3, m_Suffix);
 }
@@ -302,7 +302,7 @@ void CDlgReconst::OnReconstQueue()
 	//rq.iDatasetSize = m_iDatasetSize;
 	rq.iDatasetSel = m_iDatasetSel;
 	rq.bReconOptionUpdated = true;
-	rq.iLossFrameSet = pd->iLossFrameSet;//120715
+	rq.ullLossFrameSet = pd->ullLossFrameSet;//120715
 	//rq.filePath = pd->GetPathName();
 	CGazoApp* pApp = (CGazoApp*) AfxGetApp();
 	pApp->dlgQueue.AddRecQueue(&rq);
@@ -439,7 +439,7 @@ void CDlgReconst::OnOK()
 		rq.iSampleFrameEnd = pd->dlgReconst.m_iDlgFL_SampleFrameEnd;
 		//rq.iDatasetSize = m_iDatasetSize;
 		rq.iDatasetSel = m_iDatasetSel;
-		rq.iLossFrameSet = pd->iLossFrameSet;//120715
+		rq.ullLossFrameSet = pd->ullLossFrameSet;//120715
 		rq.bReconOptionUpdated = bOptionUpdated;
 		//
 		pd->EnableSystemMenu(false);
@@ -661,7 +661,7 @@ void CDlgReconst::CalcTomogram(int iParams, CGazoDoc* pdTarget) {
 		rq.iSampleFrameEnd = pd->dlgReconst.m_iDlgFL_SampleFrameEnd;
 		//rq.iDatasetSize = m_iDatasetSize;
 		rq.iDatasetSel = m_iDatasetSel;
-		rq.iLossFrameSet = pd->iLossFrameSet;//120715
+		rq.ullLossFrameSet = pd->ullLossFrameSet;//120715
 		//CString msg; msg.Format("%d", rq.iLossFrameSet); AfxMessageBox(msg);
 		rq.bReconOptionUpdated = bOptionUpdated;
 		//
@@ -809,7 +809,7 @@ void CDlgReconst::OnBnClickedReconstSino1()
 		rq.iSampleFrameEnd = pd->dlgReconst.m_iDlgFL_SampleFrameEnd;
 		//rq.iDatasetSize = m_iDatasetSize;
 		rq.iDatasetSel = m_iDatasetSel;
-		rq.iLossFrameSet = pd->iLossFrameSet;//120715
+		rq.ullLossFrameSet = pd->ullLossFrameSet;//120715
 		rq.bReconOptionUpdated = bOptionUpdated;
 		//
 		pd->ShowSinogram(&rq, m_Slice1, rq.dCenter1);

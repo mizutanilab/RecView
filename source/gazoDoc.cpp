@@ -175,7 +175,8 @@ void CGazoDoc::ClearAll() {
 	iFramePerDataset = -1;
 	nDarkFrame = 0;
 	dlgReconst.m_nDataset = 1;
-	iLossFrameSet = -1;
+	//210618 iLossFrameSet = -1;
+	ullLossFrameSet = 0;//210618
 	for (int i=0; i<MAX_CPU; i++) {
 		ri[i].hThread = NULL;
 		ri[i].iStatus = RECONST_INFO_IDLE;
@@ -1146,10 +1147,12 @@ TErr CGazoDoc::ReadFile(CFile* fp) {
 	} else if ((_tcscmp(ext, ".img") == 0)||(_tcscmp(ext, ".IMG") == 0)) {
 		err = ReadITEX(fp, &pPixel, &maxPixel, &iydim, &ixdim, &fileComment);
 		error.Log(err);
-	} else if ((_tcscmp(ext, ".his") == 0)||(_tcscmp(ext, ".HIS") == 0)) {
+	}
+	else if ((_tcscmp(ext, ".his") == 0) || (_tcscmp(ext, ".HIS") == 0)) {
 		HIS_Header his, ehis;
 		if (fp->GetPosition() == 0) maxHisFrame = -1;
 		err = ReadHIS(fp, &pPixel, &maxPixel, &iydim, &ixdim, &his, &fileComment);
+		error.Log(err);
 		TReal rAvgS = 0, rSigS = 0;
 		const int ixydim = ixdim * iydim;
 		for (int i=0; i<ixydim; i++) {
@@ -1159,54 +1162,86 @@ TErr CGazoDoc::ReadFile(CFile* fp) {
 		rSigS = sqrt(rSigS / ixydim - rAvgS * rAvgS);
 		if (maxHisFrame < 0) {
 			maxHisFrame = his.n_image1 + (his.n_image2 << 16);
-			if ((maxHisFrame > 2) &&(iLossFrameSet < 0)) {//120715
+			//210618==>
+			int nset = 1;
+			if (CountFrameFromConvBat(sPath) > 0) nset = dlgReconst.m_nDataset;
+			else { err = 21061801; error.Log(err); }
+			//==>210618
+			//210618 if ((maxHisFrame > 2) &&(iLossFrameSet < 0)) {//120715
+			if ((maxHisFrame > 2) && (ullLossFrameSet == 0) && (!err)) {//210618
 				//analyse frame loss
 				int* ePixel = NULL;
 				int emaxPixel = 0, eiydim, eixdim;
 				CString efileComment;
-				TReal rAvgE0 = 0, rAvgE1 = 0;
-				SkipHISframeFast(fp, maxHisFrame-3);
+				TReal rAvgE0 = 0, rAvgE1 = 0, sig1 = 0;
+				//210618 see nset-1 dataset. This works if the lostframe was filled with Io images and not dark images.
+				if (nset >= 2) {
+					SkipHISframeFast(fp, iFramePerDataset * (nset - 1) - 2);
+					ReadHIS(fp, &ePixel, &emaxPixel, &eiydim, &eixdim, &ehis, &efileComment);
+					const int eixydim = eiydim * eixdim;
+					for (int i = 0; i < eixydim; i++) { rAvgE1 += ePixel[i]; }
+					rAvgE1 /= eixydim;
+					sig1 = fabs((rAvgE1 - rAvgS) / rSigS);
+					//210618 SkipHISframeFast(fp, 1);
+				}
+				SkipHISframeFast(fp, iFramePerDataset-1);//210618
+				//210618 SkipHISframeFast(fp, maxHisFrame - 3);
 				//final -1
+				//ReadHIS(fp, &ePixel, &emaxPixel, &eiydim, &eixdim, &ehis, &efileComment);
+				//const int eixydim = eiydim * eixdim;
+				//for (int i=0; i<eixydim; i++) {rAvgE1 += ePixel[i];}
+				//rAvgE1 /= eixydim;
+				//TReal sig1 = fabs((rAvgE1 - rAvgS) / rSigS);
+				//final dataset
 				ReadHIS(fp, &ePixel, &emaxPixel, &eiydim, &eixdim, &ehis, &efileComment);
 				const int eixydim = eiydim * eixdim;
-				for (int i=0; i<eixydim; i++) {rAvgE1 += ePixel[i];}
-				rAvgE1 /= eixydim;
-				TReal sig1 = fabs((rAvgE1 - rAvgS) / rSigS);
-				//final
-				ReadHIS(fp, &ePixel, &emaxPixel, &eiydim, &eixdim, &ehis, &efileComment);
 				for (int i=0; i<eixydim; i++) {rAvgE0 += ePixel[i];}
 				rAvgE0 /= eixydim;
 				TReal sig0 = fabs((rAvgE0 - rAvgS) / rSigS);
-				//int iLossSet = -1;
-				if (sig1 < 10) AfxMessageBox("Multiple frames have been lost.\r\nThis should be fixed manually.");
-				else if (sig0 < 10) {//difference between the last image and the dark current is less than 10 sigma
-					if (CountFrameFromConvBat(sPath) > 0){
+				//210618 if (sig1 < 10) AfxMessageBox("Multiple frames have been lost.\r\nThis should be fixed manually.");
+				//else if (sig0 < 10) {//difference between the last image and the dark current is less than 10 sigma
+				if ((sig0 < 10)||(sig1 < 10)) {//difference between the last image and the dark current is less than 10 sigma
+					//210618 if (CountFrameFromConvBat(sPath) > 0){
+					if (!err) {
 						//141229 const int nset = maxHisFrame / iFramePerDataset;
-						const int nset = dlgReconst.m_nDataset;
+						//210618 const int nset = dlgReconst.m_nDataset;
 						fp->SeekToBegin();
-						ReadHIS(fp, &ePixel, &emaxPixel, &eiydim, &eixdim, &ehis, &efileComment);//to skip comment of the first frame
-						iLossFrameSet = nset-1;//assume loss-set as the final set if the lost frames are not found in the 0 to nset-2 sets.
-						for (int i=0; i<nset-1; i++) {
-							SkipHISframeFast(fp, iFramePerDataset-2);
-							//final
-							ReadHIS(fp, &ePixel, &emaxPixel, &eiydim, &eixdim, &ehis, &efileComment);
-							for (int j=0; j<eixydim; j++) {rAvgE0 += ePixel[j];}
-							rAvgE0 /= eixydim;
-							if (fabs((rAvgE0 - rAvgS) / rSigS) < 10) {iLossFrameSet = i; break;}
-							SkipHISframeFast(fp, 1);
+						//210618 ReadHIS(fp, &ePixel, &emaxPixel, &eiydim, &eixdim, &ehis, &efileComment);//to skip comment of the first frame
+						SkipHISframe(fp, 1);//skip first frame
+						//210618 iLossFrameSet = nset-1;//assume loss-set as the final set if the lost frames are not found in the 0 to nset-2 sets.
+						for (int i=0; i<nset; i++) {
+							const int nlast = 2;//max lostframes per set
+							SkipHISframeFast(fp, iFramePerDataset - nlast - 1);//move to last frame
+							bool bLost = false;
+							for (int j = 0; j < nlast; j++) {
+								ReadHIS(fp, &ePixel, &emaxPixel, &eiydim, &eixdim, &ehis, &efileComment);
+								TReal rAvgE2 = 0;
+								for (int j = 0; j < eixydim; j++) { rAvgE2 += ePixel[j]; }
+								rAvgE2 /= eixydim;
+								//210618 if (fabs((rAvgE0 - rAvgS) / rSigS) < 10) { iLossFrameSet = i; break; }
+								if (fabs((rAvgE2 - rAvgS) / rSigS) < 10) { ullLossFrameSet |= ((nlast - j) << (i * 4)); bLost = true; break; }
+							}
+							if ((bLost == false)&&(i < nset-1)) SkipHISframeFast(fp, 1);//skip first frame
+							if (bLost && (i >= 16)) {
+								CString msg; msg.Format("Lost frame found in dataset %d. This should be fixed manually.", i); AfxMessageBox(msg);
+							}
 						}
 					}
 				}
 				if (ePixel) delete [] ePixel;//120718
-				if (iLossFrameSet >= 0) {
-					CString msg;
-					msg.Format("!!! LOST FRAME FOUND !!!\r\n Dark:%f\r\n Last-1:%f sigma:%f\r\n Last:%f sigma:%f\r\n Dataset with the lost frame: %d\r\nFix this?", 
-												rAvgS, rAvgE1, sig1, rAvgE0, sig0, iLossFrameSet); 
-					if (AfxMessageBox(msg, MB_YESNO) == IDNO) {
-						iLossFrameSet = -1;
-						AfxMessageBox("The lost frame problem should be fixed manually.");
+				if (ullLossFrameSet) {
+					CString msg, msg2 = "", line;
+					for (int i = 0; i < nset; i++) { line.Format("set%d #lostframe=%d\r\n", i, (ullLossFrameSet >> (i * 4)) & 0x0f); msg2 += line; }
+					msg.Format("!!! LOST FRAME FOUND !!!\r\n Dark:%f\r\n Last frames of\r\n  Nset-1:%f sigma:%f\r\n  Lastset:%f sigma:%f\r\n%s", 
+												rAvgS, rAvgE1, sig1, rAvgE0, sig0, msg2); 
+					error.Log(1, msg);
+					if (AfxMessageBox(msg + "Fix this?", MB_YESNO) == IDNO) {
+						ullLossFrameSet = 0;
+						msg = "The lost frame problem should be fixed manually.";
+						AfxMessageBox(msg);
+						error.Log(1, msg);
 					} else {
-						AfxMessageBox("The lost frame problem will be taken into account in the following calculation.");
+						error.Log(1, "Lostframe fixed.");
 					}
 				}
 			}
@@ -1528,6 +1563,7 @@ TErr CGazoDoc::BatchReconst(RECONST_QUEUE* rq) {
 	const double fc2 = rq->dCenter2;
 	const int iInterpolation = rq->iInterpolation;
 	const int iBinning = (rq->iInterpolation == 0) ? 4 : ((rq->iInterpolation == 1) ? 2 : 1);
+	ullLossFrameSet = rq->ullLossFrameSet;//210621 CalcAvgFromHis does not use rq, so the value is moved from rq to the native variable.
 	//
 	//int iy1, iy2; double fc1, fc2;
 	//dlgReconst.GetLayer(&iy1, &iy2);
@@ -1586,9 +1622,9 @@ TErr CGazoDoc::BatchReconst(RECONST_QUEUE* rq) {
 			line.Format("  Axis increment %.3f\n", rq->dAxisInc); flog.WriteString(line);
 		}
 		line.Format(" Dataset: %d\n", rq->iDatasetSel);
-		if (rq->iLossFrameSet >= 0) {
+		if (rq->ullLossFrameSet != 0) {
 			flog.WriteString(line);
-			line.Format(" A frame have been lost in dataset: %d\n", rq->iLossFrameSet);
+			line.Format(" Frame(s) lost in each dataset (end->set0): %016I64x\n", rq->ullLossFrameSet);
 		}
 		flog.WriteString(line);
 		line.Format(" Pixel width: %f um\n", rq->dPixelWidth);
@@ -1697,8 +1733,6 @@ TErr CGazoDoc::BatchReconst(RECONST_QUEUE* rq) {
 				deltaCent = (fc2 - fc1) / (iy2 - iy1);
 				fc = fc1 + deltaCent * (i - iy1);
 			}
-			//201124 round center at 0.001 figure: center 1035.499955 caused an unexpected shift in cuda routine
-			//fc = round(fc * 1000.) * 0.001;
 			if ( err = GenerateSinogram(rq, i, fc, deltaCent, iMultiplex) ) {error.Log(err); return err;}
 			//if (dlgReconst.m_hWnd) dlgReconst.m_Progress.SetPos(iProgressEnd/2);
 			if (dlgReconst.iStatus == CDLGRECONST_STOP) {
@@ -1714,8 +1748,6 @@ TErr CGazoDoc::BatchReconst(RECONST_QUEUE* rq) {
 				if (iLayer + iBinning-1 > iydim-1) break;
 				if (iy1 == iy2) fc = fc1;
 				else fc = fc1 + (fc2 - fc1) * (iLayer - iy1) / (iy2 - iy1);
-				//201124 round center at 0.001 figure: center 1035.499955 caused an unexpected shift in cuda routine
-				//fc = round(fc * 1000.) * 0.001;
 				fn.Format(" layer %d center %.3f", iLayer, fc);
 				pf->m_wndStatusBar.SetPaneText(1, "Backprojection " + dataName + fn);
 				double tcpu = 0; float pixelBase = 0, pixelDiv = 1;
@@ -2111,7 +2143,8 @@ TErr CGazoDoc::LoadLogFile(BOOL bOffsetCT) {
 		//degree column seems to be given in #pulse in some beamtimes.
 //161103		int ideg = (int)(fdeg[ipos-1]);
 //161103		if ((ideg != 180)&&(ideg != 360)) {
-		if ((abs(fdeg[ipos-1] - 180) > 3)&&(abs(fdeg[ipos-1] - 360) > 3)) {
+		//210618 if ((abs(fdeg[ipos-1] - 180) > 3)&&(abs(fdeg[ipos-1] - 360) > 3)) {
+		if (abs(fdeg[ipos - 1]) > 10000) {
 			for (unsigned int i=0; i<ipos; i++) {fdeg[i] /= 500.;}
 //161112
 //			const int nframe = (int)(ipos / 10) * 10;
@@ -2217,22 +2250,52 @@ TErr CGazoDoc::SetFramesToExclude() {
 		//dlgReconst.m_iDlgFL_SampleFrameStart = 1 because an averaged white frame is at the beginning
 		//201125 dummy frames in dark and flat series are not listed here but detected in DlgFrameList::OnInitDialog
 		//because the detection is not necessary for the recon calc (CalcAvgFromHis reads convList) but needed for consistent displaying in DlgFrameList
-		for (int i=0; i<(int)ipos; i++) {
-			if ((bInc[i] & CGAZODOC_BINC_SAMPLE)&&(fdeg[i] == fdegStart)) {dlgReconst.m_iDlgFL_SampleFrameStart = i; break;}
+		//210619 update for 190deg rotation
+		double dnotch = 0.1;
+		for (int i = 1; i < ipos; i++) {
+			if (fdeg[i] != fdeg[i - 1]) {dnotch = fabs(fdeg[i] - fdeg[i - 1]); break;}
 		}
-		for (int i=0; i<(int)ipos; i++) {
+		for (int i = ipos-1; i >= 1; i--) {
 			if (bInc[i] & CGAZODOC_BINC_SAMPLE) {
-				if (fdeg[i] - fdegStart >= dDegEnd) {
-					CString line; line.Format(fmt, i); m_sFramesToExclude += line;
-				} else {
+				if (fdeg[i] <= fdegEnd - dnotch) {
 					dlgReconst.m_iDlgFL_SampleFrameEnd = i;
+					break;
+				}
+				else {
+					CString line; line.Format(fmt, i); m_sFramesToExclude += line;
 				}
 			}
 		}
+		const double dFLend = dlgReconst.m_iDlgFL_SampleFrameEnd ? fdeg[dlgReconst.m_iDlgFL_SampleFrameEnd] : fdegEnd;
+		for (int i = 0; i < ipos; i++) {
+			if (bInc[i] & CGAZODOC_BINC_SAMPLE) {
+				if (dFLend - fdeg[i] >= dDegEnd) {
+					CString line; line.Format(fmt, i); m_sFramesToExclude += line;
+				}
+				else {
+					dlgReconst.m_iDlgFL_SampleFrameStart = i;
+					break;
+				}
+			}
+		}
+		//210619
+		//for (int i=0; i<(int)ipos; i++) {
+		//	if ((bInc[i] & CGAZODOC_BINC_SAMPLE)&&(fdeg[i] == fdegStart)) {dlgReconst.m_iDlgFL_SampleFrameStart = i; break;}
+		//}
+		//for (int i=0; i<(int)ipos; i++) {
+		//	if (bInc[i] & CGAZODOC_BINC_SAMPLE) {
+		//		if (fdeg[i] - fdegStart >= dDegEnd) {
+		//			CString line; line.Format(fmt, i); m_sFramesToExclude += line;
+		//		} else {
+		//			dlgReconst.m_iDlgFL_SampleFrameEnd = i;
+		//		}
+		//	}
+		//}
 
 		if (bDebug) {
 			CString line;
-			line.Format("start: %d %f\r\nend: %d %f\r\nexclude: %s", 
+			line.Format("fdegEnd %f\r\nstart: %d %f\r\nend: %d %f\r\nexclude: %s", 
+				fdegEnd,
 				dlgReconst.m_iDlgFL_SampleFrameStart, fdeg[dlgReconst.m_iDlgFL_SampleFrameStart], 
 				dlgReconst.m_iDlgFL_SampleFrameEnd, fdeg[dlgReconst.m_iDlgFL_SampleFrameEnd],
 				m_sFramesToExclude);
@@ -2338,7 +2401,7 @@ TErr CGazoDoc::SetConvList(CString sDataPath, CString sFilePrefix, CString sFile
 				convList[idx] = "a " + token[narg-1];
 				err = CalcAvgFromHis(sDataPath, sFilePrefix + sFileSuffix, token, narg, iDatasetSel);
 				if (err) return err;
-				for (int i = 0; i < narg-1; i++) m_sHisAvgFiles += token[i] + " ";//201125
+				for (int i = 0; i < narg-1; i++) m_sHisAvgFiles += token[i] + "/" + destfn + " ";//201125
 				break;}
 			case CGAZOAPP_CMD_REN: {
 				convList[idx] = "r " + token[0].SpanExcluding(".").Mid(1);
@@ -2523,10 +2586,15 @@ CString msg = "CalcAvgFromHis\r\n[File]\r\n" + files[nfiles-1] + "\r\n[Previous 
 				}
 			}
 			//iframe % iFramePerDataset is taken because the avg_img command points incident images at the end of the a.his.
-			if (iLossFrameSet >= 0) {
-				if (iLossFrameSet == iDatasetSel) {
-					if ((iframetag-nDarkFrame) % (iFramePerDataset-nDarkFrame) > (iFramePerDataset-nDarkFrame) / 2) {iframetag--;}
-				} else if (iLossFrameSet < iDatasetSel) {iframetag--;}
+			if (ullLossFrameSet != 0) {
+				int nlostbefore = 0;
+				for (int i = 0; i < iDatasetSel; i++) {nlostbefore += (ullLossFrameSet >> (i * 4)) & 0x0f;}
+				iframetag -= nlostbefore;
+				const int nlost = (ullLossFrameSet >> (iDatasetSel * 4)) & 0x0f;
+				if ((iframetag - nDarkFrame) % (iFramePerDataset - nDarkFrame) > (iFramePerDataset - nDarkFrame) / 2) { iframetag -= nlost; }
+				//210618 if (iLossFrameSet == iDatasetSel) {
+				//	if ((iframetag-nDarkFrame) % (iFramePerDataset-nDarkFrame) > (iFramePerDataset-nDarkFrame) / 2) {iframetag--;}
+				//} else if (iLossFrameSet < iDatasetSel) {iframetag--;}
 			}
 if (bDebug) {line.Format("%d ", iframetag); msg += line;}
 			CString sTag; sTag.Format(fmt, iframetag);
@@ -2571,13 +2639,20 @@ if (bDebug) AfxMessageBox(msg);
 			}
 		}
 		//iframe % iFramePerDataset is taken because the avg_img command points incident images at the end of the a.his.
-		//120715
-		if (iLossFrameSet >= 0) {
-			if (iLossFrameSet == iDatasetSel) {
-				//141229 if (iframe % iFramePerDataset > iFramePerDataset / 2) {iframe--;}
-				if ((iframe-nDarkFrame) % (iFramePerDataset-nDarkFrame) > (iFramePerDataset-nDarkFrame) / 2) {iframe--; iframetag--;}
-			} else if (iLossFrameSet < iDatasetSel) {iframe--; iframetag--;}
+		//210618
+		if (ullLossFrameSet != 0) {
+			int nlostbefore = 0;
+			for (int i = 0; i < iDatasetSel; i++) { nlostbefore += (ullLossFrameSet >> (i * 4)) & 0x0f; }
+			iframe -= nlostbefore; iframetag -= nlostbefore;
+			const int nlost = (ullLossFrameSet >> (iDatasetSel * 4)) & 0x0f;
+			if ((iframe - nDarkFrame) % (iFramePerDataset - nDarkFrame) > (iFramePerDataset - nDarkFrame) / 2) { iframe -= nlost; iframetag -= nlost; }
 		}
+		//if (iLossFrameSet >= 0) {
+		//	if (iLossFrameSet == iDatasetSel) {
+		//		//141229 if (iframe % iFramePerDataset > iFramePerDataset / 2) {iframe--;}
+		//		if ((iframe-nDarkFrame) % (iFramePerDataset-nDarkFrame) > (iFramePerDataset-nDarkFrame) / 2) {iframe--; iframetag--;}
+		//	} else if (iLossFrameSet < iDatasetSel) {iframe--; iframetag--;}
+		//}
 		//120715
 		if (iframe < 0) continue;
 		//161113
@@ -2671,7 +2746,8 @@ int CGazoDoc::GetSinogramYdim(BOOL bOffsetCT) {
 
 TErr CGazoDoc::GenerateSinogram(RECONST_QUEUE* rq, int iLayer, double center, double deltaCent, int iMultiplex) {
 	TErr err;
-//CString msg; msg.Format("dReconFlags=%d", rq->dReconFlags); AfxMessageBox(msg);
+	const CGazoApp* pApp = (CGazoApp*)AfxGetApp();
+	//CString msg; msg.Format("dReconFlags=%d", rq->dReconFlags); AfxMessageBox(msg);
 	const int isino = iLenSinogr;
 	const int iTrim = rq->iTrimWidth;
 	const int iProgStep = isino / PROGRESS_BAR_UNIT + 1;
@@ -2681,7 +2757,11 @@ TErr CGazoDoc::GenerateSinogram(RECONST_QUEUE* rq, int iLayer, double center, do
 		for (int i=0; i<isino; i++) {
 			if ((i % iProgStep == 0)&&(dlgReconst.m_hWnd)) dlgReconst.m_Progress.StepIt();
 		}
-		rq->dReconFlags |= RQFLAGS_SINOGRAMKEPT;//190101
+		//210106 avoid unexpected recon behavior in zoomed recon using CUDA
+		//rq->dReconFlags |= RQFLAGS_SINOGRAMKEPT;//190101
+		if ((pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_INTEL) || (rq->iInterpolation <= CDLGRECONST_OPT_ZOOMING_NONE)) {
+			rq->dReconFlags |= RQFLAGS_SINOGRAMKEPT;//190101
+		}
 		return 0;
 	}
 	const int ixFrm = rq->iRawSinoXdim;
@@ -2869,15 +2949,22 @@ TErr CGazoDoc::GenerateSinogram(RECONST_QUEUE* rq, int iLayer, double center, do
 						ihisFrame = (ihisFrame % iFramePerDataset) + iFramePerDataset * iDatasetSel;//111108
 					}
 				}
-				//120715
-				if (iLossFrameSet >= 0) {
-					if (iLossFrameSet == iDatasetSel) {
-						//141229 if (ihisFrame % iFramePerDataset > iFramePerDataset / 2) {
-						if ((ihisFrame-nDarkFrame) % (iFramePerDataset-nDarkFrame) > (iFramePerDataset-nDarkFrame) / 2) {
-							ihisFrame--;
-						}
-					} else if (iLossFrameSet < iDatasetSel) {ihisFrame--;}
+				//210618
+				if (ullLossFrameSet != 0) {
+					int nlostbefore = 0;
+					for (int i = 0; i < iDatasetSel; i++) { nlostbefore += (ullLossFrameSet >> (i * 4)) & 0x0f; }
+					ihisFrame -= nlostbefore;
+					const int nlost = (ullLossFrameSet >> (iDatasetSel * 4)) & 0x0f;
+					if ((ihisFrame - nDarkFrame) % (iFramePerDataset - nDarkFrame) > (iFramePerDataset - nDarkFrame) / 2) { ihisFrame -= nlost; }
 				}
+				//if (iLossFrameSet >= 0) {
+				//	if (iLossFrameSet == iDatasetSel) {
+				//		//141229 if (ihisFrame % iFramePerDataset > iFramePerDataset / 2) {
+				//		if ((ihisFrame-nDarkFrame) % (iFramePerDataset-nDarkFrame) > (iFramePerDataset-nDarkFrame) / 2) {
+				//			ihisFrame--;
+				//		}
+				//	} else if (iLossFrameSet < iDatasetSel) {ihisFrame--;}
+				//}
 				//120715
 				CString msg; msg.Format("frame %s", fname[i]);
 				if (pf) pf->m_wndStatusBar.SetPaneText(0, line + msg);
@@ -2894,6 +2981,7 @@ TErr CGazoDoc::GenerateSinogram(RECONST_QUEUE* rq, int iLayer, double center, do
  					AfxMessageBox("Error in HIS image format");
 					fimg.Close(); if (uctmp) delete [] uctmp; return err;
 				}
+				//msg.Format("%d %d %s %d (%d %d)", ihisFrame, ihisPrev, convList[cidx], cidx, sbuf[0], sbuf[1]); AfxMessageBox(msg);//210618
 				ihisPrev = ihisFrame;
 			} else if (convList[cidx].GetAt(0) == 'a') {
 				//110914 read strip from qxxxx file
@@ -3153,7 +3241,7 @@ if (bDebug) AfxMessageBox(msg + fmts);
 	//_ftime_s( &tstruct );
 	//tm0 = tstruct.time + tstruct.millitm * 0.001;
 	//
-	const CGazoApp* pApp = (CGazoApp*) AfxGetApp();
+	//const CGazoApp* pApp = (CGazoApp*) AfxGetApp();
 	//Each processor gives correct sinograms, 
 	//but CUDA routine affects the resulant tomograms by memory allocation of d_Strip.
 	//Therefore, intel processors should be used for sinogram generation.
@@ -3582,8 +3670,6 @@ TErr CGazoDoc::DeconvBackProj(RECONST_QUEUE* rq, double center, int iMultiplex, 
 	//090213 const int ixdimp = ixdim * ipintp;
 	const int ixdimp = ixlen * ipintp;
 	const int ixdim2 = ixdimp * ixdimp;
-	//201124 round center at 0.001 figure: center 1035.499955 caused an unexpected shift in cuda routine
-	//center = round(center * 1000.) * 0.001;
 	if (rq->bOffsetCT) {
 		if (center <= rq->iRawSinoXdim / 2.) {
 			//center = rq->iSinoXdim - center - 1.5;//100212 Trimming not considered
@@ -5003,6 +5089,8 @@ void CGazoDoc::OnTomoLine()
 			line += scr;
 		}
 	}
+	scr.Format("Line: (%d,%d)-(%d,%d)", ix0, iy0, ix1, iy1);//210105
+	line += scr;
 	CDlgMessage dlg;
 	dlg.m_Msg = line;
 	dlg.DoModal();

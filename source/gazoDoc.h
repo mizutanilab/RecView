@@ -123,7 +123,8 @@ public:
 	int* ppOverlay[CGAZODOC_MAXOVERLAY];
 	bool bCmdLine;
 	int maxHisFrame;
-	int iLossFrameSet;//120715
+	//210618 int iLossFrameSet;//120715
+	unsigned __int64 ullLossFrameSet;//210618
 	//bool bUnderCalc;
 	//int iThreadStatus;
 	bool bDebug;

@@ -2018,7 +2018,11 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 		const int ixdimpg = ixdimp * DBPT_GINTP;
 		const int ixdimh = ixdimp / 2;
 		const int ihoffset = ndim / 2 - 1 - ixdimh;
-		const float fcenter = (ixdimh + (float)center - (int)(center)) * DBPT_GINTP;
+		//210105 unexpected results with center change of 199.49 => 199.50 in zoomed recon
+		//210105 const float fcenter = (ixdimh + (float)center - (int)(center)) * DBPT_GINTP;
+		const float fcenter = (iIntpDim == 1) ? (ixdimh + (float)center - (int)(center)) * DBPT_GINTP : 
+												(ixdimh + ((float)center - (int)center) * iIntpDim) * DBPT_GINTP;
+		//CString msg; msg.Format("210105 %d %d %f %f %f", ixdimh, iIntpDim, fcenter, fcenter/DBPT_GINTP, center); AfxMessageBox(msg);
 		//
 		CCmplx* p = NULL;
 		int* igp = NULL;
@@ -2125,7 +2129,7 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 			if (bUseSIMD) {
 				DBPT_PROJX;//projx64((__int64)param) or projx32((int)param)
 			} else {
-				foffset = fcenter - ixdimh * (fcos + fsin);
+				//210105 foffset = fcenter - ixdimh * (fcos + fsin);//looks the same as a few lines above
 				//for (int iy=0; iy<ixdimp; iy++) {
 				for (int iy = iy0; iy < iy1; iy++) {
 					int ifpidx = iy * ixdimp - 1;

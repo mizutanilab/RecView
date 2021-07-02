@@ -885,7 +885,7 @@ TErr CDlgQueue::SaveQueue(CStdioFile* fp) {
 			line.Format("iInterpolation %d\r\n", rq->iInterpolation); fp->WriteString(line);
 			line.Format("iLayer1 %d\r\n", rq->iLayer1); fp->WriteString(line);
 			line.Format("iLayer2 %d\r\n", rq->iLayer2); fp->WriteString(line);
-			line.Format("iLossFrameSet %d\r\n", rq->iLossFrameSet); fp->WriteString(line);
+			line.Format("ullLossFrameSet %I64x\r\n", rq->ullLossFrameSet); fp->WriteString(line);
 			line.Format("iSinoXdim %d\r\n", rq->iRawSinoXdim); fp->WriteString(line);
 			line.Format("iSinoYdim %d\r\n", rq->iSinoYdim); fp->WriteString(line);
 			line.Format("itexFilePrefix %s\r\n", rq->itexFilePrefix); fp->WriteString(line);
@@ -1018,7 +1018,7 @@ TErr CDlgQueue::LoadQueue(CStdioFile* fp) {
 				} else if (cmd == "iInterpolation") {if (sscanf_s(param, "%d", &(rq.iInterpolation)) < 1) msg += line;
 				} else if (cmd == "iLayer1") {if (sscanf_s(param, "%d", &(rq.iLayer1)) < 1) msg += line;
 				} else if (cmd == "iLayer2") {if (sscanf_s(param, "%d", &(rq.iLayer2)) < 1) msg += line;
-				} else if (cmd == "iLossFrameSet") {if (sscanf_s(param, "%d", &(rq.iLossFrameSet)) < 1) msg += line;
+				} else if (cmd == "ullLossFrameSet") {if (sscanf_s(param, "%I64x", &(rq.ullLossFrameSet)) < 1) msg += line;
 				} else if (cmd == "iSinoXdim") {if (sscanf_s(param, "%d", &(rq.iRawSinoXdim)) < 1) msg += line;
 				} else if (cmd == "iSinoYdim") {if (sscanf_s(param, "%d", &(rq.iSinoYdim)) < 1) msg += line;
 				} else if (cmd == "itexFilePrefix") {rq.itexFilePrefix = param;

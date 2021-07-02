@@ -280,7 +280,7 @@ void CudaReconstHostFFT(RECONST_INFO* ri, int idev, bool bReport) {
 			CudaDeconv(ixdim, iIntpDim, ndim, fCenter,
 				ri->d_filt, ri->d_strip, &(ri->d_igp[isino * igpdimx]), ri->d_p, &(ri->fftplan));
 		}
-		CudaBackProjStream(ixdimp, fCenter, intcenter - ri->iSinoCenter,
+		CudaBackProjStream(ixdimp, fCenter, intcenter - ri->iSinoCenter, iIntpDim,
 			(ri->fdeg[i] + ri->fTiltAngle) * DEG_TO_RAD, ri->d_ifp, &(ri->d_igp[isino * igpdimx]), cudaStreamDefault);
 		if (bReport && (isino % 40 == 0)) cudaDeviceSynchronize();//this is for progress bar and may add 10 msec delay
 	}
@@ -773,7 +773,7 @@ void CudaReconstHost(RECONST_INFO* ri, int idev, bool bReport, bool bEnStream) {
 		}
 		//back projection
 		const int iCenterOffset = intcenter - ri->iSinoCenter;
-		CudaBackProjStream(ixdimp, fCenter, iCenterOffset, (ri->fdeg[i] + ri->fTiltAngle) * DEG_TO_RAD,
+		CudaBackProjStream(ixdimp, fCenter, iCenterOffset, iIntpDim, (ri->fdeg[i] + ri->fTiltAngle) * DEG_TO_RAD,
 			ri->d_ifp, &(ri->d_igp[isino * igpdimx]), (bDeconv && bEnStream) ? *pCurrentStream : cudaStreamDefault);
 		/*/141205==>
 		float theta = (ri->fdeg[i] + ri->fTiltAngle) * (float)DEG_TO_RAD;

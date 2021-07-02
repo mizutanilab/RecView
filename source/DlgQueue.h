@@ -58,7 +58,8 @@ struct RECONST_QUEUE {
 	double dAxisInc;
 	int iDatasetSel;
 	//int iDatasetSize;
-	int iLossFrameSet;
+	//210618 int iLossFrameSet;
+	unsigned __int64 ullLossFrameSet;//210618
 	CString sDriftListPath;
 	bool bReconOptionUpdated;
 	CString sFramesToExclude;
@@ -193,6 +194,8 @@ protected:
 	afx_msg void OnPopupqueueDown();
 	afx_msg void OnQueueStop();
 	afx_msg void OnQueueFinal();
+	afx_msg void OnPopupqueueAppendstop();//201126
+	afx_msg void OnPopupqueueAppendsleep();//201126
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 public:

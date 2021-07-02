@@ -193,7 +193,7 @@ void CudaDeconv(int ixdim, int iIntpDim, int ndim, float center,
 #endif
 
 extern "C"
-void CudaBackProjStream(int ixdimp, float center, int iCenterOffset, double theta, int* d_ifp, int* d_igp, cudaStream_t stream) {
+void CudaBackProjStream(int ixdimp, float center, int iCenterOffset, int iIntpDim, double theta, int* d_ifp, int* d_igp, cudaStream_t stream) {
 	//constants
 	//const int ixdimp = ixdim * iIntpDim;
 	const int ixdimh = ixdimp / 2;
@@ -215,7 +215,10 @@ void CudaBackProjStream(int ixdimp, float center, int iCenterOffset, double thet
 	//params
 	const float fcos = (float)(cos(theta) * DBPT_GINTP);
 	const float fsin = (float)(-sin(theta) * DBPT_GINTP);
-	const float fcenter = (float)((ixdimh + center - (int)(center)) * DBPT_GINTP);
+	//210105 const float fcenter = (float)((ixdimh + center - (int)(center)) * DBPT_GINTP);
+	//a possible revision related to the bug fix of 210105 in the corresponding intel routine
+	const float fcenter = (iIntpDim == 1) ? (ixdimh + center - (int)(center)) * DBPT_GINTP :
+											(ixdimh + (center - (int)(center)) * iIntpDim) * DBPT_GINTP;
 	const float foffset = fcenter - ixdimh * (fcos + fsin) + DBPT_GINTP * iCenterOffset;
 	//Kernel
 	int iydim = ixdimp;
