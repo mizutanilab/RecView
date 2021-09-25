@@ -98,7 +98,7 @@ Here, tau is the time constant required for one pixel projection. For example, o
     </UL>
   <LI>v2.0.0 (released 21 Jan 2009). x64 platform is now supported. The x64 version can generate larger tomograms upto 10<sup>6</sup> x 10<sup>6</sup> pixels. Performance: tau(3.16 GHz) = 0.789 nsec using Xeon E5410 (x64, 4 threads). Performace of x86 version: tau(3.16 GHz) = 0.849 nsec using Core2Duo (x86, 2 threads), or tau = 1.395 nsec (x86, single thread).
   <LI>v1.0.4 (released 1 Apr 2008). Multithreaded reconstruction routine was implemented. This function is partially written in x86 machine language, allowing faster execution of the reconstruction calculation.
-  <LI>v1.0.0 (released 6 Mar 2008).
+  <LI>v1.0.0 (released 6 Mar 2008).</LI>
 </UL>
 
 ## How to use
