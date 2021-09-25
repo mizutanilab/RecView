@@ -27,7 +27,6 @@ RecView is provided under the BSD 2-Clause License.
  <A href="https://doi.org/10.1016/j.micron.2017.11.009">DOI</A>
  <a href="https://www.ncbi.nlm.nih.gov/pubmed/29179010">PubMed</a> 
 <A href="http://arxiv.org/abs/1711.09776">arXiv</A></li>
-</li>
 </ul>
 
 ## Release notes
@@ -42,9 +41,8 @@ A test dataset in TIFF format is available from the binary folder.
   <LI>Build-191001. A bugfix in the CUDA memory freeing routine. 
   <LI>Build-190729. Default memory usage in the Computing config dialog is now set to 40%. This minimizes memory paging and boosts the batch recon calculation. 
     <UL>
-    <LI>Tau (Quadro P4000, 1792 cores, 1.48 GHz) = 0.161 nsec (1.22 sec for a 2048x2048 slice from 1800 projections)
+    <LI>Tau (Quadro P4000, 1792 cores, 1.48 GHz) = 0.161 nsec (1.22 sec for a 2048x2048 slice from 1800 projections)</LI>
     </UL>
-  </LI>
   <LI>Build-190713. A bugfix in multithreading. Some improved GUI functions were implemented. CUDA stream is enabled by default. The source code can now be compiled also by using Visual Studio 2008 and CUDA Toolkit 5.5.  
   <LI>Build-190530. A checkbox to enablie/disable CUDA stream pipelining was implemented in the Tomography-Computing config dialog.  
   <LI>Build-190118. CUDA routines were revised by using the 'stream' pipelining to parallelize the calculation. Performances are: 
