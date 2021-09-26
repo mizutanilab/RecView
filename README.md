@@ -30,7 +30,7 @@ RecView is provided under the BSD 2-Clause License.
 </ul>
 
 ## Release notes
-The current Release contains 64-bit (x64) and 32-bit (x86) executables complied using Visual Studio 2017 C++ and CUDA Toolkit 10.0. If your PC is running 64-bit Windows and has an NVIDIA Tesla, GeForce, or Quadro GPU processor with 'compute capability' of 3.0 or higher (Kepler or later), the reonstruction calculation can be executed on the GPU. <br>
+The current Release contains 64-bit (x64) and 32-bit (x86) executables complied using Visual Studio 2017 C++ and CUDA Toolkit 10.0. If your PC is running 64-bit Windows and has an NVIDIA Tesla, GeForce, or Quadro GPU processor with 'compute capability' of 3.0 or higher (Kepler or later), the reconstruction calculation can be executed on the GPU. <br>
 The present version can also be compiled with Visual Studio 2008 and CUDA Toolkit 5.5 by using gazoVS2008.sln file. An x64CUDA executable built with VS2008 is included in the Release file. This exe can run on GPUs with 'compute capability' of 2.0 (Fermi). A CUDA executable for x86 platform can be built with VS2008.  
 
 A test dataset in TIFF format is also included in the Release. 
@@ -105,7 +105,7 @@ Here, tau is the time constant required for one pixel projection. For example, o
 Concise help can be found in the 'Help'-'About' menu. We believe that this program is self-explanatory, but the following tips would be helpul.
 
 <B>Installation</B>  
-Download x64 or x86 executable and place it any folder you like. 
+Download x64 or x86 executable from the Release pane of the <b><a href="https://github.com/mizutanilab/RecView">repository homepage</a></b> and place it any folder you like. 
 
 <B>Execution</B>  
 Double click the 'RecView' executable.
