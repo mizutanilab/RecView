@@ -1,7 +1,7 @@
 ## RecView <A href="https://scicrunch.org/scicrunch/Resources/record/nlx_144509-1/SCR_016531/resolver">RRID:SCR_016531</A>
-RecView is a program for tomographic reconstruction and image processing. It consists of over 25,000 lines of custom source codes in C++, CUDA C, OpenCL, and x86/x86_64 (x64) assembly languages including SIMD instructions up to AVX2. RecView is designed for processing data obtained at the BL20B2, BL20XU, BL37XU, and BL47XU beamlines of the SPring-8 synchrotron radiation facility and also those taken at the 32-ID beamline of Advanced Photon Source (APS) of Argonne National Laboratory. 
+RecView is a program for tomographic reconstruction and image processing. It consists of over 25,000 lines of custom source codes in C++, CUDA C, OpenCL, and x86/x86_64 (x64) assembly languages including SIMD instructions up to AVX2. RecView is designed for processing data obtained at the BL20B2, BL20XU, BL37XU, and BL47XU beamlines of the SPring-8 synchrotron radiation facility and also those taken at the 32-ID beamline of Advanced Photon Source (APS) of Argonne National Laboratory. Executables are available from the Releases pane of the <b><a href="https://github.com/mizutanilab/RecView">repository homepage</a></b>.
 
-<IMG width=100 height=140 alt=testPattern src="binary/testPattern.png" align=left>
+<IMG width=100 height=140 alt=testPattern src="testPattern.png" align=left>
 Three-dimensional structural analysis with microtomography (micro-CT) or nanotomography (nano-CT) is performed by recording two-dimensional x-ray images while rotating the sample. Then tomographic sections are calculated from the x-ray images with the convolution back-projection method. This calculation is repeated for each tomographic slice to reconstruct the entire three-dimensional structure. RecView is a program for the tomographic reconstruction calculation with graphical user interfaces. Multiple datasets can be continuously processed by using its queueing function. Zooming reconstruction (an example is shown left), Gaussian convolution for denoising, and many other procedures for image processing are also implemented. Resolution of real sample images can be estimated with the Fourier domain plot by using this program. 
 <BR clear=left>
 
@@ -30,10 +30,10 @@ RecView is provided under the BSD 2-Clause License.
 </ul>
 
 ## Release notes
-The binary folder contains 64-bit (x64) and 32-bit (x86) executables complied using Visual Studio 2017 C++ and CUDA Toolkit 10.0. If your PC is running 64-bit Windows and has an NVIDIA Tesla, GeForce, or Quadro GPU processor with 'compute capability' of 3.0 or higher (Kepler or later), the reonstruction calculation can be executed on the GPU. <br>
-The present version can also be compiled with Visual Studio 2008 and CUDA Toolkit 5.5 by using gazoVS2008.sln file. An x64CUDA executable built with VS2008 is available from the binary folder. This exe can run on GPUs with 'compute capability' of 2.0 (Fermi). A CUDA executable for x86 platform can be built with VS2008.  
+The current Release contains 64-bit (x64) and 32-bit (x86) executables complied using Visual Studio 2017 C++ and CUDA Toolkit 10.0. If your PC is running 64-bit Windows and has an NVIDIA Tesla, GeForce, or Quadro GPU processor with 'compute capability' of 3.0 or higher (Kepler or later), the reonstruction calculation can be executed on the GPU. <br>
+The present version can also be compiled with Visual Studio 2008 and CUDA Toolkit 5.5 by using gazoVS2008.sln file. An x64CUDA executable built with VS2008 is included in the Release file. This exe can run on GPUs with 'compute capability' of 2.0 (Fermi). A CUDA executable for x86 platform can be built with VS2008.  
 
-A test dataset in TIFF format is available from the binary folder. 
+A test dataset in TIFF format is also included in the Release. 
 
 <UL>
   <LI>Build-210621. Frame loss detection routines were updated to deal with multiple frame loss. A bugfix in sample center calculation in the zoomed reconstruction.</LI> 
