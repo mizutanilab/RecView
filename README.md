@@ -127,7 +127,7 @@ The 'Tomography'-'Histogram/conversion' dialog provides several tools for trimmi
   <LI><b>System requirements</b></LI>
     RecView can be executed on a Windows PC running Windows 7-10 with an x86 or x64 CPU and a local storage. Its reoncstruction kernel can run either on CPU or GPU. The CUDA kernel can be executed on NVIDIA GPU processors with 'compute capability' 3.0 or higher (this corresponds to Kepler processors or later). If you run RecView on a legacy CPU without using GPU, we recommend CPUs released after approx 2005 (i.e., Pentium4 / Athlon64 or later), because SSE2 SIMD instructions are used in the x86/x64 reconstruction kernel. This is not a requirement, but the performance may differ by a factor of 2-3 with or without the SIMD. The x86/x64 kernel also uses AVX2 instructions if available. <br><br>
   <LI><b>Manuals</b></LI>
-    A brief how-to-use guide has been published as the appendix of the following paper (though it may be outdated). A step-by-step manual in Japanese is provided in the docs folder.<BR><BR>
+    A brief how-to-use guide has been published as the appendix of the following paper (though it may be outdated). A step-by-step manual in Japanese is provided in the Release file.<BR><BR>
 R. Mizutani, A. Takeuchi, K. Uesugi, S. Takekoshi, R.Y. Osamura and Y. Suzuki (2009). Three-dimensional microstructural analysis of human brain tissue by using synchrotron radiation microtomographs. In <I>Handbook on White Matter</I>, eds. Westland, T.B. & Calton, R.N., New York, Nova Science Publishers, pp. 247-277.
 <A href="https://drive.google.com/open?id=0Byx6vGOSewwpcGdISUp0YTk5QW8">PDF (9.5 MB)</A><br><br>
   <LI><b>What kind of data can be processed?</b></LI>
