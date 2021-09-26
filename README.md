@@ -32,7 +32,7 @@ RecView is provided under the BSD 2-Clause License.
 
 ## Release notes
 The current Release contains 64-bit (x64) and 32-bit (x86) executables complied using Visual Studio 2017 C++ and CUDA Toolkit 10.0. If your PC is running 64-bit Windows and has an NVIDIA Tesla, GeForce, or Quadro GPU processor with 'compute capability' of 3.0 or higher (Kepler or later), the reconstruction calculation can be executed on the GPU.<br> 
-The present version can also be compiled with Visual Studio 2008 and CUDA Toolkit 5.5 by using gazoVS2008.sln file. An x64CUDA executable built with VS2008 is included in the Release file. This exe can run on GPUs with 'compute capability' of 2.0 (Fermi). A CUDA executable for x86 platform can be built with VS2008.  
+The present version can also be compiled with Visual Studio 2008 and CUDA Toolkit 5.5 by using gazoVS2008.sln file. An x64CUDA executable built with VS2008 is included in the current Release. This exe can run on GPUs with 'compute capability' of 2.0 (Fermi). A CUDA executable for x86 platform can be built with VS2008.  
 
 A test dataset in TIFF format is also included in the Release. 
 
