@@ -2012,7 +2012,7 @@ TErr CGazoDoc::LoadLogFile(BOOL bOffsetCT) {
 		CString fn = dataPath + dataPrefix + dataSuffix;
 		CFile fhdf5;
 		if (!fhdf5.Open(fn, CFile::modeRead | CFile::shareDenyWrite)) {
-				fhdf5.Close(); AfxMessageBox("file open error"); return 1652601;
+			fhdf5.Close(); if (!bFromQueue) AfxMessageBox("file open error"); return 1652601;
 		}
 		//get m_lHDF5DataSize0
 		hdf5.SetFile(&fhdf5);
@@ -2121,23 +2121,28 @@ TErr CGazoDoc::LoadLogFile(BOOL bOffsetCT) {
 			if (line.IsEmpty()) continue;
 			ipos++;
 		}
+		if (ipos == 0) {//==>211204
+			if (!bFromQueue) AfxMessageBox("Empty output.log file"); 
+			fclose(flog); return 21120401;
+		}//==>211204
 		const DWORD ilen = ipos;
 		stdioLog.SeekToBegin();
 		TErr err = 0;
 		if (err = LoadLogFileAlloc(ilen)) {fclose(flog); return err;}
 		ipos = 0;
 		char cfname[20];
-		//float tiltAngle = 0;//090318 for slanted edge MTF calculation
 		while (stdioLog.ReadString(line)) {
 			if (line.IsEmpty()) continue;
-			if (ipos >= ilen) {AfxMessageBox("Too much frames"); break;}
-			if (sscanf_s(line, "%s %f %f %c", cfname, 20, &(fexp[ipos]), &(fdeg[ipos]), &(bInc[ipos]), 1)
-						!= 4) break;
+			if (ipos >= ilen) { if (!bFromQueue) AfxMessageBox("Too much output.log lines"); err = 21120402; break; }
+			if (sscanf_s(line, "%s %f %f %c", cfname, 20, &(fexp[ipos]), &(fdeg[ipos]), &(bInc[ipos]), 1) != 4) {
+				if (!bFromQueue) AfxMessageBox("An irregular line found in output.log:\r\n" + line); err = 21120403; break;
+			}
 			fname[ipos] = cfname;
 			if (bInc[ipos] == '1') bInc[ipos] = CGAZODOC_BINC_SAMPLE; else bInc[ipos] = CGAZODOC_BINC_WHITE;
 			ipos++;
 		}
 		fclose(flog);
+		if (err) return err;//211204
 		logPath = fn;
 		//141204==>
 		//degree column seems to be given in #pulse in some beamtimes.

@@ -37,6 +37,7 @@ The present version can also be compiled with Visual Studio 2008 and CUDA Toolki
 A test dataset in TIFF format is also included in the Release. 
 
 <UL>
+  <LI>Build-211204. A bugfix to detect empty output.log file.</LI> 
   <LI>Build-210621. Frame loss detection routines were updated to deal with multiple frame loss. A bugfix in sample center calculation in the zoomed reconstruction.</LI> 
   <LI>Build-201127. Updates for 'syncreadout' mode of the Hamamatsu camera and also for several other minor functional improvements.</LI> 
   <LI>Build-191001. A bugfix in the CUDA memory freeing routine.</LI> 
@@ -136,7 +137,7 @@ R. Mizutani, A. Takeuchi, K. Uesugi, S. Takekoshi, R.Y. Osamura and Y. Suzuki (2
     <UL>
       <LI>We use file names beginning with alphabet characters followed by sequential frame number, such as 'q0005.tif' for frame #5.</LI>
       <LI>Place a dark-field image 'dark.tif' in the dataset folder.</LI>
-      <LI>Prepare a paprameter file 'output.log' in plain text format (an example is given in the test dataset). This file has four fields:<BR>
+      <LI>Prepare a paprameter file 'output.log' in plain text format. You can find examples in the docs folder and also in the test dataset. This file has four fields:<BR>
 <pre>
 frame#      time(msec)     angle(deg) 0=flatfield/1=sample
 00001       00012.46900    000.0000        0

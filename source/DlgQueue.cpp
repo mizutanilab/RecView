@@ -390,7 +390,7 @@ void CDlgQueue::OnOK()
 			////doc.SetPathName(rq->filePath, FALSE);
 			doc.SetDimension(rq->iXdim, rq->iYdim);
 			pd = &doc;
-			if (err = doc.LoadLogFile((BOOL)(rq->bOffsetCT))) {
+			if ( err = doc.LoadLogFile((BOOL)(rq->bOffsetCT)) ) {
 				msg.Format("Err%d", err);
 				m_QueueList.SetItemText(i, 1, msg);
 				error.Log(err);
