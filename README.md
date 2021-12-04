@@ -153,7 +153,7 @@ frame#      time(msec)     angle(deg) 0=flatfield/1=sample
     </UL><br>
   <LI><b>RecView returns an error when processing offset-CT data taken at SPring-8.</b></LI>
     In the offset CT, the sample is rotated by 360 degrees. Start and stop angles of the sample rotation vary depending on your setup, such as -180 to 180 deg or 0 to 360 deg. If the 'stop angle' was not exactly 360 deg in your offset-CT experiment, 'conv.bat' file seems to have incorrect contents. You have to edit it manually before the reconstruction calculation. Or you can find examples of conv.bat and output.log files in the 'docs' folder. <br><br>
-  <LI><b>How to try the test dataset.</b></LI>
+  <LI><b>How to try test dataset in the Release.</b></LI>
     <UL>
       <LI>Extract all files in the archived test dataset.</LI>
       <LI>Open one of TIFF files (such as Q0005.tif) using RecView.</LI>
