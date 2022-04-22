@@ -1,5 +1,5 @@
 ## RecView <A href="https://scicrunch.org/scicrunch/Resources/record/nlx_144509-1/SCR_016531/resolver">RRID:SCR_016531</A>
-RecView is a program for tomographic reconstruction and image processing. It consists of over 25,000 lines of custom source codes in C++, CUDA C, OpenCL, and x86/x86_64 (x64) assembly languages including SIMD instructions up to AVX2. RecView is designed for processing data obtained at the BL20B2, BL20XU, BL37XU, and BL47XU beamlines of the SPring-8 synchrotron radiation facility and also those taken at the 32-ID beamline of Advanced Photon Source (APS) of Argonne National Laboratory.<BR> 
+RecView is a program for tomographic reconstruction and image processing. It consists of over 25,000 lines of custom source codes in C++, CUDA C, OpenCL, and x86/x86_64 (x64) assembly languages including SIMD instructions up to AVX-512. RecView is designed for processing data obtained at the BL20B2, BL20XU, BL37XU, and BL47XU beamlines of the SPring-8 synchrotron radiation facility and also those taken at the 32-ID beamline of Advanced Photon Source (APS) of Argonne National Laboratory.<BR> 
 Executables are available from the Releases pane of the <b><a href="https://github.com/mizutanilab/RecView">repository homepage</a></b>.
 
 <IMG width=100 height=140 alt=testPattern src="testPattern.png" align=left>
@@ -37,6 +37,12 @@ The present version can also be compiled with Visual Studio 2008 and CUDA Toolki
 A test dataset in TIFF format is also included in the Release. 
 
 <UL>
+  <LI>Build-220422. Tomographic reconstruction code using AVX-512 instructions is now implemented. The AVX-512 assembler routine is enabled if both of AVX-512F and AVX-512DQ features are available. The previous rouitnes can also be chosen from the 'Computing config' dialog. The acceleration with AVX-512 was very subtle in the following example. 
+    <UL>
+    <LI>Tau (RTX A4000, 6144 cores, 1.56 GHz) = 0.029 nsec (0.22 sec for a 2048x2048 slice from 1800 projections)</LI>
+    <LI>Tau (Core i5-11400 (x64), 6 threads, 2.6 GHz, AVX-512) = 0.22 nsec (1.67 sec for a 2048x2048 tomogram from 1800 projections)</LI>
+    <LI>Tau (Core i5-11400 (x64), 6 threads, 2.6 GHz, AVX2) = 0.22 nsec (1.68 sec for a 2048x2048 tomogram from 1800 projections)</LI>
+    </UL></LI>
   <LI>Build-211204. A bugfix to detect empty output.log file.</LI> 
   <LI>Build-210621. Frame loss detection routines were updated to deal with multiple frame loss. A bugfix in sample center calculation in the zoomed reconstruction.</LI> 
   <LI>Build-201127. Updates for 'syncreadout' mode of the Hamamatsu camera and also for several other minor functional improvements.</LI> 
@@ -127,7 +133,7 @@ The 'Tomography'-'Histogram/conversion' dialog provides several tools for trimmi
 ## Frequently asked questions
 <OL>
   <LI><b>System requirements</b></LI>
-    RecView can be executed on a Windows PC running Windows 7-10 with an x86 or x64 CPU and a local storage. Its reoncstruction kernel can run either on CPU or GPU. The CUDA kernel can be executed on NVIDIA GPU processors with 'compute capability' 3.0 or higher (this corresponds to Kepler processors or later). If you run RecView on a legacy CPU without using GPU, we recommend CPUs released after approx 2005 (i.e., Pentium4 / Athlon64 or later), because SSE2 SIMD instructions are used in the x86/x64 reconstruction kernel. This is not a requirement, but the performance may differ by a factor of 2-3 with or without the SIMD. The x86/x64 kernel also uses AVX2 instructions if available. <br><br>
+    RecView can be executed on a Windows PC running Windows 10 or 11 with an x86 or x64 CPU and a local storage. Its reoncstruction kernel can run either on CPU or GPU. The CUDA kernel can be executed on NVIDIA GPU processors with 'compute capability' 3.0 or higher (this corresponds to Kepler processors or later). If you run RecView on a legacy CPU without using GPU, we recommend CPUs released after approx 2005 (i.e., Pentium4 / Athlon64 or later), because SSE2 SIMD instructions are used in the x86/x64 reconstruction kernel. This is not a requirement, but the performance may differ by a factor of 2-3 with or without the SIMD. The x86/x64 kernel also uses AVX2 or AVX-512 instructions if available. <br><br>
   <LI><b>Manuals</b></LI>
     A brief how-to-use guide has been published as the appendix of the following paper (though it may be outdated). A step-by-step manual in Japanese is provided in the Release file.<BR><BR>
 R. Mizutani, A. Takeuchi, K. Uesugi, S. Takekoshi, R.Y. Osamura and Y. Suzuki (2009). Three-dimensional microstructural analysis of human brain tissue by using synchrotron radiation microtomographs. In <I>Handbook on White Matter</I>, eds. Westland, T.B. & Calton, R.N., New York, Nova Science Publishers, pp. 247-277.
