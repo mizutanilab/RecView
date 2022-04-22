@@ -1,6 +1,9 @@
 ;ml64.exe
 
-DATA segment align(32)
+DATA segment align(64)
+FZMM0_15 real4 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0
+FZMM16_16 real4 16.0, 16.0, 16.0, 16.0, 16.0, 16.0, 16.0, 16.0, 16.0, 16.0, 16.0, 16.0, 16.0, 16.0, 16.0, 16.0
+FZMM0_0 real4 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
 F76543210 real4 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0
 F88888888 real4 8.0, 8.0, 8.0, 8.0, 8.0, 8.0, 8.0, 8.0
 F00000000 real4 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
@@ -61,6 +64,9 @@ projx64 PROC
 ;	ldmxcsr pmxcsr
 
 ;jump to AVX routine
+	mov rax, [rsi + 56]	; AVX flag
+	and rax, 000000002h
+	jnz USEAVX512
 	mov rax, [rsi + 56]	; AVX flag
 	and rax, 000000001h
 	jnz USEAVX
@@ -213,6 +219,65 @@ ALOOPYEND2:
 	inc rdx	; iy++
 	cmp rdx, r13
 	jnae ALOOPY	; iy < iy1
+
+	jmp RTN
+
+USEAVX512:
+;220417
+;load valiables	
+	mov rax, [rsi]	; &fcos
+	vbroadcastss zmm0, real4 ptr [rax]
+	mov r8, [rsi + 8]	; &fsin
+	mov r11, [rsi + 16]	; &foffset
+
+	mov rcx, [rsi + 24]	; ixdimpg
+	vcvtsi2ss xmm6, xmm6, rcx	; xmm6<==ixdimpg
+	vbroadcastss zmm6, xmm6	; zmm6<==ixdimpg, ixdimpg, ixdimpg, ixdimpg
+	vcvtsi2ss xmm1, xmm1, r10	; xmm1<==ixdimp
+	vbroadcastss zmm1, xmm1	; zmm1<==ixdimp, ixdimp, ixdimp, ixdimp
+	
+	mov rax, r12; iy = iy0
+	mov rcx, r10; ix = ixdimp
+	imul rcx
+	shl rax, 2	; ixy = ixdimp * iy0 * 4
+	add rax, [rsi + 40]	; ixy += ifp
+	mov rdi, rax
+;	mov rdi, [rsi + 40]	; ifp
+	mov rsi, [rsi + 48]	; igp
+
+	mov rdx, r12	; iy<==iy0
+A5LOOPY:
+	mov rbx, 0	; ix<==0
+	vmovaps zmm2, FZMM0_15	; reset ix
+	vcvtsi2ss xmm3, xmm3, rdx	; xmm3<==iy
+	vbroadcastss zmm3, xmm3	; xmm3<==iy, iy, iy, iy
+	vbroadcastss zmm5, real4 ptr [r8]
+	vmulps zmm5, zmm5, zmm3	; iy * fsin for each float
+	vbroadcastss zmm7, real4 ptr [r11]	; zmm7<==foffset
+	vaddps zmm5, zmm5, zmm7	; zmm5<==iy * fsin + foffset
+A5LOOPX:
+	vmulps zmm4, zmm0, zmm2	; (ix+n) * fcos
+	vaddps zmm4, zmm4, zmm5	; (ix+n) * fcos + foffset
+	vcmpltps k1, zmm4, zmm6	; k1[i:i]=1 if (zmm4 < ixdimpg)
+	vcmpgeps k2, zmm4, FZMM0_0	; k2[i:i]=1 if (zmm4 >= 0)
+	kandw k1, k1, k2
+	vpxord zmm3, zmm3, zmm3	; clear zmm3
+	vcvttps2dq zmm4, zmm4	; zmm4 float*8 to integer32*8
+	vpgatherdd zmm3{k1}, [rsi + zmm4 * 4]	; load [rsi+zmm4*4] if k1[i:i]=1
+	vcmpltps k1, zmm2, zmm1	; k1[i:i]=1 if (zmm2 < ixdimp)
+	vmovdqa32 zmm4{k1}, [rdi + rbx * 4]
+	vpaddd zmm4, zmm3, zmm4
+	vmovdqa32 [rdi + rbx * 4]{k1}, zmm4
+
+	vaddps zmm2, zmm2, FZMM16_16	; zmm2 + 16.0
+	add rbx, 16
+	cmp rbx, r10
+	jnae A5LOOPX	; ix < ixdimp
+A5LOOPYEND2:
+	add rdi, r9 ; +ixdimp*4
+	inc rdx	; iy++
+	cmp rdx, r13
+	jnae A5LOOPY	; iy < iy1
 
 RTN:
 ;	ldmxcsr smxcsr

@@ -155,6 +155,8 @@
 #define IDC_PROP_CUDASTREAM             1056
 #define IDC_REFR_XENERGY                1057
 #define IDC_REFR_S2DDIST                1058
+#define IDC_PROP_AVX3                   1058
+#define IDC_PROP_AVX512                 1058
 #define IDC_REFR_PXSIZE                 1059
 #define IDC_REFR_STATUS                 1060
 #define IDC_REFR_PXSIZE2                1061
@@ -262,6 +264,7 @@
 #define IDC_POLYGONLIST                 1125
 #define IDC_POLYGON_CURRENT             1126
 #define IDC_POLYGON_DELETE              1127
+#define IDC_LSQFIT_FLIP                 1128
 #define IDC_DIALBOX_COMPORT             1414
 #define IDC_DIALBOX_CONNECT             1415
 #define IDC_DIALBOX_DISCONNECT          1416
@@ -365,6 +368,10 @@
 #define ID_TOOLBAR_QUEUE                32844
 #define ID_TOOLBAR_HISTG                32845
 #define ID_ANALYSIS_SUBTRACT            32846
+#define ID_POPUPQUEUE_INSERTSTOP        32847
+#define ID_POPUPQUEUE_APPENDSTOP        32848
+#define ID_POPUPQUEUE_APPENDPAUSE       32849
+#define ID_POPUPQUEUE_APPENDSLEEP       32850
 #define ID_POPUPQUEUE_DEL               32860
 
 // Next default values for new objects
@@ -373,8 +380,8 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_3D_CONTROLS                     1
 #define _APS_NEXT_RESOURCE_VALUE        153
-#define _APS_NEXT_COMMAND_VALUE         32847
-#define _APS_NEXT_CONTROL_VALUE         1128
+#define _APS_NEXT_COMMAND_VALUE         32851
+#define _APS_NEXT_CONTROL_VALUE         1129
 #define _APS_NEXT_SYMED_VALUE           102
 #endif
 #endif

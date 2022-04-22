@@ -18,9 +18,10 @@ CDlgProperty::CDlgProperty(CWnd* pParent /*=NULL*/)
 	, bUseCUDAFFT(FALSE)
 	, m_EnFastSeek(TRUE)
 	, m_bEnableAVX2(FALSE)
+	, m_bEnableAVX512(FALSE) //220417
 	, m_EnCUDAStream(TRUE) //190620
 {
-	Init(1, false, false, 0, CUDA_BLOCKSIZE, CUDA_WARPSIZE, 
+	Init(1, false, false, false, 0, CUDA_BLOCKSIZE, CUDA_WARPSIZE, 
 					0, ATISTREAM_MAXWORK, ATISTREAM_UNITWORK);
 }
 
@@ -28,7 +29,7 @@ CDlgProperty::~CDlgProperty()
 {
 }
 
-void CDlgProperty::Init(int icpu, bool bsimd, bool bavx2, 
+void CDlgProperty::Init(int icpu, bool bsimd, bool bavx2, bool bavx512, //220417
 						int iCudaCount, int iCudaBlock, int iCudaWarp,
 						int iATIcount, int iATImaxwork, int iATIunitwork, int iProcessorType) {
 	//CGazoApp* pApp = (CGazoApp*) AfxGetApp();
@@ -38,6 +39,8 @@ void CDlgProperty::Init(int icpu, bool bsimd, bool bavx2,
 	if (bSIMD) bEnableSIMD = TRUE;//160918 enabled again
 	bAVX2 = bavx2;
 	if (bAVX2) m_bEnableAVX2 = TRUE;
+	bAVX512 = bavx512; //220417
+	if (bAVX512) m_bEnableAVX512 = TRUE; //220417
 	maxCUDA = iCudaCount;
 	maxCUDAThreadsPerBlock = iCudaBlock;
 	iCUDAwarpsize = iCudaWarp;
@@ -84,6 +87,7 @@ void CDlgProperty::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_PROP_ATISTREAMNWORK, m_ATIstreamNwork);
 	DDX_Check(pDX, IDC_PROP_ENFASTSEEK, m_EnFastSeek);
 	DDX_Check(pDX, IDC_PROP_AVX2, m_bEnableAVX2);
+	DDX_Check(pDX, IDC_PROP_AVX512, m_bEnableAVX512);
 	DDX_Check(pDX, IDC_PROP_CUDASTREAM, m_EnCUDAStream);
 }
 
@@ -94,6 +98,7 @@ ON_BN_CLICKED(IDC_PROP_CUDAGPU, &CDlgProperty::OnBnClickedCudagpu)
 ON_BN_CLICKED(IDC_PROP_ATISTREAM, &CDlgProperty::OnBnClickedPropAtistream)
 ON_BN_CLICKED(IDC_PROP_SIMD, &CDlgProperty::OnBnClickedPropSimd)
 ON_BN_CLICKED(IDC_PROP_INFO, &CDlgProperty::OnBnClickedPropInfo)
+ON_BN_CLICKED(IDC_PROP_AVX2, &CDlgProperty::OnBnClickedPropAvx2)
 END_MESSAGE_MAP()
 
 
@@ -110,6 +115,7 @@ BOOL CDlgProperty::OnInitDialog()
 	r_ProcessorType = m_ProcessorType;
 	rEnableSIMD = bEnableSIMD;
 	rEnableAVX2 = m_bEnableAVX2;
+	rEnableAVX512 = m_bEnableAVX512;//220417
 	rCUDAnblock = iCUDAnblock;
 	r_EnReport = m_EnReport;
 	r_EnFastSeek = m_EnFastSeek;
@@ -218,6 +224,7 @@ void CDlgProperty::EnableCtrl() {
 	//
 	GetDlgItem(IDC_PROP_SIMD)->EnableWindow(FALSE);
 	GetDlgItem(IDC_PROP_AVX2)->EnableWindow(FALSE);
+	GetDlgItem(IDC_PROP_AVX512)->EnableWindow(FALSE);//220417
 	GetDlgItem(IDC_PROP_NCPU)->EnableWindow(FALSE);
 	GetDlgItem(IDC_PROP_NGPU)->EnableWindow(FALSE);
 	GetDlgItem(IDC_PROP_CUDANBLOCK)->EnableWindow(FALSE);
@@ -233,6 +240,7 @@ void CDlgProperty::EnableCtrl() {
 			if (bSIMD) {
 				GetDlgItem(IDC_PROP_SIMD)->EnableWindow(TRUE);
 				if (bAVX2 && bEnableSIMD) GetDlgItem(IDC_PROP_AVX2)->EnableWindow(TRUE);
+				if (bAVX512 && m_bEnableAVX2 && bEnableSIMD) GetDlgItem(IDC_PROP_AVX512)->EnableWindow(TRUE);//220417
 			}
 			GetDlgItem(IDC_PROP_NCPU)->EnableWindow(TRUE);
 			break;}
@@ -317,6 +325,7 @@ void CDlgProperty::OnCancel()
 	iCPU = rCPU;
 	bEnableSIMD = rEnableSIMD;
 	m_bEnableAVX2 = rEnableAVX2;
+	m_bEnableAVX512 = rEnableAVX512;//220417
 	iCUDA = rCUDA;
 	iCUDAnblock = rCUDAnblock;
 	bUseCUDAFFT = r_UseCUDAFFT;
@@ -343,4 +352,11 @@ void CDlgProperty::OnBnClickedPropInfo()
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
 	CGazoApp* pApp = (CGazoApp*) AfxGetApp();
 	pApp->OnViewError();
+}
+
+
+void CDlgProperty::OnBnClickedPropAvx2()
+{
+	UpdateData();
+	EnableCtrl();
 }

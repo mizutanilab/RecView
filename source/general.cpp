@@ -2064,7 +2064,10 @@ unsigned __stdcall DeconvBackProjThread(void* pArg) {
 		param[6] = iparam6;
 		int* ipgp = (int*)(iparam6);
 		param[7] = 0;
-		if (pApp->dlgProperty.m_bEnableAVX2) param[7] |= 0x0001;
+		if (pApp->dlgProperty.m_bEnableAVX2) {
+			param[7] |= 0x0001;
+			if (pApp->dlgProperty.m_bEnableAVX512) param[7] |= 0x0002;//220417
+		}
 		param[8] = iy0;
 		param[9] = iy1;
 		BOOL bUseSIMD = pApp->dlgProperty.bEnableSIMD;

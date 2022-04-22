@@ -26,6 +26,8 @@
 #include "DlgOverlay.h"
 #include "DlgResolnPlot.h"
 #include "DlgFrameList.h"
+//220417
+#include <malloc.h>
 
 //CUDA declaration
 #include "cudaReconst.h"
@@ -259,7 +261,8 @@ void CGazoDoc::DeleteAll()
 	for (int i=0; i<CGAZODOC_MAXOVERLAY; i++) {
 		if (ppOverlay[i]) delete [] ppOverlay[i];
 	}
-	if (iReconst) delete [] iReconst;
+	//220417 if (iReconst) delete [] iReconst;
+	if (iReconst) _aligned_free(iReconst);//220417
 	if (iSinogr) {
 		for (int i=0; i<maxSinogrLen; i++) {if (iSinogr[i]) delete [] iSinogr[i];}
 		delete [] iSinogr;
@@ -3687,13 +3690,15 @@ TErr CGazoDoc::DeconvBackProj(RECONST_QUEUE* rq, double center, int iMultiplex, 
 	}
 	if (maxReconst < ixdim2) {
 		int* irct = iReconst;
-		try {iReconst = new int[ixdim2];}
+		//220417 try {iReconst = new int[ixdim2];}
+		try {iReconst = (int*)_aligned_malloc(sizeof(int) * ixdim2, 64);}//220417
 		catch(CException* e) {
 			e->Delete();
 			iReconst = irct; 
 			return 21021;
 		}
-		if (irct) delete [] irct;
+		//220417 if (irct) delete [] irct;
+		_aligned_free(irct);//220417
 		maxReconst = ixdim2;
 	}
 	nReconst = ixdimp;
@@ -3751,14 +3756,18 @@ TErr CGazoDoc::DeconvBackProj(RECONST_QUEUE* rq, double center, int iMultiplex, 
 			try {
 				ppiReconst = new int*[nCPU - 1];
 				for (int i = 0; i < nCPU - 1; i++) {
-					ppiReconst[i] = new int[maxReconst];
+					//220417 ppiReconst[i] = new int[maxReconst];
+					ppiReconst[i] = (int*)_aligned_malloc(sizeof(int) * maxReconst, 64);//220417
 					memset(ppiReconst[i], 0, sizeof(int) * maxReconst);
 				}
 			}
 			catch (CException* e) {
 				e->Delete();
 				if (ppiReconst) {
-					for (int i = 0; i < nCPU - 1; i++) { if (ppiReconst[i]) delete[] ppiReconst[i]; }
+					for (int i = 0; i < nCPU - 1; i++) {
+						//220417 if (ppiReconst[i]) delete[] ppiReconst[i]; 
+						if (ppiReconst[i]) _aligned_free(ppiReconst[i]); //220417
+					}
 					delete[] ppiReconst;
 				}
 				return 21023;
@@ -3817,7 +3826,8 @@ TErr CGazoDoc::DeconvBackProj(RECONST_QUEUE* rq, double center, int iMultiplex, 
 			if (ppiReconst[i-1]) {
 				for (int j = 0; j < maxReconst; j++) { iReconst[j] += (ppiReconst[i-1])[j]; }
 				if (pApp->dlgProperty.m_ProcessorType == CDLGPROPERTY_PROCTYPE_CUDA) CUDA_FREE_HOST(ppiReconst[i-1]);
-				else delete[] ppiReconst[i - 1];
+				//220417 else delete[] ppiReconst[i - 1];
+				else _aligned_free(ppiReconst[i - 1]);//220417
 			}
 		}
 	}

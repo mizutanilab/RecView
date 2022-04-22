@@ -105,6 +105,7 @@ CGazoApp::CGazoApp()
 	int iLogicalProcessorCount = 1;
 	bool bSIMD = false;
 	bool bAVX2 = false;//181222
+	bool bAVX512 = false;//220417
 	__cpuid(CPUInfo, 0);
 	int idmax = CPUInfo[0];
 	if (idmax >= 1) {
@@ -123,8 +124,21 @@ CGazoApp::CGazoApp()
 	if (idmax >= 7) {
 #ifdef _MSC_VER
 #if _MSC_VER >=1910 //VS2017 or later
-		__cpuidex(CPUInfo, 7, 0);
-		if (CPUInfo[1] & (1 << 5)) bAVX2 = true;
+		//__cpuidex(CPUInfo, 7, 0);
+		//if (CPUInfo[1] & (1 << 5)) bAVX2 = true;
+		//220417==>
+		if ((CPUInfo[2] & 0x08000000) && //CPUID.ECX.bit27 XSAVE enabled by OS => xgetbv available
+			(CPUInfo[2] & 0x10000000)) {//CPUID.ECX.bit28 AVX
+			const __int64 xcr0 = _xgetbv(0);
+			if ((xcr0 & 0x06) == 0x06) {//OS supoorts AVX
+				__cpuidex(CPUInfo, 7, 0);
+				if (CPUInfo[1] & 0x20) bAVX2 = true; //CPUID(7,0).EBX.bit5
+				if ((xcr0 & 0xe0) == 0xe0) {//OS supoorts AVX-512
+					if ((CPUInfo[1] & 0x00030000) == 0x00030000) bAVX512 = true;//512F & 512DQ
+				}
+			}
+		}
+		//==>220417
 #endif
 #endif
 	}
@@ -155,6 +169,8 @@ CGazoApp::CGazoApp()
 	else msg += " MMX+SSE+SSE2: not detected\r\n";
 	if (bAVX2) msg += " AVX2: detected\r\n";
 	else msg += " AVX2: not detected\r\n";
+	if (bAVX512) msg += " AVX-512F+DQ: detected\r\n";
+	else msg += " AVX-512F+DQ: not detected\r\n";
 	//memory
 	MEMORYSTATUSEX memory;
 	memory.dwLength = sizeof(memory);
@@ -271,7 +287,7 @@ CGazoApp::CGazoApp()
 		}
 	}
 	//
-	dlgProperty.Init(iAvailableCPU, bSIMD, bAVX2, 
+	dlgProperty.Init(iAvailableCPU, bSIMD, bAVX2, bAVX512, 
 						iCUDAcount, iCUDAblock, iCUDAwarp, 
 						iATIcount, iATImaxwork, iATIunitwork, iProcessorType);
 	//prevPixelWidth = -1;
@@ -738,6 +754,8 @@ TErr CGazoApp::CalcAvgImage(CString path, CString* files, int nfiles) {
 
 void CGazoApp::OnTomoLsqfit()
 {
+	//201126
+	const int nframes = 20;
 	CString sPathName[] = { "", "" };
 	POSITION pos = GetFirstDocTemplatePosition();
 	while (pos) {
@@ -752,9 +770,11 @@ void CGazoApp::OnTomoLsqfit()
 			}
 		}
 	}
-	const int nframes = 20;
+	int nPathName[] = { 0,0 };
 	TCHAR path_buffer[_MAX_PATH];
 	TCHAR drive[_MAX_DRIVE]; TCHAR dir[_MAX_DIR]; TCHAR fnm[_MAX_FNAME]; TCHAR ext[_MAX_EXT];
+	CFile file;
+	CMainFrame* pf = (CMainFrame*)AfxGetMainWnd();
 	for (int j = 0; j <= 1; j++) {
 		_stprintf_s(path_buffer, _MAX_PATH, sPathName[j]);
 		_tsplitpath_s(path_buffer, drive, _MAX_DRIVE, dir, _MAX_DIR, fnm, _MAX_FNAME, ext, _MAX_EXT);
@@ -769,16 +789,24 @@ void CGazoApp::OnTomoLsqfit()
 			sfnm.Format(fmt, i + idx0);
 			_stprintf_s(fnm, _MAX_FNAME, sfnm);
 			_tmakepath_s(path_buffer, _MAX_PATH, drive, dir, fnm, ext);
-			sPathName[j] += path_buffer;
-			sPathName[j] += "\r\n";
+			CString msg = "Accessing ";
+			if (pf) pf->m_wndStatusBar.SetPaneText(0, msg + path_buffer);
+			if (file.Open(path_buffer, CFile::modeRead)) {
+				file.Close();
+				sPathName[j] += path_buffer;
+				sPathName[j] += "\r\n";
+				nPathName[j]++;
+			}
+			else break;
 		}
 	}
-	AfxMessageBox(sPathName[0] + "\r\n-----\r\n" + sPathName[1]);
+	if (pf) pf->m_wndStatusBar.SetPaneText(0, "");
+	//AfxMessageBox(sPathName[0] + "\r\n-----\r\n" + sPathName[1]);
 	CDlgLsqfit dlg;
 	dlg.m_RefList = sPathName[0];
 	dlg.m_QryList = sPathName[1];
-	dlg.nRefFiles = nframes;
-	dlg.nQryFiles = nframes;
+	dlg.nRefFiles = nPathName[0];
+	dlg.nQryFiles = nPathName[1];
 	dlg.UpdateNfiles();
 	dlg.DoModal();
 }

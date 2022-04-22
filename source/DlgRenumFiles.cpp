@@ -230,13 +230,17 @@ void CDlgRenumFiles::OnOK()
 		e3p.UnitLength();
 		CXyz e1p = e2 * e3p;
 		CXyz e2p = e3p * e1p;
-		if (e3p.Length2() < 1E-6) {
+		//220118 if (e3p.Length2() < 1E-6) {
+		if (e1p.Length2() < 1E-6) {
 			e2p = e3p * e1;
 			e1p = e2p * e3p;
 		}
 		b[0] = e1p.X(e1); b[3] = e1p.X(e2); b[6] = e1p.X(e3);
 		b[1] = e2p.X(e1); b[4] = e2p.X(e2); b[7] = e2p.X(e3);
 		b[2] = e3p.X(e1); b[5] = e3p.X(e2); b[8] = e3p.X(e3);
+		//CString line, msg = "";
+		//line.Format("%f %f %f\r\n%f %f %f\r\n%f %f %f\r\n", e1p.x, e1p.y, e1p.z, e2p.x, e2p.y, e2p.z, e3p.x, e3p.y, e3p.z); msg += line;
+		//line.Format("%f %f %f\r\n%f %f %f\r\n%f %f %f\r\n", b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7], b[8]); msg += line;
 
 		TReal x1 = b[0] * (-ixcent) + b[3] * (-iycent) + b[6] * (-izcent);
 		TReal y1 = b[1] * (-ixcent) + b[4] * (-iycent) + b[7] * (-izcent);
@@ -244,7 +248,6 @@ void CDlgRenumFiles::OnOK()
 		ixmin = (x1 < ixmin) ? (int)x1 : ixmin; ixmax = (x1 > ixmax) ? (int)x1 : ixmax;
 		iymin = (y1 < iymin) ? (int)y1 : iymin; iymax = (y1 > iymax) ? (int)y1 : iymax;
 		izmin = (z1 < izmin) ? (int)z1 : izmin; izmax = (z1 > izmax) ? (int)z1 : izmax;
-		//CString line, msg = "";
 		//line.Format("%d %d %d ==> %f %f %f\r\n", -ixcent, -iycent, -izcent, x1, y1, z1); msg += line;
 		x1 = b[0] * (-ixcent + ixref-1) + b[3] * (-iycent) + b[6] * (-izcent);
 		y1 = b[1] * (-ixcent + ixref-1) + b[4] * (-iycent) + b[7] * (-izcent);
@@ -294,9 +297,6 @@ void CDlgRenumFiles::OnOK()
 		ixmin = (x1 < ixmin) ? (int)x1 : ixmin; ixmax = (x1 > ixmax) ? (int)x1 : ixmax;
 		iymin = (y1 < iymin) ? (int)y1 : iymin; iymax = (y1 > iymax) ? (int)y1 : iymax;
 		izmin = (z1 < izmin) ? (int)z1 : izmin; izmax = (z1 > izmax) ? (int)z1 : izmax;
-		//CString line;
-		//line.Format("%d-%d %d-%d %d-&d", ixmin, ixmax, iymin, iymax, izmin, izmax); 
-		//AfxMessageBox(line);
 		//output images
 		const unsigned int ixsize = ixmax - ixmin + 1;
 		const unsigned int iysize = iymax - iymin + 1;
@@ -321,6 +321,9 @@ void CDlgRenumFiles::OnOK()
 			iz1min = (iz1min < 0) ? 0 : iz1min;
 			nCache = (iz1max-iz1min+1 > nCache) ? iz1max-iz1min+1 : nCache;
 		}
+		//line.Format("%d-%d %d-%d %d-%d %d", ixmin, ixmax, iymin, iymax, izmin, izmax, nCache); msg += line;
+		//AfxMessageBox(msg);
+		//return;//220118
 		//alloc memory
 		MEMORYSTATUSEX memory;
 		memory.dwLength = sizeof(memory);

@@ -519,7 +519,11 @@ extern "C" int GetCudaNumberOfCores(int iDevice, int* piCores, int* piProcessors
 	cudaDeviceProp deviceProp;
 	if (cudaSuccess != cudaGetDeviceProperties(&deviceProp, iDevice)) { return CUDA_ERROR_DEVICE_GETPROPERTY; }
 	if (deviceProp.major == 9999 && deviceProp.minor == 9999) { return CUDA_ERROR_VIRTUAL_DEVICE_DETECTED; }//virtual device
-	if (piCores) *piCores = _ConvertSMVer2Cores(deviceProp.major, deviceProp.minor);
+	//220422 if (piCores) *piCores = _ConvertSMVer2Cores(deviceProp.major, deviceProp.minor);
+	if (piCores) {//220422
+		if ((deviceProp.major == 8) && (deviceProp.minor == 6)) *piCores = 128;//GA102-7 has 64 FP32 + 64 FP/INT32 = 128 cores per SM (NVIDIA Ampere GA102 GPU Architecture, 2021)
+		else *piCores = _ConvertSMVer2Cores(deviceProp.major, deviceProp.minor);
+	}
 	if (piProcessors) *piProcessors = deviceProp.multiProcessorCount;
 	return 0;
 }
