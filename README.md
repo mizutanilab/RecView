@@ -1,6 +1,6 @@
 ## RecView <A href="https://scicrunch.org/scicrunch/Resources/record/nlx_144509-1/SCR_016531/resolver">RRID:SCR_016531</A>
 RecView is a program for tomographic reconstruction and image processing. It consists of over 25,000 lines of custom source codes in C++, CUDA C, OpenCL, and x86/x86_64 (x64) assembly languages including SIMD instructions up to AVX-512. RecView is designed for processing data obtained at the BL20B2, BL20XU, BL37XU, and BL47XU beamlines of the SPring-8 synchrotron radiation facility and also those taken at the 32-ID beamline of Advanced Photon Source (APS) of Argonne National Laboratory.<BR> 
-Executables are available from the Releases pane of the <b><a href="https://github.com/mizutanilab/RecView">repository homepage</a></b>. Manuals are in the docs folder.
+Executables and manuals are available from the Releases pane of the <b><a href="https://github.com/mizutanilab/RecView">repository homepage</a></b>. Manuals are separately provided also in the docs folder.
 
 <IMG width=100 height=140 alt=testPattern src="testPattern.png" align=left>
 Three-dimensional structural analysis with microtomography (micro-CT) or nanotomography (nano-CT) is performed by recording two-dimensional x-ray images while rotating the sample. Then tomographic sections are calculated from the x-ray images with the convolution back-projection method. This calculation is repeated for each tomographic slice to reconstruct the entire three-dimensional structure. RecView is a program for the tomographic reconstruction calculation with graphical user interfaces. Multiple datasets can be continuously processed by using its queueing function. Zooming reconstruction (an example is shown left), Gaussian convolution for denoising, and many other procedures for image processing are also implemented. Resolution of real sample images can be estimated with the Fourier domain plot by using this program. 
@@ -135,7 +135,7 @@ The 'Tomography'-'Histogram/conversion' dialog provides several tools for trimmi
   <LI><b>System requirements</b></LI>
     RecView can be executed on a Windows PC running Windows 10 or 11 with an x86 or x64 CPU and a local storage. Its reoncstruction kernel can run either on CPU or GPU. The CUDA kernel can be executed on NVIDIA GPU processors with 'compute capability' 3.0 or higher (this corresponds to Kepler processors or later). If you run RecView on a legacy CPU without using GPU, we recommend CPUs released after approx 2005 (i.e., Pentium4 / Athlon64 or later), because SSE2 SIMD instructions are used in the x86/x64 reconstruction kernel. This is not a requirement, but the performance may differ by a factor of 2-3 with or without the SIMD. The x86/x64 kernel also uses AVX2 or AVX-512 instructions if available. <br><br>
   <LI><b>Manuals</b></LI>
-    A step-by-step manuals are provided in the docs folder.<BR><BR>
+    A step-by-step manuals in English and Japanese are included in the Release. They are also separrately provided in the docs folder.<BR><BR>
   <LI><b>What kind of data can be processed?</b></LI>
     RecView is designed for the reconstruction of tomographic data obtained at SPring-8 and APS. However, any kind of data can be processed. Please contact the author if you have problems in using this program with your own data. Dataset requirements are:
     <UL>
