@@ -49,6 +49,7 @@ public:
 	bool IsBusy();
 	CString Lsqfit(LSQFIT_QUEUE* lq, CDlgLsqfit* dlg = NULL, CDlgQueue* dqueue = NULL);
 	CString LsqfitMin(LSQFIT_QUEUE* lq, CDlgLsqfit* dlg = NULL, CDlgQueue* dqueue = NULL);
+	TErr ExecConvBat();//230613
 
 	int iAvailableCPU;
 	//150101 HCURSOR hCursorRot;
@@ -63,6 +64,7 @@ public:
 
 	CMutex m_mutex;//131019
 
+	int m_iDPI;//230613
 //	CDlgDialbox dlgDialbox;
 
 private:

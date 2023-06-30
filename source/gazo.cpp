@@ -368,6 +368,10 @@ BOOL CGazoApp::InitInstance()
 
 	pMainFrame->m_wndStatusBar.SetPaneText(1, sProcessorSelectedOnInit);
 
+	HDC hDC = ::GetDC(pMainFrame->m_hWnd);
+	m_iDPI = ::GetDeviceCaps(hDC, LOGPIXELSY);
+	//CString msg; msg.Format("%d %f", iDPI, dRate); AfxMessageBox(msg);
+
 	return TRUE;
 }
 
@@ -457,7 +461,7 @@ void CGazoApp::OnFileOpen() {
 	CString fn = "";
 	static char BASED_CODE defaultExt[] = ".img";
 	static char BASED_CODE szFilter[] = 
-		"Raw data (*.his;q*.img;*.h5)|*.his;q*.img;*.h5|rec files (rec*.tif)|rec*.tif|ro files (ro*.tif)|ro*.tif|ITEX files (*.img)|*.img|TIFF files (*.tif)|*.tif|Images (*.jpg;*.png;*.bmp)|*.jpg;*.png;*.bmp|All files (*.*)|*.*||";
+		"Raw data (*.his;q*.img;*.h5)|*.his;q*.img;*.h5|Preconv data (a*.img)|a*.img|rec files (rec*.tif)|rec*.tif|ro files (ro*.tif)|ro*.tif|ITEX files (*.img)|*.img|TIFF files (*.tif)|*.tif|Images (*.jpg;*.png;*.bmp)|*.jpg;*.png;*.bmp|All files (*.*)|*.*||";
 	//CFileDialog dlg(TRUE, defaultExt, fn, OFN_FILEMUSTEXIST | OFN_HIDEREADONLY, szFilter, NULL, 0, FALSE);
 	//190121 CFileDialog dlg(TRUE, defaultExt, fn, OFN_FILEMUSTEXIST | OFN_HIDEREADONLY, szFilter);
 	CFileDialog dlg(TRUE, defaultExt, NULL, OFN_FILEMUSTEXIST | OFN_HIDEREADONLY, szFilter);
@@ -555,17 +559,18 @@ void CGazoApp::OnUpdateWindowNew(CCmdUI *pCmdUI)
 	pCmdUI->Enable(false);
 }
 
-void CGazoApp::OnFilePrepfiles()
+void CGazoApp::OnFilePrepfiles() { ExecConvBat(); }//230613
+TErr CGazoApp::ExecConvBat() //230613
 {
 	static char BASED_CODE defaultExt[] = ".bat";
 	static char BASED_CODE szFilter[] = 
 		"Accompanied batch file (conv.bat)|conv.bat|Batch files (*.bat)|*.bat|All files (*.*)|*.*||";
 	CFileDialog dlgFile(TRUE, defaultExt, "conv.bat", OFN_FILEMUSTEXIST | OFN_HIDEREADONLY, szFilter, NULL);
-	if (dlgFile.DoModal() != IDOK) return;
+	if (dlgFile.DoModal() != IDOK) return 2306131;
 	const CString fname = dlgFile.GetPathName();
 	FILE* fconv = NULL;
 	errno_t errn = fopen_s(&fconv, fname, "rt");
-	if (errn) {AfxMessageBox("File not found."); return;}
+	if (errn) {AfxMessageBox("File not found."); return 2306132;}
 	CStdioFile stdioConv(fconv);
 	//
 	TCHAR path_buffer[_MAX_PATH];
@@ -575,6 +580,19 @@ void CGazoApp::OnFilePrepfiles()
 	_tmakepath_s(path_buffer, _MAX_PATH, drive, dir, NULL, NULL);
 	const CString fpath = path_buffer;
 	//AfxMessageBox(fname + "\r\n" + fpath);
+	//CMainFrame* pf = (CMainFrame*)AfxGetMainWnd();//230613
+
+	::CoInitialize(NULL);//initilaize COM
+	IProgressDialog *pDlg = NULL;
+	HRESULT hr = ::CoCreateInstance(CLSID_ProgressDialog, NULL, CLSCTX_INPROC_SERVER,
+									IID_IProgressDialog, (void**)&pDlg);
+	if (pDlg) {
+		pDlg->SetTitle(L"Executing conv.bat");
+		//pDlg->SetAnimation(NULL, IDR_AVI);
+		pDlg->SetLine(1, L"Executing conv.bat", FALSE, NULL);
+		pDlg->StartProgressDialog(NULL, NULL, PROGDLG_NORMAL | PROGDLG_NOMINIMIZE | PROGDLG_NOPROGRESSBAR, NULL);
+	}
+
 	//check files
 	TErr err = 0;
 	CString fcheck = "";
@@ -584,6 +602,7 @@ void CGazoApp::OnFilePrepfiles()
 	while (stdioConv.ReadString(line)) {
 		iline++;
 		if (line.IsEmpty()) continue;
+		ProcessMessage();//230613
 		const CString cmd = line.SpanExcluding("\t ");
 		line = line.Mid(cmd.GetLength());
 		line.TrimLeft();
@@ -593,6 +612,17 @@ void CGazoApp::OnFilePrepfiles()
 		else if (cmd == "copy") {icmd = CGAZOAPP_CMD_COPY; narg = 2;}
 		else if (cmd == "img_ave") {icmd = CGAZOAPP_CMD_AVG; narg = CGAZOAPP_CMD_MAXTOKEN;}
 		else continue;
+
+		//if (pf) pf->m_wndStatusBar.SetPaneText(0, "Checking " + token[0]);//230613
+		if (pDlg) {
+			//pDlg->SetProgress(icurr, imax);
+			if (iline % 20 == 0) {
+				pDlg->SetLine(2, (CStringW)"Checking files ", FALSE, NULL);
+				pDlg->SetLine(3, (CStringW)(line), FALSE, NULL);
+				Sleep(1);
+			}
+			if (pDlg->HasUserCancelled()) { err = 1; break; }
+		}
 		//get args
 		for (int i=0; i<narg; i++) {
 			token[i] = line.SpanExcluding("\t ");
@@ -615,21 +645,16 @@ void CGazoApp::OnFilePrepfiles()
 		if (err) break;
 	}
 	if (err) {
+		if (pDlg) {
+			pDlg->SetLine(2, (CStringW)"Error", FALSE, NULL);
+			pDlg->SetLine(3, (CStringW)"", FALSE, NULL);
+			pDlg->StopProgressDialog();
+		}
+		::CoUninitialize();//unload COM
 		CString msg;
 		msg.Format("ERROR. Line %d\r\nFile not found:\r\n ", iline);
 		AfxMessageBox(msg + fcheck);
-		return;
-	}
-
-	::CoInitialize(NULL);//initilaize COM
-	IProgressDialog *pDlg = NULL;
-	HRESULT hr = ::CoCreateInstance(CLSID_ProgressDialog, NULL, CLSCTX_INPROC_SERVER,
-									IID_IProgressDialog, (void**)&pDlg);
-	if (pDlg) {
-		pDlg->SetTitle(L"Radiograph file preparation");
-		//pDlg->SetAnimation(NULL, IDR_AVI);
-		pDlg->SetLine(1, L"Radiograph file preparation", FALSE, NULL);
-		pDlg->StartProgressDialog(NULL, NULL, PROGDLG_NORMAL | PROGDLG_NOMINIMIZE | PROGDLG_NOPROGRESSBAR, NULL);
+		return 2306133;
 	}
 
 	line = "";
@@ -638,6 +663,7 @@ void CGazoApp::OnFilePrepfiles()
 	stdioConv.SeekToBegin();
 	while (stdioConv.ReadString(line)) {
 		if (line.IsEmpty()) continue;
+		ProcessMessage();//230613
 		const CString cmd = line.SpanExcluding("\t ");
 		line = line.Mid(cmd.GetLength());
 		line.TrimLeft();
@@ -646,24 +672,6 @@ void CGazoApp::OnFilePrepfiles()
 		if (cmd == "ren") {icmd = CGAZOAPP_CMD_REN; narg = 2;}
 		else if (cmd == "copy") {icmd = CGAZOAPP_CMD_COPY; narg = 2;}
 		else if (cmd == "img_ave") {icmd = CGAZOAPP_CMD_AVG; narg = CGAZOAPP_CMD_MAXTOKEN;}
-		//Dlg control
-		istep++;
-		if (pDlg) {
-			//pDlg->SetProgress(icurr, imax);
-			if (istep % 20 == 0) {
-				CString msg2;
-				switch (icmd) {
-					case CGAZOAPP_CMD_REN: {msg2 = "Moving files..."; break;}
-					case CGAZOAPP_CMD_COPY: {msg2 = "Copying files..."; break;}
-					case CGAZOAPP_CMD_AVG: {msg2 = "Averaging images..."; break;}
-					default: {msg2 = "Working...";}
-				}
-				pDlg->SetLine(2, (CStringW)msg2, FALSE, NULL);
-				pDlg->SetLine(3, (CStringW)(token[0] + " ===> " + token[1]), FALSE, NULL);
-				Sleep(1);
-			}
-			if( pDlg->HasUserCancelled() )  break;
-		}
 		//get args
 		for (int i=0; i<narg; i++) {
 			token[i] = line.SpanExcluding("\t ");
@@ -671,6 +679,25 @@ void CGazoApp::OnFilePrepfiles()
 			line = line.Mid(token[i].GetLength());
 			line.TrimLeft();
 			if (line.IsEmpty()) {narg = i+1; break;}
+		}
+		//Dlg control
+		istep++;
+		//if (pf) pf->m_wndStatusBar.SetPaneText(0, "Processing " + token[0]);//230613
+		if (pDlg) {
+			//pDlg->SetProgress(icurr, imax);
+			if (istep % 20 == 0) {
+				CString msg2;
+				switch (icmd) {
+				case CGAZOAPP_CMD_REN: {msg2 = "Moving files..."; break;}
+				case CGAZOAPP_CMD_COPY: {msg2 = "Copying files..."; break;}
+				case CGAZOAPP_CMD_AVG: {msg2 = "Averaging images..."; break;}
+				default: {msg2 = "Working...";}
+				}
+				pDlg->SetLine(2, (CStringW)msg2, FALSE, NULL);
+				pDlg->SetLine(3, (CStringW)(token[0] + " ===> " + token[1]), FALSE, NULL);
+				Sleep(1);
+			}
+			if (pDlg->HasUserCancelled())  break;
 		}
 		//commands
 		const CString fn0 = fpath + token[0];
@@ -697,11 +724,14 @@ void CGazoApp::OnFilePrepfiles()
 		}
 	}
 	//
-	pDlg->SetLine(2, (CStringW)"Finished.", FALSE, NULL);
-	pDlg->SetLine(3, (CStringW)"", FALSE, NULL);
 	fclose(fconv);
-	if (pDlg) pDlg->StopProgressDialog();
+	if (pDlg) {
+		pDlg->SetLine(2, (CStringW)"Finished.", FALSE, NULL);
+		pDlg->SetLine(3, (CStringW)"", FALSE, NULL);
+		pDlg->StopProgressDialog();
+	}
 	::CoUninitialize();//unload COM
+	return 0;
 }
 
 TErr CGazoApp::CalcAvgImage(CString path, CString* files, int nfiles) {

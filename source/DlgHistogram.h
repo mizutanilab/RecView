@@ -10,6 +10,7 @@
 
 #define CDLGHISTG_BITMAP_HEIGHT 150
 #define CDLGHISTG_BITMAP_WIDTH 300
+
 //#define CDLGHISTG_BITMAP_HEIGHT 190
 //#define CDLGHISTG_BITMAP_WIDTH 400
 #define CDLGHISTG_BITMAP_NEAR 5
@@ -33,6 +34,7 @@ public:
 	void ParamCopyFrom(const CDlgHistogram& a);
 	void UpdateView();
 	void UpdateParam();
+	void RedrawHistogram();//230613
 
 	CString filePath;
 	TCHAR* fileList;
@@ -102,6 +104,10 @@ protected:
 	LPBITMAPINFO lpBmpInfo;
 	BYTE* pBitmapPix;
 
+	//230613
+	int m_iCDLGHISTG_BITMAP_HEIGHT;
+	int m_iCDLGHISTG_BITMAP_WIDTH;
+
 	// 生成されたメッセージ マップ関数
 	//{{AFX_MSG(CDlgHistogram)
 	virtual BOOL OnInitDialog();
@@ -130,6 +136,8 @@ public:
 	BOOL m_bEnablePolygon;
 	afx_msg void OnBnClickedHistgEnpolygon();
 	BOOL m_bHistLog;
+	BOOL m_bUpdateHistg;
+	afx_msg void OnBnClickedHistgUpdatehistg();
 };
 
 //{{AFX_INSERT_LOCATION}}

@@ -135,7 +135,7 @@ BEGIN
     POPUP "&File"
     BEGIN
         MENUITEM "&New\tCtrl+N",                ID_FILE_NEW
-        MENUITEM "Prepare files...",            IDM_FILE_PREPFILES
+        MENUITEM "Exec conv.bat...",            IDM_FILE_PREPFILES
         MENUITEM "&Open...\tCtrl+O",            ID_FILE_OPEN
         MENUITEM SEPARATOR
         MENUITEM "Load queue...",               IDM_FILE_LOADQUEUE
@@ -174,7 +174,7 @@ BEGIN
     POPUP "&File"
     BEGIN
         MENUITEM "&New\tCtrl+N",                ID_FILE_NEW
-        MENUITEM "Prepare files...",            IDM_FILE_PREPFILES
+        MENUITEM "Exec conv.bat...",            IDM_FILE_PREPFILES
         MENUITEM "&Open...\tCtrl+O",            ID_FILE_OPEN
         MENUITEM "Close",                       ID_FILE_CLOSE
         MENUITEM "Close all",                   IDM_FILE_CLOSEALL
@@ -315,7 +315,7 @@ BEGIN
     ICON            IDR_MAINFRAME,IDC_STATIC,11,17,20,20
     DEFPUSHBUTTON   "OK",IDOK,164,7,36,14,WS_GROUP
     LTEXT           "CGazoApp::CGazoApp() sProgVersion",IDC_ABOUT_VER,42,11,115,16,SS_NOPREFIX | WS_TABSTOP
-    LTEXT           "Copyright (C) 2008-2022 Ryuta Mizutani.\r\nAll rights reserved.",IDC_STATIC,46,31,154,17
+    LTEXT           "Copyright (C) 2008-2023 Ryuta Mizutani.\r\nAll rights reserved.",IDC_STATIC,46,31,154,17
     LTEXT           "https://mizutanilab.github.io/",IDC_STATIC,54,49,139,15
     LTEXT           "File->Open one of *.his, *.img, or *.h5 files.\r\nGo 'Tomography->Reconstruction' menu.\r\n  Click 'Show image' to calcurate tomograms.\r\n  Examine tomograms at top and bottom of the sample.\r\n  Refine parameters as you like.\r\n  Then issue or queue execution.",IDC_STATIC,17,67,179,60
     LTEXT           "Again File->Open one of rec*.tif files.\r\nGo 'Tomography->Histogram/conversion' menu.\r\n  Click 'Select Image'\r\n    to select files to convert.\r\n  Move green and red lines in the histogram\r\n    to define output LAC levels.\r\n  Issue or queue execution.",IDC_STATIC,17,119,183,61
@@ -399,6 +399,7 @@ BEGIN
     PUSHBUTTON      "Options...",IDC_HISTG_OPT,201,130,34,14
     CONTROL         "Enable polygon lasso",IDC_HISTG_ENPOLYGON,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,144,156,82,10
     CONTROL         "Output histogram log",IDC_HISTG_OUTLOGHIST,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,144,168,82,10
+    CONTROL         "Update histogram",IDC_HISTG_UPDATEHISTG,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,144,180,82,10
 END
 
 IDD_QUEUE DIALOGEX 0, 0, 299, 141
@@ -1069,6 +1070,11 @@ BEGIN
 END
 
 IDD_GENERAL AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_HISTOGRAM AFX_DIALOG_LAYOUT
 BEGIN
     0
 END

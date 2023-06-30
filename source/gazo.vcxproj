@@ -294,6 +294,9 @@
       <TargetMachine>MachineX86</TargetMachine>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
+    <Manifest>
+      <EnableDpiAwareness>true</EnableDpiAwareness>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Midl>
@@ -336,6 +339,9 @@
       <DataExecutionPrevention />
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
+    <Manifest>
+      <EnableDpiAwareness>true</EnableDpiAwareness>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='CUDA_Release|x64'">
     <Midl>
@@ -383,6 +389,9 @@
       <CodeGeneration>compute_30,sm_30</CodeGeneration>
       <TargetMachinePlatform>64</TargetMachinePlatform>
     </CudaCompile>
+    <Manifest>
+      <EnableDpiAwareness>true</EnableDpiAwareness>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='CUDAFFT_Release|x64'">
     <Midl>
@@ -432,6 +441,9 @@
       <CodeGeneration>compute_30,sm_30</CodeGeneration>
       <TargetMachinePlatform>64</TargetMachinePlatform>
     </CudaCompile>
+    <Manifest>
+      <EnableDpiAwareness>true</EnableDpiAwareness>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='OpenCL_Release|Win32'">
     <Midl>

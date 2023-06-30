@@ -98,6 +98,8 @@
 #define IDC_HISTG_OUTLOGHIST            1041
 #define IDC_PROP_CPU                    1042
 #define IDC_PROP_NCPU                   1042
+#define IDC_HISTG_OUTLOGHIST2           1042
+#define IDC_HISTG_UPDATEHISTG           1042
 #define IDC_PROP_CPU2                   1043
 #define IDC_PROP_MEMORY                 1043
 #define IDC_CHECK1                      1044
@@ -379,7 +381,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_3D_CONTROLS                     1
-#define _APS_NEXT_RESOURCE_VALUE        153
+#define _APS_NEXT_RESOURCE_VALUE        154
 #define _APS_NEXT_COMMAND_VALUE         32851
 #define _APS_NEXT_CONTROL_VALUE         1129
 #define _APS_NEXT_SYMED_VALUE           102

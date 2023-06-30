@@ -24,6 +24,7 @@ CDlgHistogram::CDlgHistogram(CWnd* pParent /*=NULL*/)
 	//, m_StatMsg(_T("Statistics..."))
 	, m_bEnablePolygon(FALSE)
 	, m_bHistLog(FALSE)
+	, m_bUpdateHistg(TRUE)
 {
 	//{{AFX_DATA_INIT(CDlgHistogram)
 	m_HstHigh = _T("");
@@ -68,6 +69,7 @@ CDlgHistogram::CDlgHistogram(CWnd* pParent /*=NULL*/)
 	fileList = new TCHAR[MAX_FILE_DIALOG_LIST];
 	_tcscpy_s(fileList, MAX_FILE_DIALOG_LIST, "");
 	//
+
 	hBitmap = NULL;
 	pBitmapPix = NULL;
 	lpBmpInfo=(LPBITMAPINFO)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, 
@@ -93,6 +95,13 @@ CDlgHistogram::CDlgHistogram(CWnd* pParent /*=NULL*/)
 		(lpBmpInfo->bmiColors)[i].rgbGreen = i;
 		(lpBmpInfo->bmiColors)[i].rgbRed = i;
 	}
+
+	//230613
+	CGazoApp* pApp = (CGazoApp*)AfxGetApp();
+	double r = (pApp->m_iDPI) ? (pApp->m_iDPI / 96.0) : 1;
+	m_iCDLGHISTG_BITMAP_HEIGHT = (int)(r * CDLGHISTG_BITMAP_HEIGHT);
+	m_iCDLGHISTG_BITMAP_WIDTH = (int)(r * CDLGHISTG_BITMAP_WIDTH) & 0xfffffffc;
+	//CString msg; msg.Format("%d %d", m_iCDLGHISTG_BITMAP_HEIGHT, m_iCDLGHISTG_BITMAP_WIDTH); AfxMessageBox(msg);
 }
 
 CDlgHistogram::~CDlgHistogram() {
@@ -124,8 +133,8 @@ void CDlgHistogram::ParamCopyFrom(const CDlgHistogram& a) {
 }
 
 TErr CDlgHistogram::AllocBitmap() {
-	const int iWidth = CDLGHISTG_BITMAP_WIDTH;
-	const int iHeight = CDLGHISTG_BITMAP_HEIGHT;
+	const int iWidth = m_iCDLGHISTG_BITMAP_WIDTH;
+	const int iHeight = m_iCDLGHISTG_BITMAP_HEIGHT;
 	const int npix = iWidth * iHeight;
 	if (pBitmapPix) return 0;
 	if (!pd) return 22000;
@@ -144,8 +153,8 @@ TErr CDlgHistogram::AllocBitmap() {
 void CDlgHistogram::UpdateHistogram() {
 	if (AllocBitmap()) return;
 	UpdateData();//080315
-	const int iWidth = CDLGHISTG_BITMAP_WIDTH;
-	const int iHeight = CDLGHISTG_BITMAP_HEIGHT;
+	const int iWidth = m_iCDLGHISTG_BITMAP_WIDTH;
+	const int iHeight = m_iCDLGHISTG_BITMAP_HEIGHT;
 	const int npix = iWidth * iHeight;
 	//
 	int ixdim, iydim;
@@ -160,9 +169,9 @@ void CDlgHistogram::UpdateHistogram() {
 		imax = ip > imax ? ip : imax;
 	}
 	if ((imin == INT_MAX)&&(imax == 0)) {
-		imin = 0; imax = CDLGHISTG_BITMAP_WIDTH;
+		imin = 0; imax = m_iCDLGHISTG_BITMAP_WIDTH;
 	} else if (imin == imax) {
-		imax = imin + CDLGHISTG_BITMAP_WIDTH;
+		imax = imin + m_iCDLGHISTG_BITMAP_WIDTH;
 	}
 	fLow = imin;
 	fHigh = imax;
@@ -188,7 +197,7 @@ void CDlgHistogram::UpdateHistogram() {
 			iHstDispMax = ip > iHstDispMax ? ip : iHstDispMax;
 		}
 	}
-	if (iHstDispMax <= 0) iHstDispMax = CDLGHISTG_BITMAP_HEIGHT;
+	if (iHstDispMax <= 0) iHstDispMax = m_iCDLGHISTG_BITMAP_HEIGHT;
 	m_HstMax.Format("%6d", iHstDispMax);
 	//CString msg; msg.Format("%d %d %d", imin, imax, iHstDispMax);
 	//AfxMessageBox("130203-12 " + msg);
@@ -204,8 +213,8 @@ void CDlgHistogram::UpdateHistogram() {
 }
 
 void CDlgHistogram::CopyHistogram() {
-	const int iWidth = CDLGHISTG_BITMAP_WIDTH;
-	const int iHeight = CDLGHISTG_BITMAP_HEIGHT;
+	const int iWidth = m_iCDLGHISTG_BITMAP_WIDTH;
+	const int iHeight = m_iCDLGHISTG_BITMAP_HEIGHT;
 	const int npix = iWidth * iHeight;
 	for (int i=0; i<npix; i++) {pBitmapPix[i] = pHistgPix[i];}
 	//zero line
@@ -220,8 +229,8 @@ void CDlgHistogram::CopyHistogram() {
 }
 
 void CDlgHistogram::SetCursor() {
-	const int iWidth = CDLGHISTG_BITMAP_WIDTH;
-	const int iHeight = CDLGHISTG_BITMAP_HEIGHT;
+	const int iWidth = m_iCDLGHISTG_BITMAP_WIDTH;
+	const int iHeight = m_iCDLGHISTG_BITMAP_HEIGHT;
 	const int npix = iWidth * iHeight;
 	int iLowCursor = GetCursorPnt(m_CursorLow);
 	int iHighCursor = GetCursorPnt(m_CursorHigh);
@@ -234,8 +243,8 @@ void CDlgHistogram::SetCursor() {
 }
 
 void CDlgHistogram::UpdateBitmap() {
-	const int iWidth = CDLGHISTG_BITMAP_WIDTH;
-	const int iHeight = CDLGHISTG_BITMAP_HEIGHT;
+	const int iWidth = m_iCDLGHISTG_BITMAP_WIDTH;
+	const int iHeight = m_iCDLGHISTG_BITMAP_HEIGHT;
 	//
 	if (hBitmap) DeleteObject(hBitmap);
 	BITMAPINFOHEADER* bh = &(lpBmpInfo->bmiHeader);
@@ -378,6 +387,7 @@ void CDlgHistogram::DoDataExchange(CDataExchange* pDX)
 	//DDX_Text(pDX, IDC_HISTG_STAT, m_StatMsg);
 	DDX_Check(pDX, IDC_HISTG_ENPOLYGON, m_bEnablePolygon);
 	DDX_Check(pDX, IDC_HISTG_OUTLOGHIST, m_bHistLog);
+	DDX_Check(pDX, IDC_HISTG_UPDATEHISTG, m_bUpdateHistg);
 }
 
 
@@ -401,6 +411,7 @@ BEGIN_MESSAGE_MAP(CDlgHistogram, CDialog)
 	//}}AFX_MSG_MAP
 	ON_BN_CLICKED(IDC_HISTG_OPT, &CDlgHistogram::OnBnClickedHistgOpt)
 	ON_BN_CLICKED(IDC_HISTG_ENPOLYGON, &CDlgHistogram::OnBnClickedHistgEnpolygon)
+	ON_BN_CLICKED(IDC_HISTG_UPDATEHISTG, &CDlgHistogram::OnBnClickedHistgUpdatehistg)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -413,6 +424,21 @@ BOOL CDlgHistogram::OnInitDialog()
 	//const int iWidth = CDLGHISTG_BITMAP_WIDTH;
 	//const int iHeight = CDLGHISTG_BITMAP_HEIGHT;
 	//const int npix = iWidth * iHeight;
+
+	RedrawHistogram();//230613
+//	UpdateHistogram();
+//	//CopyHistogram();
+//	SetCursor();
+//	UpdateData(FALSE);
+//	EnableCtrl();
+//	UpdateBitmap();
+//	//if (hBitmap) m_Bitmap.SetBitmap(hBitmap);
+//	UpdateBoxMsg();
+	return TRUE;  // コントロールにフォーカスを設定しないとき、戻り値は TRUE となります
+	              // 例外: OCX プロパティ ページの戻り値は FALSE となります
+}
+
+void CDlgHistogram::RedrawHistogram() {//230613
 	UpdateHistogram();
 	//CopyHistogram();
 	SetCursor();
@@ -421,14 +447,12 @@ BOOL CDlgHistogram::OnInitDialog()
 	UpdateBitmap();
 	//if (hBitmap) m_Bitmap.SetBitmap(hBitmap);
 	UpdateBoxMsg();
-	return TRUE;  // コントロールにフォーカスを設定しないとき、戻り値は TRUE となります
-	              // 例外: OCX プロパティ ページの戻り値は FALSE となります
 }
 
 void CDlgHistogram::OnDeltaposHistgMag(NMHDR* pNMHDR, LRESULT* pResult) 
 {
-	const int iWidth = CDLGHISTG_BITMAP_WIDTH;
-	const int iHeight = CDLGHISTG_BITMAP_HEIGHT;
+	const int iWidth = m_iCDLGHISTG_BITMAP_WIDTH;
+	const int iHeight = m_iCDLGHISTG_BITMAP_HEIGHT;
 	const int npix = iWidth * iHeight;
 	NM_UPDOWN* pNMUpDown = (NM_UPDOWN*)pNMHDR;
 	int idlt = pNMUpDown->iDelta; //left = 1 and right = -1
@@ -452,14 +476,14 @@ int CDlgHistogram::GetCursorPnt(CString arg) {
 	//	}
 	//}
 	double dens = atof(arg);
-	int irtn = (int)( (dens - fLow) * (CDLGHISTG_BITMAP_WIDTH - 1) / (fHigh - fLow) );
+	int irtn = (int)( (dens - fLow) * (m_iCDLGHISTG_BITMAP_WIDTH - 1) / (fHigh - fLow) );
 	if (irtn < 0) irtn = 0;
-	else if (irtn >= CDLGHISTG_BITMAP_WIDTH) irtn = CDLGHISTG_BITMAP_WIDTH - 1;
+	else if (irtn >= m_iCDLGHISTG_BITMAP_WIDTH) irtn = m_iCDLGHISTG_BITMAP_WIDTH - 1;
 	return irtn;
 }
 
 CString CDlgHistogram::GetIntensityFromCursor(int ipos) {
-	double dens = ipos * (fHigh - fLow) / (CDLGHISTG_BITMAP_WIDTH - 1) + fLow;
+	double dens = ipos * (fHigh - fLow) / (m_iCDLGHISTG_BITMAP_WIDTH - 1) + fLow;
 	//if (pd) {
 	//	if (pd->pixDiv > 0) {
 	//		rtn = rtn / pd->pixDiv + pd->pixBase;
@@ -480,8 +504,8 @@ void CDlgHistogram::OnLButtonDown(UINT nFlags, CPoint point)
 	int iHighCursor = GetCursorPnt(m_CursorHigh);
 	POINT pnt = point;
 	MapWindowPoints(GetDlgItem(IDC_HISTG_BITMAP), &pnt, 1);
-	if ((pnt.x >= 0)&&(pnt.x < CDLGHISTG_BITMAP_WIDTH)&&
-			(pnt.y >= 0)&&(pnt.y < CDLGHISTG_BITMAP_HEIGHT)) {
+	if ((pnt.x >= 0)&&(pnt.x < m_iCDLGHISTG_BITMAP_WIDTH)&&
+			(pnt.y >= 0)&&(pnt.y < m_iCDLGHISTG_BITMAP_HEIGHT)) {
 		if (abs(iLowCursor - pnt.x) < CDLGHISTG_BITMAP_NEAR) {
 			bLButtonDownLow = true;
 			bLButtonDownHigh = false;
@@ -532,7 +556,7 @@ void CDlgHistogram::OnMouseMove(UINT nFlags, CPoint point)
 		} else if (bLButtonDownHigh) {
 			iHighCursor = pnt.x;
 			//if (iHighCursor < 0) iHighCursor = 0;
-			if (iHighCursor >= CDLGHISTG_BITMAP_WIDTH) iHighCursor = CDLGHISTG_BITMAP_WIDTH - 1;
+			if (iHighCursor >= m_iCDLGHISTG_BITMAP_WIDTH) iHighCursor = m_iCDLGHISTG_BITMAP_WIDTH - 1;
 			else if (iHighCursor <= iLowCursor) iHighCursor = iLowCursor + 1;
 			m_CursorHigh = GetIntensityFromCursor(iHighCursor);
 			bInvalidate = true;
@@ -844,4 +868,12 @@ void CDlgHistogram::OnBnClickedHistgEnpolygon()
 		}
 	}
 	UpdateView();
+}
+
+
+void CDlgHistogram::OnBnClickedHistgUpdatehistg()
+{
+	// TODO: ここにコントロール通知ハンドラー コードを追加します。
+	UpdateData();
+	RedrawHistogram();//230613
 }

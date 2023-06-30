@@ -75,6 +75,12 @@ CDlgResolnPlot::CDlgResolnPlot(CWnd* pParent /*=NULL*/)
 		(lpBmpInfo->bmiColors)[i].rgbGreen = i;
 		(lpBmpInfo->bmiColors)[i].rgbRed = i;
 	}
+
+	CGazoApp* pApp = (CGazoApp*)AfxGetApp();
+	double r = (pApp->m_iDPI) ? (pApp->m_iDPI / 96.0) : 1;
+	m_iCDLGRESOLNPLOT_BITMAP_HEIGHT = (int)(r * CDLGRESOLNPLOT_BITMAP_HEIGHT);
+	m_iCDLGRESOLNPLOT_BITMAP_WIDTH = (int)(r * CDLGRESOLNPLOT_BITMAP_WIDTH) & 0xfffffffc;
+	//CString msg; msg.Format("%d %d", m_iCDLGRESOLNPLOT_BITMAP_HEIGHT, m_iCDLGRESOLNPLOT_BITMAP_WIDTH); AfxMessageBox(msg);
 }
 
 CDlgResolnPlot::~CDlgResolnPlot()
@@ -151,27 +157,27 @@ void CDlgResolnPlot::UpdateHistogram() {
 	if (AllocBitmap()) return;
 	UpdateData();//080315
 	UpdateReport();
-	const int iWidth = CDLGRESOLNPLOT_BITMAP_WIDTH;
-	const int iHeight = CDLGRESOLNPLOT_BITMAP_HEIGHT;
+	const int iWidth = m_iCDLGRESOLNPLOT_BITMAP_WIDTH;
+	const int iHeight = m_iCDLGRESOLNPLOT_BITMAP_HEIGHT;
 	const int npix = iWidth * iHeight;
 	//
 	for (int i=0; i<npix; i++) {pPlotPix[i] = 0;}
 	for (int i=0; i<m_iMaxResolnList; i++) {
 		double dx = m_psResolnList[i].dDistance2;
 		if (fabs(dx) < 1E-8) continue;
-		int ix = (int)((dx - m_dLeft) / (m_dRight - m_dLeft) * CDLGRESOLNPLOT_BITMAP_WIDTH);
-		if ((ix < 0)||(ix >= CDLGRESOLNPLOT_BITMAP_WIDTH)) continue;
+		int ix = (int)((dx - m_dLeft) / (m_dRight - m_dLeft) * m_iCDLGRESOLNPLOT_BITMAP_WIDTH);
+		if ((ix < 0)||(ix >= m_iCDLGRESOLNPLOT_BITMAP_WIDTH)) continue;
 		if (m_bColor) {
 			for (int n=0; n<3; n++) {
 				double dy = m_psResolnList[i].dLogMod[n];
-				int iy = (int)((dy - m_dLow) / (m_dHigh - m_dLow) * CDLGRESOLNPLOT_BITMAP_HEIGHT);
-				if ((iy < 0)||(iy >= CDLGRESOLNPLOT_BITMAP_HEIGHT)) continue;
+				int iy = (int)((dy - m_dLow) / (m_dHigh - m_dLow) * m_iCDLGRESOLNPLOT_BITMAP_HEIGHT);
+				if ((iy < 0)||(iy >= m_iCDLGRESOLNPLOT_BITMAP_HEIGHT)) continue;
 				pPlotPix[ix + iWidth * iy] = n+2;
 			}
 		} else {
 			double dy = m_psResolnList[i].dLogMod[0];
-			int iy = (int)((dy - m_dLow) / (m_dHigh - m_dLow) * CDLGRESOLNPLOT_BITMAP_HEIGHT);
-			if ((iy < 0)||(iy >= CDLGRESOLNPLOT_BITMAP_HEIGHT)) continue;
+			int iy = (int)((dy - m_dLow) / (m_dHigh - m_dLow) * m_iCDLGRESOLNPLOT_BITMAP_HEIGHT);
+			if ((iy < 0)||(iy >= m_iCDLGRESOLNPLOT_BITMAP_HEIGHT)) continue;
 			pPlotPix[ix + iWidth * iy] = 1;
 		}
 	}
@@ -180,8 +186,8 @@ void CDlgResolnPlot::UpdateHistogram() {
 }
 
 TErr CDlgResolnPlot::AllocBitmap() {
-	const int iWidth = CDLGRESOLNPLOT_BITMAP_WIDTH;
-	const int iHeight = CDLGRESOLNPLOT_BITMAP_HEIGHT;
+	const int iWidth = m_iCDLGRESOLNPLOT_BITMAP_WIDTH;
+	const int iHeight = m_iCDLGRESOLNPLOT_BITMAP_HEIGHT;
 	const int npix = iWidth * iHeight;
 	if (pBitmapPix) return 0;
 	try {
@@ -199,8 +205,8 @@ TErr CDlgResolnPlot::AllocBitmap() {
 }
 
 void CDlgResolnPlot::CopyHistogram() {
-	const int iWidth = CDLGRESOLNPLOT_BITMAP_WIDTH;
-	const int iHeight = CDLGRESOLNPLOT_BITMAP_HEIGHT;
+	const int iWidth = m_iCDLGRESOLNPLOT_BITMAP_WIDTH;
+	const int iHeight = m_iCDLGRESOLNPLOT_BITMAP_HEIGHT;
 	const int npix = iWidth * iHeight;
 	for (int i=0; i<npix; i++) {pBitmapPix[i] = pPlotPix[i];}
 	//zero line
@@ -215,16 +221,16 @@ void CDlgResolnPlot::CopyHistogram() {
 }
 
 int CDlgResolnPlot::GetCoordX(double dx) {
-	int irtn = (int)( (dx - m_dLeft) * (CDLGRESOLNPLOT_BITMAP_WIDTH - 1) / (m_dRight - m_dLeft) );
+	int irtn = (int)( (dx - m_dLeft) * (m_iCDLGRESOLNPLOT_BITMAP_WIDTH - 1) / (m_dRight - m_dLeft) );
 	if (irtn < 0) irtn = 0;
-	else if (irtn >= CDLGRESOLNPLOT_BITMAP_WIDTH) irtn = CDLGRESOLNPLOT_BITMAP_WIDTH - 1;
+	else if (irtn >= m_iCDLGRESOLNPLOT_BITMAP_WIDTH) irtn = m_iCDLGRESOLNPLOT_BITMAP_WIDTH - 1;
 	return irtn;
 }
 
 int CDlgResolnPlot::GetCoordY(double dy) {
-	int irtn = (int)( (dy - m_dLow) * (CDLGRESOLNPLOT_BITMAP_HEIGHT - 1) / (m_dHigh - m_dLow) );
+	int irtn = (int)( (dy - m_dLow) * (m_iCDLGRESOLNPLOT_BITMAP_HEIGHT - 1) / (m_dHigh - m_dLow) );
 	if (irtn < 0) irtn = 0;
-	else if (irtn >= CDLGRESOLNPLOT_BITMAP_HEIGHT) irtn = CDLGRESOLNPLOT_BITMAP_HEIGHT - 1;
+	else if (irtn >= m_iCDLGRESOLNPLOT_BITMAP_HEIGHT) irtn = m_iCDLGRESOLNPLOT_BITMAP_HEIGHT - 1;
 	return irtn;
 }
 
@@ -232,15 +238,15 @@ void CDlgResolnPlot::UpdateCursorAndRegression() {
 	int iCursorLeft = GetCoordX(atof(m_CursorLeft));
 	int iCursorRight = GetCoordX(atof(m_CursorRight));
 
-	for (int i=0; i<CDLGRESOLNPLOT_BITMAP_HEIGHT; i++) {
-		pBitmapPix[iCursorLeft + i * CDLGRESOLNPLOT_BITMAP_WIDTH] = 5;//cursor color
-		pBitmapPix[iCursorRight + i * CDLGRESOLNPLOT_BITMAP_WIDTH] = 5;
+	for (int i=0; i<m_iCDLGRESOLNPLOT_BITMAP_HEIGHT; i++) {
+		pBitmapPix[iCursorLeft + i * m_iCDLGRESOLNPLOT_BITMAP_WIDTH] = 5;//cursor color
+		pBitmapPix[iCursorRight + i * m_iCDLGRESOLNPLOT_BITMAP_WIDTH] = 5;
 	}
-	for (int i=0; i<CDLGRESOLNPLOT_BITMAP_WIDTH; i++) {
-		double dx = m_dLeft + (m_dRight - m_dLeft) * i / (CDLGRESOLNPLOT_BITMAP_WIDTH - 1);
+	for (int i=0; i<m_iCDLGRESOLNPLOT_BITMAP_WIDTH; i++) {
+		double dx = m_dLeft + (m_dRight - m_dLeft) * i / (m_iCDLGRESOLNPLOT_BITMAP_WIDTH - 1);
 		int iy = GetCoordY(m_dYSection + dx * m_dSlope);
-		if ((iy > 0)&&(iy < CDLGRESOLNPLOT_BITMAP_HEIGHT-1)) 
-			pBitmapPix[i + iy * CDLGRESOLNPLOT_BITMAP_WIDTH] = 6;//regression color
+		if ((iy > 0)&&(iy < m_iCDLGRESOLNPLOT_BITMAP_HEIGHT-1)) 
+			pBitmapPix[i + iy * m_iCDLGRESOLNPLOT_BITMAP_WIDTH] = 6;//regression color
 	}
 }
 
@@ -258,8 +264,8 @@ void CDlgResolnPlot::EnableCtrl() {
 }
 
 void CDlgResolnPlot::UpdateBitmap() {
-	const int iWidth = CDLGRESOLNPLOT_BITMAP_WIDTH;
-	const int iHeight = CDLGRESOLNPLOT_BITMAP_HEIGHT;
+	const int iWidth = m_iCDLGRESOLNPLOT_BITMAP_WIDTH;
+	const int iHeight = m_iCDLGRESOLNPLOT_BITMAP_HEIGHT;
 	//
 	if (hBitmap) DeleteObject(hBitmap);
 	BITMAPINFOHEADER* bh = &(lpBmpInfo->bmiHeader);
@@ -286,8 +292,8 @@ void CDlgResolnPlot::OnLButtonDown(UINT nFlags, CPoint point)
 	int iHighCursor = GetCoordX(atof(m_CursorRight));
 	POINT pnt = point;
 	MapWindowPoints(GetDlgItem(IDC_RESOLNPLOT_BITMAP), &pnt, 1);
-	if ((pnt.x >= 0)&&(pnt.x < CDLGRESOLNPLOT_BITMAP_WIDTH)&&
-			(pnt.y >= 0)&&(pnt.y < CDLGRESOLNPLOT_BITMAP_HEIGHT)) {
+	if ((pnt.x >= 0)&&(pnt.x < m_iCDLGRESOLNPLOT_BITMAP_WIDTH)&&
+			(pnt.y >= 0)&&(pnt.y < m_iCDLGRESOLNPLOT_BITMAP_HEIGHT)) {
 		if (abs(iLowCursor - pnt.x) < CDLGRESOLNPLOT_BITMAP_NEAR) {
 			bLButtonDownLow = true;
 			bLButtonDownHigh = false;
@@ -338,7 +344,7 @@ void CDlgResolnPlot::OnMouseMove(UINT nFlags, CPoint point)
 		} else if (bLButtonDownHigh) {
 			iHighCursor = pnt.x;
 			//if (iHighCursor < 0) iHighCursor = 0;
-			if (iHighCursor >= CDLGRESOLNPLOT_BITMAP_WIDTH) iHighCursor = CDLGRESOLNPLOT_BITMAP_WIDTH - 1;
+			if (iHighCursor >= m_iCDLGRESOLNPLOT_BITMAP_WIDTH) iHighCursor = m_iCDLGRESOLNPLOT_BITMAP_WIDTH - 1;
 			else if (iHighCursor <= iLowCursor) iHighCursor = iLowCursor + 1;
 			m_CursorRight = GetIntensityFromCursor(iHighCursor);
 			bInvalidate = true;
@@ -386,7 +392,7 @@ void CDlgResolnPlot::UpdateReport() {
 }
 
 CString CDlgResolnPlot::GetIntensityFromCursor(int ipos) {
-	double dens = ipos * (m_dRight - m_dLeft) / (CDLGRESOLNPLOT_BITMAP_WIDTH - 1) + m_dLeft;
+	double dens = ipos * (m_dRight - m_dLeft) / (m_iCDLGRESOLNPLOT_BITMAP_WIDTH - 1) + m_dLeft;
 	CString rtn;
 	rtn.Format("%f", dens);
 	return rtn;
@@ -396,8 +402,8 @@ void CDlgResolnPlot::OnDeltaposResolnplotMag(NMHDR *pNMHDR, LRESULT *pResult)
 {
 	LPNMUPDOWN pNMUpDown = reinterpret_cast<LPNMUPDOWN>(pNMHDR);
 
-	const int iWidth = CDLGRESOLNPLOT_BITMAP_WIDTH;
-	const int iHeight = CDLGRESOLNPLOT_BITMAP_HEIGHT;
+	const int iWidth = m_iCDLGRESOLNPLOT_BITMAP_WIDTH;
+	const int iHeight = m_iCDLGRESOLNPLOT_BITMAP_HEIGHT;
 	const int npix = iWidth * iHeight;
 	int idlt = pNMUpDown->iDelta; //left = 1 and right = -1
 

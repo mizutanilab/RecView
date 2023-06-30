@@ -433,6 +433,16 @@ void CGazoDoc::UpdateView(bool bInit) {
 				}
 			}
 		}
+		//230613 adjust iDispLow/High to keep contrast
+		if (dlgHist.m_hWnd) {
+			if (pixDiv > 0) {
+				int iHigh = (int)((atof(dlgHist.m_CursorHigh) - pixBase) * pixDiv);
+				int iLow = (int)((atof(dlgHist.m_CursorLow) - pixBase) * pixDiv);
+				SetDispLevel(iLow, iHigh);
+			}
+			if (dlgHist.m_bUpdateHistg) dlgHist.RedrawHistogram();
+		}
+		//
 		pv->SetPixels(ixdim, iydim, iDispLow, iDispHigh - iDispLow);
 		pv->SetOverlay(ppOverlay, ioxdim, ioydim, izOverlay, iDispLow, iDispHigh - iDispLow);
 		pv->InvalidateRect(NULL, FALSE);
@@ -1114,7 +1124,6 @@ void CGazoDoc::Serialize(CArchive& ar)
 		ar.Flush();
 		CFile* fp = ar.GetFile();
 		TErr err = ReadFile(fp);
-		//160803
 		if (err) {
 			CString line; line.Format("Not supported: %d", err); AfxMessageBox(line);
 		}
@@ -1455,8 +1464,41 @@ void CGazoDoc::OnTomoReconst()
 		dataPrefix = fnm;
 		dataSuffix = ext;
 		//121013 dataPrefix = dataPrefix.SpanExcluding("0123456789");
-		//
-//AfxMessageBox(dataPrefix + dataSuffix + " 1");
+
+		//230613==>detect a0000 files and run conv.bat
+		CGazoApp* pApp = (CGazoApp*)AfxGetApp();
+		if ((dataSuffix.MakeUpper() == ".IMG") && (dataPrefix.GetLength())) {
+			if (dataPrefix.GetAt(0) == 'a') {
+				if (AfxMessageBox("Execute conv.bat?", MB_OKCANCEL) == IDOK) {
+					CMainFrame* pf = (CMainFrame*)AfxGetMainWnd();
+					pf->m_wndStatusBar.SetPaneText(0, "Executing conv.bat...");
+					TErr err = pApp->ExecConvBat();
+					pf->m_wndStatusBar.SetPaneText(0, "Finished");
+					if (!err) {
+						//AfxMessageBox("Reopen q???.img file and its recon dialog.");
+						dataPrefix.SetAt(0, 'q');
+						_tmakepath_s(path_buffer, _MAX_PATH, drive, dir, dataPrefix, ext);
+						//AfxMessageBox(path_buffer);
+						CFile file;
+						if (file.Open(path_buffer, CFile::modeRead | CFile::shareDenyWrite)) {
+							CGazoView* pcv = (CGazoView*)(((CGazoApp*)AfxGetApp())->RequestNew());
+							CGazoDoc* pcd = pcv->GetDocument();
+							err = pcd->ReadFile(&file);
+							file.Close();
+							pcd->UpdateView(/*bInit=*/true);
+							pcd->SetPathName(path_buffer, FALSE);
+							pcd->SetTitle(path_buffer);
+							pcd->OnTomoReconst();
+						} else {
+							AfxMessageBox("File open error.");
+						}
+					}
+					return;
+				}
+			}
+		}//==>230613
+
+		//AfxMessageBox(dataPrefix + dataSuffix + " 1");
 		CString title = dataPath;
 		if (dataSuffix.MakeUpper() != ".H5") {
 			if (dataPath.GetLength()) {
@@ -1480,7 +1522,7 @@ void CGazoDoc::OnTomoReconst()
 		//160617 else dataPrefix = dataPrefix.SpanExcluding("0123456789");
 		//CString msg; msg.Format("%d %d %s", ideg, ipos, dataPrefix); AfxMessageBox(msg);
 		//
-		CGazoApp* pApp = (CGazoApp*) AfxGetApp();
+		//230613 CGazoApp* pApp = (CGazoApp*) AfxGetApp();
 		//100315 if (pApp->prevPixelWidth > 0) dlgReconst.m_PixelWidth = pApp->prevPixelWidth;
 		if (pApp->prevDlgReconst.iStatus == CDLGRECONST_BUSY) {
 			dlgReconst.ParamCopyFrom(pApp->prevDlgReconst);
@@ -2536,7 +2578,8 @@ int CGazoDoc::CountFrameFromConvBat(CString sDataPath) {
 			nDarkFrame = 0;
 		//201125 } else if ((maxHisFrame - nDarkFrame) % (iFramePerDataset - nDarkFrame) == 0) {
 		} else {
-			dlgReconst.m_nDataset = (maxHisFrame - nDarkFrame) / (iFramePerDataset - nDarkFrame);
+			int nset = (maxHisFrame - nDarkFrame) / (iFramePerDataset - nDarkFrame);//221209
+			dlgReconst.m_nDataset = nset < 1 ? 1 : nset;//221209 nset=0 causes a crash
 			iFramePerDataset = (maxHisFrame - nDarkFrame) / dlgReconst.m_nDataset + nDarkFrame;//201125
 		}
 	}
