@@ -2568,12 +2568,14 @@ int CGazoDoc::CountFrameFromConvBat(CString sDataPath) {
 		stdioConv.Close();
 		//201125 iFramePerDataset = (nframe > 0) ? nframe : -1;
 		iFramePerDataset = (maxframeno > 0) ? maxframeno : -1;
+		//CString msg; msg.Format("240605 iFramePerDataset %d", iFramePerDataset); AfxMessageBox(msg);
 	}
 	//141229 Get number of dataset
 	if ((maxHisFrame >= 0)&&(iFramePerDataset != 0)&&(iFramePerDataset - nDarkFrame != 0)&&(dlgReconst.m_nDataset <= 1)) {
 		//201125if (maxHisFrame % iFramePerDataset == 0) {
-		if ((maxHisFrame % iFramePerDataset) < ((maxHisFrame - nDarkFrame) % (iFramePerDataset - nDarkFrame))) {
-			dlgReconst.m_nDataset = maxHisFrame / iFramePerDataset;
+        //240605if ((maxHisFrame % iFramePerDataset) < ((maxHisFrame - nDarkFrame) % (iFramePerDataset - nDarkFrame))) {
+		if ((maxHisFrame % iFramePerDataset) <= ((maxHisFrame - nDarkFrame) % (iFramePerDataset - nDarkFrame))) {
+				dlgReconst.m_nDataset = maxHisFrame / iFramePerDataset;
 			iFramePerDataset = maxHisFrame / dlgReconst.m_nDataset;//201125 
 			nDarkFrame = 0;
 		//201125 } else if ((maxHisFrame - nDarkFrame) % (iFramePerDataset - nDarkFrame) == 0) {
