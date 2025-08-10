@@ -363,6 +363,7 @@ TErr ReadTif(CFile* fp, int** buffer, int* pMaxBuffer, int* prevH, int* prevW,
 	int iImageWidth = -1, iImageLength = -1, iBitsPerSample = 8, iCompression = 1, 
 		iPhotometric = 1, iRowsPerStrip = -1, iResolutionUnit = 1, iSamplesPerPixel = 1,
 		iPlanarConfiguration = 1;
+	iRowsPerStrip = INT_MAX;//250805 Type of this param is SHORT or LONG. So its default should be 2^32-1, but set to 2^31-1 here to keep the revision minimum.
 	int oStripOffsets = -1, oStripByteCounts = -1, oXResolution = -1, oYResolution = -1;
 	int nStripOffsets = 0, nStripByteCounts = 0;
 	int oArtist = -1, oImageDescription = -1;

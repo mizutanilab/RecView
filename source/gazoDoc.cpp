@@ -130,6 +130,7 @@ ON_COMMAND(IDM_TOMO_HORIZCENT, &CGazoDoc::OnTomoHorizcent)
 	ON_UPDATE_COMMAND_UI(ID_TOOLBAR_HISTG, &CGazoDoc::OnUpdateTomoHistg)
 	ON_COMMAND(ID_ANALYSIS_SUBTRACT, &CGazoDoc::OnAnalysisSubtract)
 	ON_UPDATE_COMMAND_UI(ID_ANALYSIS_SUBTRACT, &CGazoDoc::OnUpdateAnalysisSubtract)
+	ON_COMMAND(ID_TOMOGRAPHY_DATASETPARAMS, &CGazoDoc::OnTomoDatasetparams)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2569,22 +2570,24 @@ int CGazoDoc::CountFrameFromConvBat(CString sDataPath) {
 		//201125 iFramePerDataset = (nframe > 0) ? nframe : -1;
 		iFramePerDataset = (maxframeno > 0) ? maxframeno : -1;
 		//CString msg; msg.Format("240605 iFramePerDataset %d", iFramePerDataset); AfxMessageBox(msg);
-	}
-	//141229 Get number of dataset
-	if ((maxHisFrame >= 0)&&(iFramePerDataset != 0)&&(iFramePerDataset - nDarkFrame != 0)&&(dlgReconst.m_nDataset <= 1)) {
-		//201125if (maxHisFrame % iFramePerDataset == 0) {
-        //240605if ((maxHisFrame % iFramePerDataset) < ((maxHisFrame - nDarkFrame) % (iFramePerDataset - nDarkFrame))) {
-		if ((maxHisFrame % iFramePerDataset) <= ((maxHisFrame - nDarkFrame) % (iFramePerDataset - nDarkFrame))) {
-				dlgReconst.m_nDataset = maxHisFrame / iFramePerDataset;
-			iFramePerDataset = maxHisFrame / dlgReconst.m_nDataset;//201125 
-			nDarkFrame = 0;
-		//201125 } else if ((maxHisFrame - nDarkFrame) % (iFramePerDataset - nDarkFrame) == 0) {
-		} else {
-			int nset = (maxHisFrame - nDarkFrame) / (iFramePerDataset - nDarkFrame);//221209
-			dlgReconst.m_nDataset = nset < 1 ? 1 : nset;//221209 nset=0 causes a crash
-			iFramePerDataset = (maxHisFrame - nDarkFrame) / dlgReconst.m_nDataset + nDarkFrame;//201125
+
+		//240622 }
+		//141229 Get number of dataset
+		if ((maxHisFrame >= 0)&&(iFramePerDataset != 0)&&(iFramePerDataset - nDarkFrame != 0)&&(dlgReconst.m_nDataset <= 1)) {
+			//201125if (maxHisFrame % iFramePerDataset == 0) {
+			//240605if ((maxHisFrame % iFramePerDataset) < ((maxHisFrame - nDarkFrame) % (iFramePerDataset - nDarkFrame))) {
+			if ((maxHisFrame % iFramePerDataset) <= ((maxHisFrame - nDarkFrame) % (iFramePerDataset - nDarkFrame))) {
+					dlgReconst.m_nDataset = maxHisFrame / iFramePerDataset;
+				iFramePerDataset = maxHisFrame / dlgReconst.m_nDataset;//201125 
+				nDarkFrame = 0;
+			//201125 } else if ((maxHisFrame - nDarkFrame) % (iFramePerDataset - nDarkFrame) == 0) {
+			} else {
+				int nset = (maxHisFrame - nDarkFrame) / (iFramePerDataset - nDarkFrame);//221209
+				dlgReconst.m_nDataset = nset < 1 ? 1 : nset;//221209 nset=0 causes a crash
+				iFramePerDataset = (maxHisFrame - nDarkFrame) / dlgReconst.m_nDataset + nDarkFrame;//201125
+			}
 		}
-	}
+    }
 	//CString msg; msg.Format("201125 nDataset:%d\r\nmaxHisFrame:%d\r\niFramePerDataset:%d\r\nnDarkFrame:%d", 
 	//		dlgReconst.m_nDataset, maxHisFrame, iFramePerDataset, nDarkFrame); AfxMessageBox(msg);
 	return iFramePerDataset;
@@ -6480,4 +6483,22 @@ void CGazoDoc::OnAnalysisSubtract()
 void CGazoDoc::OnUpdateAnalysisSubtract(CCmdUI *pCmdUI)
 {//190708
 	// TODO:ここにコマンド更新 UI ハンドラー コードを追加します。
+}
+
+
+void CGazoDoc::OnTomoDatasetparams()
+{
+	//240622
+	CDlgGeneral dlg;
+	dlg.m_sTitle = "Dataset params";
+	dlg.m_sCaption1 = "Num of HIS frames";
+	dlg.m_sInput1.Format("%d", maxHisFrame);
+	dlg.m_sCaption2 = "Frames per dataset";
+	dlg.m_sInput2.Format("%d", iFramePerDataset);
+	dlg.m_sCaption3 = "Num of datasets";
+	dlg.m_sInput3.Format("%d", dlgReconst.m_nDataset);
+	if (dlg.DoModal() == IDCANCEL) return;
+	maxHisFrame = atoi(dlg.m_sInput1);
+	iFramePerDataset = atoi(dlg.m_sInput2);
+	dlgReconst.m_nDataset = atoi(dlg.m_sInput3);
 }
