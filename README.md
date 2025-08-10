@@ -10,21 +10,27 @@ Three-dimensional structural analysis with microtomography (micro-CT) or nanotom
 RecView is provided under the BSD 2-Clause License.
 
 ## References
-<ul><li>R. Mizutani, A. Takeuchi, R.Y. Osamura, S. Takekoshi, K. Uesugi and Y. Suzuki (2010). Submicrometer tomographic resolution examined using a micro-fabricated test object. <i>Micron</i> <b>41(1)</b>, 90-95. 
-<a href="http://dx.doi.org/10.1016/j.micron.2009.09.001">DOI</a> 
-<a href="http://www.ncbi.nlm.nih.gov/pubmed/19800246">PubMed</a> 
-<a href="https://arxiv.org/abs/1609.02270">arXiv</a> 
-</li>
-<li>R. Mizutani, K. Taguchi, A. Takeuchi, K. Uesugi and Y. Suzuki (2010). Estimation of presampling modulation transfer function in synchrotron radiation microtomography. <i>Nuclear Instrum. Meth. A</i> <b>621(1-3)</b>, 615-619.
-<a href="http://dx.doi.org/10.1016/j.nima.2010.03.111">DOI</a> 
-<a href="https://arxiv.org/abs/1609.02269">arXiv</a> 
-</li>
-<li>R. Mizutani, R. Saiga, S. Takekoshi, C. Inomoto, N. Nakamura, M. Itokawa, M. Arai, K. Oshima, A. Takeuchi, K. Uesugi, Y. Terada and Y. Suzuki (2016). A method for estimating spatial resolution of real image in the Fourier domain. <i>J. Microscopy</i> <b>261(1)</b>, 57-66.
+<ul>
+<li>Software itself<BR>
+ R. Mizutani et al. (2010). Microtomographic analysis of neuronal circuits of human brain. <i>Cerebral Cortex</i> <b>20(7)</b>, 1739-1748. 
+ <a href="http://dx.doi.org/10.1093/cercor/bhp237">DOI</a> 
+ <a href="http://www.ncbi.nlm.nih.gov/pubmed/19915092">PubMed</a> 
+<li>Resolution estimation from real images<BR>
+R. Mizutani et al. (2016). A method for estimating spatial resolution of real image in the Fourier domain. <i>J. Microscopy</i> <b>261(1)</b>, 57-66.
 <a href="http://dx.doi.org/10.1111/jmi.12315">DOI</a> 
 <a href="http://www.ncbi.nlm.nih.gov/pubmed/26444300">PubMed</a> 
 <a href="https://arxiv.org/abs/1609.02268">arXiv</a> 
 </li>
-<LI>R. Saiga, A. Takeuchi, K. Uesugi, Y. Terada, Y. Suzuki and R. Mizutani (2018). Method for estimating modulation transfer function from sample images. <I>Micron</I> <B>105</B>, 64-69.
+<li>Test patterns<BR>
+R. Mizutani et al. (2008). Evaluation of the improved three-dimensional resolution of a synchrotron radiation computed tomograph using a micro-fabricated test pattern. <i>J. Synchrotron Radiat.</i> <b>15(6)</b>, 648-654. 
+<a href="http://dx.doi.org/10.1107/S0909049508025685">DOI</a> 
+<a href="http://www.ncbi.nlm.nih.gov/pubmed/18955773">PubMed</a> 
+</li>
+<li>Modulation transfer function<BR>
+R. Mizutani et al. (2010). Estimation of presampling modulation transfer function in synchrotron radiation microtomography. <i>Nuclear Instrum. Meth. A</i> <b>621(1-3)</b>, 615-619.
+<a href="http://dx.doi.org/10.1016/j.nima.2010.03.111">DOI</a> 
+<a href="https://arxiv.org/abs/1609.02269">arXiv</a><BR> 
+R. Saiga et al. (2018). Method for estimating modulation transfer function from sample images. <I>Micron</I> <B>105</B>, 64-69.
  <A href="https://doi.org/10.1016/j.micron.2017.11.009">DOI</A>
  <a href="https://www.ncbi.nlm.nih.gov/pubmed/29179010">PubMed</a> 
 <A href="http://arxiv.org/abs/1711.09776">arXiv</A></li>
@@ -37,6 +43,7 @@ The present version can also be compiled with Visual Studio 2008 and CUDA Toolki
 A test dataset in TIFF format is also included in the Release. 
 
 <UL>
+  <LI>Build-250805. A minor debug in the TIFF reading routine. </LI>
   <LI>Build-240605. Minor debugs in determining the number of frames per dataset of data obtained with the syncreadout mode of Hamamatsu detectors. </LI>
   <LI>Build-230615. Updated the histogram and resolution plot dialogs to make the display compatible with the Screen DPI awareness. Added a function to automatically preprocess raw data when reading individual a*.img files. Added an ability to maintain contrast on the LAC scale when moving back and forth between image frames. Other misc updates.</LI> 
   <LI>Build-220422. Tomographic reconstruction code using AVX-512 instructions is now implemented. The AVX-512 assembler routine is enabled if both of AVX-512F and AVX-512DQ features are available. The previous rouitnes can also be chosen from the 'Computing config' dialog. The acceleration with AVX-512 was very subtle in the following example. 
@@ -173,7 +180,7 @@ frame#      time(msec)     angle(deg) 0=flatfield/1=sample
   <LI><b>My samples showed drifts in reconsturcted images. How can I prepare biological samples best suited for the synchrotron radiation experiment? </b></LI>
       Please see the following:<br>
       R. Saiga and R. Mizutani (2018). Preparation of soft tissue samples for synchrotron radiation microtomography and nanotomography. <I>Protocol Exchange</I> DOI: 10.1038/protex.2018.085.
-       <A href="https://www.nature.com/protocolexchange/protocols/6905">web</A> <A href="http://dx.doi.org/10.1038/protex.2018.085">DOI</A></li><br><br>
+        <A href="http://dx.doi.org/10.1038/protex.2018.085">DOI</A></li><br><br>
   <LI><b>How to prepare a development environment for RecView.</b></LI>
       You need Visual Studio 2017 and CUDA Toolkit 10.0 to compile the source code. The 'Desktop Environment with C++' package and 'Visual C++ MFC' component of VS2017 should be installed. You may also need to update GPU driver to the latest one to run the CUDA reconstruction kernel. 
       <UL>
