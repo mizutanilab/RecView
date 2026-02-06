@@ -37,8 +37,8 @@ R. Saiga et al. (2018). Method for estimating modulation transfer function from 
 </ul>
 
 ## Release notes
-The current Release contains 64-bit (x64) and 32-bit (x86) executables complied using Visual Studio 2017 C++ and CUDA Toolkit 10.0. If your PC is running 64-bit Windows and has NVIDIA Tesla, GeForce, Quadro,or RTX GPUs with 'compute capability' of 3.0 or higher (Kepler or later), the reconstruction calculation can be executed on the GPU.<br> 
-The present version can also be compiled with Visual Studio 2008 and CUDA Toolkit 5.5 by using gazoVS2008.sln file. An x64CUDA executable built with VS2008 is included in the current Release. This exe can run on GPUs with 'compute capability' of 2.0 (Fermi). A CUDA executable for x86 platform can be built with VS2008.  
+The current Release contains a 64-bit (x64) executable complied using Visual Studio 2017 C++ and CUDA Toolkit 10.0. If your PC is running 64-bit Windows and has NVIDIA Tesla, GeForce, Quadro,or RTX GPUs with 'compute capability' of 3.0 or higher (Kepler or later), the reconstruction calculation can be executed on the GPU. Windows 11's Smart App Control may block compiled executable files, so a signed executable is also provided. If this does not work, please try signing the compiled executable yourself. <br> 
+The former version can be compiled with Visual Studio 2008 and CUDA Toolkit 5.5 by using gazoVS2008.sln file. Please find x64 CUDA and x86 executables built with VS2008 in Release-230615. Those exes can run on GPUs with 'compute capability' of 2.0 (Fermi). 
 
 A test dataset in TIFF format is also included in the Release. 
 
