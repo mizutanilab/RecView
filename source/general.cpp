@@ -1736,7 +1736,11 @@ TErr Read_hishead(CFile* fimg, HISHeader* his, CString* pComment) {
 
 TErr ReadHIS(CFile* fp, int** buffer, int* pMaxBuffer, int* iHeight, int* iWidth, HISHeader* his, CString* pComment) {
 // read comment and image data from HIS file
+	CString msg = "251205-001";//251205
+	const CGazoApp* pApp = (CGazoApp*)AfxGetApp();//251205
+	if (pApp->bDebug) { msg.Format("251205-031 ReadHIS"); AfxMessageBox(msg); }//251205
 	if (fp->Read(his, sizeof(char) * HIS_Header_Size) != sizeof(char) * HIS_Header_Size) return 20123;
+	if (pApp->bDebug) { msg.Format("251205-032 ReadHIS"); AfxMessageBox(msg); }//251205
 	if (strncmp(his->head, "IM", 2)) return 20124;
 
 	char* comment = NULL;
@@ -1757,6 +1761,7 @@ TErr ReadHIS(CFile* fp, int** buffer, int* pMaxBuffer, int* iHeight, int* iWidth
 	const int iImageHeight = his->height;
 	const long nData = iImageWidth * iImageHeight;
 	const long nDataAlloc = nData + 2;
+	if (pApp->bDebug) { msg.Format("251205-032\r\n%d %d %d", iImageWidth, iImageHeight, nDataAlloc); AfxMessageBox(msg); }//251205
 	if (*pMaxBuffer < nDataAlloc) {
 		if (*buffer) delete [] (*buffer);
 		*buffer = NULL;
@@ -1773,6 +1778,7 @@ TErr ReadHIS(CFile* fp, int** buffer, int* pMaxBuffer, int* iHeight, int* iWidth
 		//for (int i=0; i<*pMaxBuffer; i++) {(*buffer)[i] = 0;}
 	}
 
+	if (pApp->bDebug) { msg.Format("251205-033\r\n%d", nDataAlloc); AfxMessageBox(msg); }//251205
 	switch (his->type) {
 		case 2: {//16 bit
 			unsigned short	*data = NULL;
@@ -1784,6 +1790,7 @@ TErr ReadHIS(CFile* fp, int** buffer, int* pMaxBuffer, int* iHeight, int* iWidth
 				delete [] data;
 				return 20128;
 			}
+			if (pApp->bDebug) { msg.Format("251205-034\r\n%d", NP); AfxMessageBox(msg); }//251205
 			for(int jj=0;jj<NP;++jj){(*buffer)[jj] = data[jj];}
 			delete [] data;
 			break;}
@@ -1822,23 +1829,26 @@ TErr ReadHIS(CFile* fp, int** buffer, int* pMaxBuffer, int* iHeight, int* iWidth
 //	printf("%s\n",his->comment);
 //	sprintf(img->comment,"%s",his->comment);
 
-	//CString msg = "", line;
-	//line.Format("%s\r\n", his->head); msg += line;
-	//line.Format("%d\r\n", his->comment_length); msg += line;		/*2-3*/
-	//line.Format("%d\r\n", his->width); msg += line;				/*4-5*/
-	//line.Format("%d\r\n", his->height); msg += line;				/*6-7*/
-	//line.Format("%d\r\n", his->x_offset); msg += line;			/*8-9*/
-	//line.Format("%d\r\n", his->y_offset); msg += line;			/*10-11*/
-	//line.Format("%d\r\n", his->type); msg += line;				/*12-13*/
-	//line.Format("%d\r\n", his->n_image1); msg += line;			/*14-15*/
-	//line.Format("%ld\r\n", his->n_image2*65536); msg += line;		/*16-17*/
-	//line.Format("%d\r\n", his->reserve1); msg += line;			/*18-19*/
-	//line.Format("%d\r\n", his->reserve2); msg += line;			/*20-21*/
-	//line.Format("%lf\r\n", his->time_stamp); msg += line;			/*22-29*/
-	//line.Format("%ld\r\n", his->maker); msg += line;				/*30-33*/
-	//line.Format("%s\r\n", his->reserved); msg += line;			/*34-64*/
-	//if (pComment) line.Format("%s\r\n", *pComment); msg += line;
-	//AfxMessageBox(msg);
+	if (pApp->bDebug) {//251205
+		CString line;
+		msg.Format("251205-035\r\n");
+		line.Format("%s\r\n", his->head); msg += line;
+		line.Format("%d\r\n", his->comment_length); msg += line;		/*2-3*/
+		line.Format("%d\r\n", his->width); msg += line;				/*4-5*/
+		line.Format("%d\r\n", his->height); msg += line;				/*6-7*/
+		line.Format("%d\r\n", his->x_offset); msg += line;			/*8-9*/
+		line.Format("%d\r\n", his->y_offset); msg += line;			/*10-11*/
+		line.Format("%d\r\n", his->type); msg += line;				/*12-13*/
+		line.Format("%d\r\n", his->n_image1); msg += line;			/*14-15*/
+		line.Format("%ld\r\n", his->n_image2 * 65536); msg += line;		/*16-17*/
+		line.Format("%d\r\n", his->reserve1); msg += line;			/*18-19*/
+		line.Format("%d\r\n", his->reserve2); msg += line;			/*20-21*/
+		line.Format("%lf\r\n", his->time_stamp); msg += line;			/*22-29*/
+		line.Format("%ld\r\n", his->maker); msg += line;				/*30-33*/
+		line.Format("%s\r\n", his->reserved); msg += line;			/*34-64*/
+		if (pComment) line.Format("%s\r\n", *pComment); msg += line;
+		AfxMessageBox(msg);
+	}
 
 	*iHeight = iImageHeight; *iWidth = iImageWidth;
 	return 0;

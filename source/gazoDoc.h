@@ -116,6 +116,9 @@ public:
 	void AdjContrast(int iAdj);
 	bool PointInPolygon(int ix, int iy, int* piPolygonX, int* piPolygonY);
 	TErr GetPolygon(CString sSliceNumber, CString sPolygonList, int* piPolygonX, int* piPolygonY);
+	bool PointInCircleLasso(int ix, int iy, int* piCircleLasso);
+	bool PointOnCircleLassoLine(int ix, int iy, int* piCircleLasso);
+	TErr GetCircleLasso(CString sSliceNumber, CString sCircleList, int* piCircleLasso);
 	//
 	int* pPixel;
 	float pixDiv, pixBase;
@@ -127,7 +130,7 @@ public:
 	unsigned __int64 ullLossFrameSet;//210618
 	//bool bUnderCalc;
 	//int iThreadStatus;
-	bool bDebug;
+	//251205 bool bDebug;
 	CDlgReconst dlgReconst;
 	CDlgRefraction dlgRefraction;
 	//CDlgProperty dlgProperty;
@@ -223,7 +226,7 @@ protected:
 	afx_msg void OnUpdateToolbarCntdown(CCmdUI* pCmdUI);
 	afx_msg void OnUpdateToolbarCntup(CCmdUI* pCmdUI);
 	afx_msg void OnTomoReconst();
-	afx_msg void OnHlpDebug();
+	//251205 afx_msg void OnHlpDebug();
 	afx_msg void OnUpdateFileSave(CCmdUI* pCmdUI);
 	afx_msg void OnUpdateFileSaveAs(CCmdUI* pCmdUI);
 	afx_msg void OnUpdateFileClose(CCmdUI* pCmdUI);
@@ -238,7 +241,7 @@ protected:
 	afx_msg void OnToolbarFnfr();
 	afx_msg void OnToolbarFnPause();
 	afx_msg void OnUpdateToolbarFnPause(CCmdUI* pCmdUI);
-	afx_msg void OnUpdateHlpDebug(CCmdUI* pCmdUI);
+	//251205 afx_msg void OnUpdateHlpDebug(CCmdUI* pCmdUI);
 	afx_msg void OnTomoAxis();
 	afx_msg void OnUpdateTomoAxis(CCmdUI* pCmdUI);
 	afx_msg void OnToolbarFnsf();
@@ -275,6 +278,7 @@ public:
 	afx_msg void OnAnalysisRadialprofile();
 	afx_msg void OnAnalysisSubtract();
 	afx_msg void OnUpdateAnalysisSubtract(CCmdUI *pCmdUI);
+	afx_msg void OnTomoDatasetparams();
 };
 
 /////////////////////////////////////////////////////////////////////////////

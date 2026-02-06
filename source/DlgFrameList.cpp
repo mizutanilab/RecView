@@ -315,7 +315,7 @@ void CDlgFrameList::OnOK()
 			CString fmt2; fmt2.Format(" w%%0%dd", idigit);
 			while (hItem) {
 				if (!m_treeFrames.GetCheck(hItem)) {
-					int idata = m_treeFrames.GetItemData(hItem);
+					int idata = (int)m_treeFrames.GetItemData(hItem);
 					CString sFrmNum;
 					if (idata < m_lHDF5DataSize[0]) {
 						if ((idata >= pd->dlgReconst.m_iDlgFL_SampleFrameStart)&&(idata <= pd->dlgReconst.m_iDlgFL_SampleFrameEnd)) {
@@ -338,7 +338,7 @@ void CDlgFrameList::OnOK()
 			CString fmt3; fmt3.Format(" s%%0%dd", idigit);
 			while (hItem) {
 				if (!m_treeFrames.GetCheck(hItem)) {
-					int idata = m_treeFrames.GetItemData(hItem);
+					int idata = (int)m_treeFrames.GetItemData(hItem);
 					CString sFrmNum;
 					if (m_piRevList[idata] >= 0) {
 						if ((m_piRevList[idata] >= pd->dlgReconst.m_iDlgFL_SampleFrameStart) &&
@@ -356,7 +356,7 @@ void CDlgFrameList::OnOK()
 			while (hItem) {
 				if (!m_treeFrames.GetCheck(hItem)) {
 					CString sFrmNum;
-					int idata = m_treeFrames.GetItemData(hItem);
+					int idata = (int)m_treeFrames.GetItemData(hItem);
 					if ((idata >= pd->dlgReconst.m_iDlgFL_SampleFrameStart)&&
 						(idata <= pd->dlgReconst.m_iDlgFL_SampleFrameEnd)) sFrmNum.Format(fmt, idata);
 					else sFrmNum.Format(fmt3, idata);
@@ -366,12 +366,12 @@ void CDlgFrameList::OnOK()
 				hItem = m_treeFrames.GetNextItem(hItem, TVGN_NEXT);
 			}
 		}
-		if (pd->bDebug) AfxMessageBox(m_sFramesToExclude);
+		//if (pd->bDebug) AfxMessageBox(m_sFramesToExclude);
 	} else if (!m_sDocList.IsEmpty()) {//190708
 		HTREEITEM hItem = m_treeFrames.GetNextItem(TVGN_ROOT, TVGN_CHILD);
 		while (hItem) {
 			if (m_treeFrames.GetCheck(hItem)) {
-				iDocPos = m_treeFrames.GetItemData(hItem);
+				iDocPos = (int)m_treeFrames.GetItemData(hItem);
 				break;
 			}
 			hItem = m_treeFrames.GetNextItem(hItem, TVGN_NEXT);
@@ -398,7 +398,7 @@ void CDlgFrameList::OnNMClickFramelistTree(NMHDR *pNMHDR, LRESULT *pResult)
 
 	if (TVHT_ONITEMSTATEICON & ht.flags)
 	{
-		int idata = m_treeFrames.GetItemData(ht.hItem);
+		int idata = (int) m_treeFrames.GetItemData(ht.hItem);
 		if ((idata >= 0)&&(idata < iList)) {
 			if (m_piRevList[idata] == INT_MIN) {
 				m_treeFrames.SetCheck(ht.hItem, TRUE);//this disables check
@@ -419,7 +419,7 @@ void CDlgFrameList::OnNMSetfocusFramelistTree(NMHDR *pNMHDR, LRESULT *pResult)
 void CDlgFrameList::OnTvnSelchangedFramelistTree(NMHDR *pNMHDR, LRESULT *pResult)
 {
 	LPNMTREEVIEW pNMTreeView = reinterpret_cast<LPNMTREEVIEW>(pNMHDR);
-	DWORD dwData = m_treeFrames.GetItemData(pNMTreeView->itemNew.hItem);
+	DWORD dwData = (DWORD) m_treeFrames.GetItemData(pNMTreeView->itemNew.hItem);
 //	CString msg; msg.Format("%d==>%d", m_dwSelectedFrame, dwData); AfxMessageBox(msg);
 	if (pd) {
 		if (pd->dataSuffix.MakeUpper() == ".HIS") {

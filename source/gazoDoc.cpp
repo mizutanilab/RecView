@@ -78,7 +78,7 @@ BEGIN_MESSAGE_MAP(CGazoDoc, CDocument)
 	ON_UPDATE_COMMAND_UI(ID_TOOLBAR_CNTDOWN, OnUpdateToolbarCntdown)
 	ON_UPDATE_COMMAND_UI(ID_TOOLBAR_CNTUP, OnUpdateToolbarCntup)
 	ON_COMMAND(IDM_TOMO_RECONST, OnTomoReconst)
-	ON_COMMAND(IDM_HLP_DEBUG, OnHlpDebug)
+	//251205 ON_COMMAND(IDM_HLP_DEBUG, OnHlpDebug)
 	ON_UPDATE_COMMAND_UI(ID_FILE_SAVE, OnUpdateFileSave)
 	ON_UPDATE_COMMAND_UI(ID_FILE_SAVE_AS, OnUpdateFileSaveAs)
 	ON_UPDATE_COMMAND_UI(ID_FILE_CLOSE, OnUpdateFileClose)
@@ -91,7 +91,7 @@ BEGIN_MESSAGE_MAP(CGazoDoc, CDocument)
 	ON_COMMAND(ID_TOOLBAR_FNFF, OnToolbarFnff)
 	ON_COMMAND(ID_TOOLBAR_FNREV, OnToolbarFnrev)
 	ON_COMMAND(ID_TOOLBAR_FNFR, OnToolbarFnfr)
-	ON_UPDATE_COMMAND_UI(IDM_HLP_DEBUG, OnUpdateHlpDebug)
+	//251205 ON_UPDATE_COMMAND_UI(IDM_HLP_DEBUG, OnUpdateHlpDebug)
 	ON_COMMAND(IDM_TOMO_AXIS, OnTomoAxis)
 	ON_UPDATE_COMMAND_UI(IDM_TOMO_AXIS, OnUpdateTomoAxis)
 	ON_COMMAND(ID_TOOLBAR_FNSF, OnToolbarFnsf)
@@ -171,7 +171,7 @@ void CGazoDoc::ClearAll() {
 	bCmdLine = false;
 	bFromQueue = false;
 	//bUnderCalc = false;
-	bDebug = false;
+	//251205 bDebug = false;
 	dAxisCenter = 0;
 	dAxisGrad = 0;
 	maxHisFrame = 0;
@@ -406,6 +406,7 @@ void CGazoDoc::UpdateView(bool bInit) {
 			pv->SetScrollPos(SB_HORZ, CGV_HSCROLL_RANGE / 2);
 			pv->SetBoxParams(ixdim/2, iydim/2, ixdim/2, iydim/2, 0);
 			pv->InitPolygon(ixdim/2, iydim/2, ixdim/2, iydim/2);//180424
+			pv->InitCircleLasso(ixdim / 2, iydim / 2, ixdim / 2, iydim / 2);//251205
 			CGazoApp* pApp = (CGazoApp*) AfxGetApp();
 			if (pApp->prevDlgHistogram.m_FileMsg == "saved") {
 				dlgHist.ParamCopyFrom(pApp->prevDlgHistogram);
@@ -478,6 +479,54 @@ bool CGazoDoc::PointInPolygon(int ix, int iy, int* piPolygonX, int* piPolygonY) 
 		}
 	}
 	return (icount & 0x01);
+}
+
+bool CGazoDoc::PointInCircleLasso(int ix, int iy, int* piCircleLasso) {//251205
+	ix = ix - piCircleLasso[0];
+	iy = iy - piCircleLasso[1];
+	double dth = atan2(iy, ix) / __PI * 180.;
+	double rx = piCircleLasso[2];
+	//double fa = piCircleLasso[3] * CGAZOVIEW_NPARAMCIRCLELASSO3_CONST;
+	//double deg = piCircleLasso[4];
+	//double fb = piCircleLasso[5] * CGAZOVIEW_NPARAMCIRCLELASSO5_CONST;
+	//const double th = dth - deg < -180 ? dth - deg + 360 : dth - deg > 180 ? dth - deg - 360 : dth - deg;
+	//double rth = rx * (1.0 + fa * exp(-fb * (th*th)));
+	double expfac = 0.0;
+	for (int j = 3; j < CGAZOVIEW_NPARAMCIRCLELASSO; j += 3) {
+		double fa = piCircleLasso[j] * CGAZOVIEW_NPARAMCIRCLELASSO3_CONST;
+		double deg = piCircleLasso[j + 1];
+		double fb = piCircleLasso[j + 2] * CGAZOVIEW_NPARAMCIRCLELASSO5_CONST;
+		const double th = dth - deg < -180 ? dth - deg + 360 : dth - deg > 180 ? dth - deg - 360 : dth - deg;
+		expfac += fa * exp(-fb * (th*th));
+	}
+	double rth = rx * (1.0 + expfac);//rx *( 1.0 + fa * exp(-fb * (th*th)) );
+	if (ix * ix + iy * iy < rth * rth) return true; else return false;
+}
+
+bool CGazoDoc::PointOnCircleLassoLine(int ix, int iy, int* piCircleLasso) {//251205
+	ix = ix - piCircleLasso[0];
+	iy = iy - piCircleLasso[1];
+	double ath = atan2(iy, ix);
+	double dth = ath / __PI * 180.;
+	double rx = piCircleLasso[2];
+	//double fa = piCircleLasso[3] * CGAZOVIEW_NPARAMCIRCLELASSO3_CONST;
+	//double deg = piCircleLasso[4];
+	//double fb = piCircleLasso[5] * CGAZOVIEW_NPARAMCIRCLELASSO5_CONST;
+	//const double th = dth - deg < -180 ? dth - deg + 360 : dth - deg > 180 ? dth - deg - 360 : dth - deg;
+	//double rth = rx * (1.0 + fa * exp(-fb * (th*th)));
+	const int iPickArea = CGAZOVIEW_LASSOPICK * CGAZOVIEW_LASSOPICK;//400 = 20 x 20
+	double expfac = 0.0;
+	for (int j = 3; j < CGAZOVIEW_NPARAMCIRCLELASSO; j += 3) {
+		double fa = piCircleLasso[j] * CGAZOVIEW_NPARAMCIRCLELASSO3_CONST;
+		double deg = piCircleLasso[j + 1];
+		double fb = piCircleLasso[j + 2] * CGAZOVIEW_NPARAMCIRCLELASSO5_CONST;
+		const double th = dth - deg < -180 ? dth - deg + 360 : dth - deg > 180 ? dth - deg - 360 : dth - deg;
+		expfac += fa * exp(-fb * (th*th));
+	}
+	double rth = rx * (1.0 + expfac);//rx *( 1.0 + fa * exp(-fb * (th*th)) );
+	double cx = rth * cos(ath) - ix;
+	double cy = rth * sin(ath) - iy;
+	if (cx * cx + cy * cy < iPickArea) return true; else return false;
 }
 
 TErr CGazoDoc::GetPolygon(CString sSliceNumber, CString sPolygonList, int* piPolygonX, int* piPolygonY) {
@@ -561,6 +610,95 @@ TErr CGazoDoc::GetPolygon(CString sSliceNumber, CString sPolygonList, int* piPol
 	return 0;
 }
 
+TErr CGazoDoc::GetCircleLasso(CString sSliceNumber, CString sCircleList, int* piCircleLasso) {
+	if (sCircleList.IsEmpty()) {
+		POSITION pos = GetFirstViewPosition();
+		CGazoView* pv = (CGazoView*)GetNextView(pos);
+		if (pv == NULL) return 18062001;
+		for (int i = 0; i < CGAZOVIEW_NPARAMCIRCLELASSO; i++) {
+			piCircleLasso[i] = pv->iCircleLasso[i];
+		}
+		return 0;
+	}
+	int ipg1x[CGAZOVIEW_NPARAMCIRCLELASSO];
+	int ipg2x[CGAZOVIEW_NPARAMCIRCLELASSO];
+	CString spg1 = "", spg2 = "";
+	int ipos = 0;
+	//AfxMessageBox(sSliceNumber + "\r\n" + sCircleList);
+	for (;;) {
+		const CString sEntry = sCircleList.Tokenize(_T("\r\n"), ipos);
+		if (sEntry.IsEmpty()) break;
+		const CString sFrmNum = sEntry.SpanExcluding(" ");
+		if (sFrmNum.IsEmpty()) break;
+		const CString sCoords = sEntry.Mid(sFrmNum.GetLength()).TrimLeft();
+		if (sFrmNum == sSliceNumber) {
+			int jpos = 0;
+			//CString msg = "180620-01\r\n", line;
+			for (int j = 0; j < CGAZOVIEW_NPARAMCIRCLELASSO; j++) {
+				CString sPoint = sCoords.Tokenize(_T("( )"), jpos);
+				//AfxMessageBox(sSliceNumber + "\r\n" + sPoint);
+				if (sPoint.IsEmpty()) return 18062002;
+				piCircleLasso[j] = atoi(sPoint);
+				//line.Format("%d ", piCircleLasso[j]); msg += line;
+			}
+			//AfxMessageBox(msg);
+			return 0;
+		}
+		else if (atoi(sFrmNum) > atoi(sSliceNumber)) {
+			int jpos = 0;
+			bool bComplete = true;
+			for (int j = 0; j < CGAZOVIEW_NPARAMCIRCLELASSO; j++) {
+				CString sPoint = sCoords.Tokenize(_T("( )"), jpos);
+				if (sPoint.IsEmpty()) { bComplete = false; break; }
+				ipg2x[j] = atoi(sPoint);
+			}
+			if (bComplete) {
+				spg2 = sEntry.SpanExcluding(" ");
+				break;
+			}
+		}
+		else {
+			int jpos = 0;
+			bool bComplete = true;
+			for (int j = 0; j < CGAZOVIEW_NPARAMCIRCLELASSO; j++) {
+				CString sPoint = sCoords.Tokenize(_T("( )"), jpos);
+				if (sPoint.IsEmpty()) { bComplete = false; break; }
+				ipg1x[j] = atoi(sPoint);
+			}
+			if (bComplete) spg1 = sEntry.SpanExcluding(" ");
+		}
+	}
+	const int ipg1 = atoi(spg1), ipg2 = atoi(spg2);
+	if (spg1.IsEmpty()) {
+		if (spg2.IsEmpty()) return 18062003;
+		for (int j = 0; j < CGAZOVIEW_NPARAMCIRCLELASSO; j++) {
+			piCircleLasso[j] = ipg2x[j]; 
+		}
+	}
+	else {
+		if ((spg2.IsEmpty()) || (ipg1 == ipg2)) {
+			for (int j = 0; j < CGAZOVIEW_NPARAMCIRCLELASSO; j++) {
+				piCircleLasso[j] = ipg1x[j]; 
+			}
+		}
+		else {
+			const double dr = (atof(sSliceNumber) - ipg1) / (ipg2 - ipg1);
+			for (int j = 0; j < CGAZOVIEW_NPARAMCIRCLELASSO; j++) {
+				if ((j > 3) && (j % 3 == 1)) {//260110
+					//determine rotation direction
+					int iddeg = ipg2x[j] - ipg1x[j];
+					iddeg = iddeg > 180 ? iddeg - 360 : iddeg < -180 ? iddeg + 360 : iddeg;
+					piCircleLasso[j] = (int)(ipg1x[j] + abs(dr) * iddeg);
+				} else {
+					piCircleLasso[j] = (int)(ipg1x[j] + dr * (ipg2x[j] - ipg1x[j]));
+				}
+			}
+			//if ( ((ipg1x[4] > 90) && (ipg2x[4] < -90)) || ((ipg1x[4] < -90) && (ipg2x[4] > 90)) ) piCircleLasso[4] = (ipg2x[4] + 360 + ipg1x[4]) / 2;
+		}
+	}
+	return 0;
+}
+
 TErr CGazoDoc::OutputImageInBox(FORMAT_QUEUE* fq, CProgressCtrl* progress, CString* psMsg) {
 	TErr err = 0;
 	if (!fq) return 21031;
@@ -587,6 +725,7 @@ TErr CGazoDoc::OutputImageInBox(FORMAT_QUEUE* fq, CProgressCtrl* progress, CStri
 	if (!bEnb) {ixsize = kxdim; iysize = kydim;}
 	const int ixy = ixsize * iysize;
 	const CString sPolygonList = fq->sPolygonList;
+	const CString sCircleLassoList = fq->sCircleLassoList;//251205
 	const bool bHistLog = (fq->uiFlags & FQFLAGS_OUTPUT_HISTG) ? true : false;
 	__int64 pllHistLog[256];
 	unsigned __int64 ullHistLogCount = 0; 
@@ -722,6 +861,10 @@ TErr CGazoDoc::OutputImageInBox(FORMAT_QUEUE* fq, CProgressCtrl* progress, CStri
 			line.Format(" Polygon list:\n%s", sPolygonList);
 			flog.WriteString(line);
 		}
+		if (!sCircleLassoList.IsEmpty()) {
+			line.Format(" Circle lasso list:\n%s", sCircleLassoList);
+			flog.WriteString(line);
+		}
 		//120803 flog.WriteString("---------------------------------------------------\r\n");
 		//flog.Close();
 	}
@@ -770,18 +913,30 @@ TErr CGazoDoc::OutputImageInBox(FORMAT_QUEUE* fq, CProgressCtrl* progress, CStri
 				if (psMsg) {*psMsg = "**Truncated**";}//130210
 			}
 		}
-		//polygon lasso
-		int ipgx[CGAZOVIEW_NPOLYGON], ipgy[CGAZOVIEW_NPOLYGON];
-		bool bEnPolygon = false;
+		//polygon/circle lasso
+		int ipgx[CGAZOVIEW_NPOLYGON], ipgy[CGAZOVIEW_NPOLYGON], icls[CGAZOVIEW_NPARAMCIRCLELASSO];
+		bool bEnPolygon = false, bEnCircleLasso = false;
 		CString sFrm = finput;
 		sFrm.MakeReverse();
 		const int iExt = sFrm.Find('.');
-		if ((!sPolygonList.IsEmpty())&&(iExt >= 0)) {
-			sFrm = sFrm.Mid(iExt+1).SpanIncluding("01234567890").MakeReverse();
+		if (iExt >= 0) {
+			sFrm = sFrm.Mid(iExt + 1).SpanIncluding("01234567890").MakeReverse();
 			if (!sFrm.IsEmpty()) {
-				if (!GetPolygon(sFrm, sPolygonList, ipgx, ipgy)) bEnPolygon = true;
+				if (!sPolygonList.IsEmpty()) {
+					if (!GetPolygon(sFrm, sPolygonList, ipgx, ipgy)) bEnPolygon = true;
+				}
+				if (!sCircleLassoList.IsEmpty()) {//251205
+					if (!GetCircleLasso(sFrm, sCircleLassoList, icls)) bEnCircleLasso = true;
+					//CString line, msg = ""; msg.Format("251207 %d %d %d %d %d\r\n%s", icls[0], icls[1], icls[2], icls[3], icls[4], sCircleLassoList); AfxMessageBox(msg);
+				}
 			}
 		}
+		//if ((!sPolygonList.IsEmpty())&&(iExt >= 0)) {
+		//	sFrm = sFrm.Mid(iExt+1).SpanIncluding("01234567890").MakeReverse();
+		//	if (!sFrm.IsEmpty()) {
+		//		if (!GetPolygon(sFrm, sPolygonList, ipgx, ipgy)) bEnPolygon = true;
+		//	}
+		//}
 		//trimming
 		int kDispHigh = (int)((dHigh - tpixBase) * tpixDiv);
 		int kDispLow = (int)((dLow - tpixBase) * tpixDiv);
@@ -790,6 +945,9 @@ TErr CGazoDoc::OutputImageInBox(FORMAT_QUEUE* fq, CProgressCtrl* progress, CStri
 				for (int j=0; j<iysize; j++) {
 					if (bEnPolygon) {
 						if (!PointInPolygon(i, j, ipgx, ipgy)) continue;
+					}
+					if (bEnCircleLasso) {//251205
+						if (!PointInCircleLasso(i, j, icls)) continue;
 					}
 					int ipix = (int)( ((double)pixIn[i + j * kxdim] - kDispLow) * maxIntensity / (kDispHigh - kDispLow) );
 					if (ipix > maxIntensity) ipix = maxIntensity; else if (ipix < 0) ipix = 0;
@@ -816,6 +974,9 @@ TErr CGazoDoc::OutputImageInBox(FORMAT_QUEUE* fq, CProgressCtrl* progress, CStri
 						int igy = (int)gy;
 						if (bEnPolygon) {
 							if (!PointInPolygon(igx, igy, ipgx, ipgy)) continue;
+						}
+						if (bEnCircleLasso) {//251205
+							if (!PointInCircleLasso(igx, igy, icls)) continue;
 						}
 						double dx = gx - igx;
 						double dy = gy - igy;
@@ -1122,13 +1283,20 @@ void CGazoDoc::Serialize(CArchive& ar)
 	else
 	{
 		// TODO: この位置に読み込み用のコードを追加してください。
+		CString msg = "251205-001";//251205
+		CGazoApp* pApp = (CGazoApp*)AfxGetApp();//251205
+		if (pApp->bDebug) { msg.Format("251205-011 Serialize"); AfxMessageBox(msg); }//251205
 		ar.Flush();
+		if (pApp->bDebug) { msg.Format("251205-012 Serialize"); AfxMessageBox(msg); }//251205
 		CFile* fp = ar.GetFile();
+		if (pApp->bDebug) { msg.Format("251205-013 Serialize"); AfxMessageBox(msg); }//251205
 		TErr err = ReadFile(fp);
 		if (err) {
 			CString line; line.Format("Not supported: %d", err); AfxMessageBox(line);
 		}
+		if (pApp->bDebug) { msg.Format("251205-014 Serialize"); AfxMessageBox(msg); }//251205
 		UpdateView(/*bInit=*/true);
+		if (pApp->bDebug) { msg.Format("251205-015 Serialize"); AfxMessageBox(msg); }//251205
 	}
 }
 
@@ -1141,6 +1309,9 @@ TErr CGazoDoc::ReadFile(CFile* fp) {
 	_tmakepath_s(path_buffer, _MAX_PATH, drive, dir, NULL, NULL);
 	const CString sPath = path_buffer;
 	TErr err = 21001;
+	CString msg = "251205-001";//251205
+	CGazoApp* pApp = (CGazoApp*)AfxGetApp();//251205
+	if (pApp->bDebug) { msg.Format("251205-021 ReadFile\r\n%s", sPath); AfxMessageBox(msg); }//251205
 	m_cimage.Destroy();
 	//120803 iLossFrameSet = -1;
 	if ((_tcscmp(ext, ".tif") == 0)||(_tcscmp(ext, ".TIF") == 0)) {
@@ -1164,7 +1335,9 @@ TErr CGazoDoc::ReadFile(CFile* fp) {
 	else if ((_tcscmp(ext, ".his") == 0) || (_tcscmp(ext, ".HIS") == 0)) {
 		HIS_Header his, ehis;
 		if (fp->GetPosition() == 0) maxHisFrame = -1;
+		if (pApp->bDebug) { msg.Format("251205-022 ReadFile"); AfxMessageBox(msg); }//251205
 		err = ReadHIS(fp, &pPixel, &maxPixel, &iydim, &ixdim, &his, &fileComment);
+		if (pApp->bDebug) { msg.Format("251205-023\r\n%d\r\n%d\r\n%d", maxPixel, iydim, ixdim); AfxMessageBox(msg); }//251205
 		error.Log(err);
 		TReal rAvgS = 0, rSigS = 0;
 		const int ixydim = ixdim * iydim;
@@ -1173,6 +1346,7 @@ TErr CGazoDoc::ReadFile(CFile* fp) {
 		}
 		rAvgS /= ixydim;
 		rSigS = sqrt(rSigS / ixydim - rAvgS * rAvgS);
+		if (pApp->bDebug) { msg.Format("251205-024\r\n%f\r\n%f", rAvgS, rSigS); AfxMessageBox(msg); }//251205
 		if (maxHisFrame < 0) {
 			maxHisFrame = his.n_image1 + (his.n_image2 << 16);
 			//210618==>
@@ -1180,6 +1354,7 @@ TErr CGazoDoc::ReadFile(CFile* fp) {
 			if (CountFrameFromConvBat(sPath) > 0) nset = dlgReconst.m_nDataset;
 			else { err = 21061801; error.Log(err); }
 			//==>210618
+			if (pApp->bDebug) { msg.Format("251205-025\r\n%d\r\n%d", maxHisFrame, nset); AfxMessageBox(msg); }//251205
 			//210618 if ((maxHisFrame > 2) &&(iLossFrameSet < 0)) {//120715
 			if ((maxHisFrame > 2) && (ullLossFrameSet == 0) && (!err)) {//210618
 				//analyse frame loss
@@ -1279,6 +1454,7 @@ TErr CGazoDoc::ReadFile(CFile* fp) {
 		HRESULT hResult = m_cimage.Load(fp->GetFilePath());
 		if (SUCCEEDED(hResult)) err = 0;
 	}
+	if (pApp->bDebug) { msg.Format("251205-026"); AfxMessageBox(msg); }//251205
 	if (!m_cimage.IsNull()) {//if c_image.Load
 		//pPixel, maxPixel, iydim, ixdim
 		const int ix = m_cimage.GetWidth();
@@ -2218,7 +2394,7 @@ TErr CGazoDoc::LoadLogFile(BOOL bOffsetCT) {
 		//==>141204
 		iLenSinogr = ipos + 1;//including dark.img
 	}
-if (bDebug) {CString msg; msg.Format("160629-1 iLenSinogr=%d ipos=%d", iLenSinogr, ipos); AfxMessageBox(msg);}
+//if (bDebug) {CString msg; msg.Format("160629-1 iLenSinogr=%d ipos=%d", iLenSinogr, ipos); AfxMessageBox(msg);}
 	//
 //	for (int i=0; i<ipos; i++) {
 //		CString line; line.Format("%s %f %f %d\r\n", fname[i], fexp[i], fdeg[i], bInc[i]);
@@ -2290,13 +2466,13 @@ TErr CGazoDoc::SetFramesToExclude() {
 			m_sFramesToExclude += line;
 		}
 
-		if (bDebug) {
-			CString line; 
-			line.Format("ipos: %d\r\nstart: %d\r\nend: %d\r\nexclude: %s", 
-				ipos, dlgReconst.m_iDlgFL_SampleFrameStart, dlgReconst.m_iDlgFL_SampleFrameEnd,
-				m_sFramesToExclude);
-			AfxMessageBox(line);
-		}
+		//if (bDebug) {
+		//	CString line; 
+		//	line.Format("ipos: %d\r\nstart: %d\r\nend: %d\r\nexclude: %s", 
+		//		ipos, dlgReconst.m_iDlgFL_SampleFrameStart, dlgReconst.m_iDlgFL_SampleFrameEnd,
+		//		m_sFramesToExclude);
+		//	AfxMessageBox(line);
+		//}
 	} else {
 		//dlgReconst.m_iDlgFL_SampleFrameStart = 1 because an averaged white frame is at the beginning
 		//201125 dummy frames in dark and flat series are not listed here but detected in DlgFrameList::OnInitDialog
@@ -2343,15 +2519,15 @@ TErr CGazoDoc::SetFramesToExclude() {
 		//	}
 		//}
 
-		if (bDebug) {
-			CString line;
-			line.Format("fdegEnd %f\r\nstart: %d %f\r\nend: %d %f\r\nexclude: %s", 
-				fdegEnd,
-				dlgReconst.m_iDlgFL_SampleFrameStart, fdeg[dlgReconst.m_iDlgFL_SampleFrameStart], 
-				dlgReconst.m_iDlgFL_SampleFrameEnd, fdeg[dlgReconst.m_iDlgFL_SampleFrameEnd],
-				m_sFramesToExclude);
-			AfxMessageBox(line);
-		}
+		//if (bDebug) {
+		//	CString line;
+		//	line.Format("fdegEnd %f\r\nstart: %d %f\r\nend: %d %f\r\nexclude: %s", 
+		//		fdegEnd,
+		//		dlgReconst.m_iDlgFL_SampleFrameStart, fdeg[dlgReconst.m_iDlgFL_SampleFrameStart], 
+		//		dlgReconst.m_iDlgFL_SampleFrameEnd, fdeg[dlgReconst.m_iDlgFL_SampleFrameEnd],
+		//		m_sFramesToExclude);
+		//	AfxMessageBox(line);
+		//}
 	}
 
 	return 0;
@@ -2652,13 +2828,13 @@ CString msg = "CalcAvgFromHis\r\n[File]\r\n" + files[nfiles-1] + "\r\n[Previous 
 				//	if ((iframetag-nDarkFrame) % (iFramePerDataset-nDarkFrame) > (iFramePerDataset-nDarkFrame) / 2) {iframetag--;}
 				//} else if (iLossFrameSet < iDatasetSel) {iframetag--;}
 			}
-if (bDebug) {line.Format("%d ", iframetag); msg += line;}
+//if (bDebug) {line.Format("%d ", iframetag); msg += line;}
 			CString sTag; sTag.Format(fmt, iframetag);
 			if ((m_sFramesToExclude.Find(sTag) >= 0)&&(sPrevComment.Find(sTag) >= 0)) continue;
 			else if ((m_sFramesToExclude.Find(sTag) < 0)&&(sPrevComment.Find(sTag) < 0)) continue;
 			else {bReturn = false; break;}
 		}
-if (bDebug) AfxMessageBox(msg);
+//if (bDebug) AfxMessageBox(msg);
 		if (bReturn) return 0;
 	}
 	//
@@ -2771,7 +2947,7 @@ if (bDebug) AfxMessageBox(msg);
 	if (iavg) {
 		//save
 		for (int j=0; j<maxData; j++) {pSum[j] /= iavg;}
-		if (bDebug) {CString msg; msg.Format("iavg %d\r\n%s", iavg, sComment); AfxMessageBox(msg);}
+		//if (bDebug) {CString msg; msg.Format("iavg %d\r\n%s", iavg, sComment); AfxMessageBox(msg);}
 		const CString fn = path + files[nfiles-1];
 		if (fimg.Open(fn, CFile::modeCreate | CFile::modeReadWrite | CFile::shareDenyWrite)) {
 			err = WriteITEX(&fimg, pSum, iydim, ixdim, sComment, 0, 0, 2);
@@ -3091,7 +3267,7 @@ TErr CGazoDoc::GenerateSinogram(RECONST_QUEUE* rq, int iLayer, double center, do
 				//const int kstart = i ? (int)(hdf5.m_plDataSize[0] / 2) : 0;//post:pre white images
 				//const int kend = i ? (int)(hdf5.m_plDataSize[0]) : (int)(hdf5.m_plDataSize[0] / 2);//post:pre white images
 CString msg = "161106GenSino\r\n";
-if (bDebug) msg += sSymbol + "\r\n";
+//if (bDebug) msg += sSymbol + "\r\n";
 				int kcount = 0;
 				for (int k=kstart; k<kend; k++) {
 					CString sTag; sTag.Format(fmts, k);
@@ -3102,7 +3278,7 @@ if (bDebug) msg += sSymbol + "\r\n";
 						if (pibuf) delete [] pibuf;
 						return err;
 					}
-if (bDebug) {CString line; line.Format("k=%d sbuf[5]=%d\r\n", k, (int)(sbuf[5])); msg += line;}
+//if (bDebug) {CString line; line.Format("k=%d sbuf[5]=%d\r\n", k, (int)(sbuf[5])); msg += line;}
 					for (int j=0; j<ixFrm * iMultiplex * iBinning; j++) {pibuf[j] += sbuf[j];}
 					kcount++;
 				}
@@ -3116,7 +3292,7 @@ if (bDebug) {CString line; line.Format("k=%d sbuf[5]=%d\r\n", k, (int)(sbuf[5]))
 					if (err = hdf5.FindChildSymbol("data", -1)) {if (pibuf) delete [] pibuf; fimg.Close(); return err;}
 					if (err = hdf5.GetDataObjHeader()) {if (pibuf) delete [] pibuf; fimg.Close(); return err;}
 				}
-if (bDebug) AfxMessageBox(msg + fmts);
+//if (bDebug) AfxMessageBox(msg + fmts);
 			} else {//data
 //161112				int idata = i;
 //161106		if (idata == isino-3) idata--;//not to use last two images, but copy from its precedent one. 
@@ -3202,13 +3378,13 @@ if (bDebug) AfxMessageBox(msg + fmts);
 			CString sframe = sList.Tokenize(_T(" "), iPos);
 			if (sframe.IsEmpty()) break;
 			if (sframe.GetAt(0) == 'h') {
-				if (bDebug) msg += sframe + "\r\n";
+				//if (bDebug) msg += sframe + "\r\n";
 				//TODO: if all white frames before or after the sample were skipped, NOUSE flag must be set.
 			} else if (sframe.GetAt(0) == 'b') {
-				if (bDebug) msg += sframe + "\r\n";
+				//if (bDebug) msg += sframe + "\r\n";
 				//HDF5
 			} else if (sframe.GetAt(0) == 'w') {
-				if (bDebug) msg += sframe + "\r\n";
+				//if (bDebug) msg += sframe + "\r\n";
 				//HDF5
 			} else if (sframe.GetAt(0) == 's') {
 				sframe = sframe.Mid(1);
@@ -3220,7 +3396,7 @@ if (bDebug) AfxMessageBox(msg + fmts);
 				if ((idx < 0)||(idx >= isino-1)) continue;
 				if (!(bInc[idx] & CGAZODOC_BINC_SAMPLE)) continue;//tokens starting with 's' are used only for sample frames 
 				bInc[idx] |= (CGAZODOC_BINC_NOUSE | CGAZODOC_BINC_SKIP);
-				if (bDebug) {CString line; line.Format("(%d %f)\r\n", idx, fdeg[idx]); msg += line;}
+				//if (bDebug) {CString line; line.Format("(%d %f)\r\n", idx, fdeg[idx]); msg += line;}
 			} else {
 				int idx = atoi(sframe);
 				if (rq->itexFileSuffix.MakeUpper() == ".H5") {
@@ -3287,10 +3463,10 @@ if (bDebug) AfxMessageBox(msg + fmts);
 						bInc[idx] |= (CGAZODOC_BINC_NOUSE | CGAZODOC_BINC_SKIP);
 					}
 				}
-				if (bDebug) {CString line; line.Format("%s\r\n(%d %f) %d %d\r\n", sList, idx, fdeg[idx], ismp0, ismp1); msg += line;}
+				//if (bDebug) {CString line; line.Format("%s\r\n(%d %f) %d %d\r\n", sList, idx, fdeg[idx], ismp0, ismp1); msg += line;}
 			}
 		} while (true);
-		if (bDebug) AfxMessageBox(msg);
+		//if (bDebug) AfxMessageBox(msg);
 	}//===>161105
 	//090806===>
 	//struct _timeb tstruct; double tm0;
@@ -3488,10 +3664,11 @@ if (bDebug) AfxMessageBox(msg + fmts);
 	return 0;
 }
 
-void CGazoDoc::OnUpdateHlpDebug(CCmdUI* pCmdUI) 
-{
-	pCmdUI->SetCheck(bDebug);
-}
+//251205
+//void CGazoDoc::OnUpdateHlpDebug(CCmdUI* pCmdUI) 
+//{
+//	pCmdUI->SetCheck(bDebug);
+//}
 
 #ifdef _WIN64
 extern "C" __int64 projx64(__int64);
@@ -3540,7 +3717,7 @@ void CGazoDoc::OutputCorrelationPlotData() {
 	fclose(fdata);
 }
 
-
+/*251205
 void CGazoDoc::OnHlpDebug() 
 {
 	TErr err = 0;
@@ -3555,91 +3732,16 @@ void CGazoDoc::OnHlpDebug()
 	float f1 = 10.3f, f2 = 10.6f;
 	int i1 = (int)f1, i2 = (int)f2;
 	line.Format("%d %d", i1, i2); AfxMessageBox(line); return;
-/*
-		const int ixdim = 10;
-		const int iZooming = 0;
-		const int iIntpDim = (int) pow((double)2, iZooming);
-		const int ndimp = (int)((log((double)ixdim) / LOG2)) + 1 + iZooming;
-		const int ndim = (int) pow((double)2, ndimp);
-		const double center = 5.1;
-		const int ixdimp = ixdim * iIntpDim;
-		const int ixdimh = ixdimp / 2;
-		const int imargin = ixdimp;
-		const int igpdim = (ixdimp + imargin * 2) * DBPT_GINTP;
-		int* igp = new int[igpdim];
-	srand(1);
-	for (int i=0; i<igpdim; i++) {igp[i] = i*10;}//rand();}
-			const float th = (10.0f) * (float)DEG_TO_RAD;
-			const float fcos = (float)(cos(th) * DBPT_GINTP);
-			const float fsin = (float)(-sin(th) * DBPT_GINTP);
-			const float fcenter = (ixdimh + (float)center - (int)(center)) * DBPT_GINTP;
-			const float foffset = fcenter - ixdimh * (fcos + fsin);
-			int iparam6 = ((DWORD_PTR) igp) + imargin * sizeof(int) * DBPT_GINTP;
-			int* ipgp = (int*)(iparam6);
-			int* ifp = new int[ixdimp * ixdimp];
-			int* ifp2 = new int[ixdimp * ixdimp];
-			for (int i=0; i<ixdimp * ixdimp; i++) {ifp[i] = 0; ifp2[i] = 0;}
-			const int ixdimpg = ixdimp * DBPT_GINTP;
-			int param[8];
-			param[0] = (DWORD_PTR)(&fcos);
-			param[1] = (DWORD_PTR)(&fsin);
-			param[2] = (DWORD_PTR)(&foffset);
-			param[3] = ixdimpg;
-			param[4] = ixdimp;
-			param[5] = (DWORD_PTR) ifp2;//iifp;
-			param[6] = ((DWORD_PTR) igp) + imargin * sizeof(int) * DBPT_GINTP;
-			param[7] = 0;
-			projx32((int)param);
-			for (int iy=0; iy<ixdimp; iy++) {
-				const int ifpidx = iy * ixdimp;
-				const float fyoff = iy * fsin + foffset;
-				for (int ix=0; ix<ixdimp; ix++) {
-					int ix0 = (int)(ix * fcos + fyoff + 0.5);
-					if (ix0 < 0) continue;
-					if (ix0 >= ixdimpg) continue;
-					ifp[ifpidx + ix] += ipgp[ix0];
-				}
-			}
-//	projx32((int)param);
-	CString msg = "";
-	for (int i=0; i<100; i++) {
-		if (ifp[i] != ifp2[i]) {
-			line.Format("%d %d %d\r\n", i, ifp[i], ifp2[i]); msg += line;
-		}
-	}
-	AfxMessageBox(msg);
-	delete [] igp; delete [] ifp; delete [] ifp2;
-	*/
 	//CDlgFrameList dlg;
 	//dlg.pd = this;
 	//dlg.DoModal();
-
-	/*
-	CString fpath = this->GetPathName();
-	TCHAR path_buffer[_MAX_PATH];
-	_stprintf_s(path_buffer, _MAX_PATH, fpath);
-	TCHAR drive[_MAX_DRIVE]; TCHAR dir[_MAX_DIR]; TCHAR fnm[_MAX_FNAME]; TCHAR ext[_MAX_EXT];
-	_tsplitpath_s( path_buffer, drive, _MAX_DRIVE, dir, _MAX_DIR, fnm, _MAX_FNAME, ext, _MAX_EXT);
-	_tmakepath_s( path_buffer, _MAX_PATH, drive, dir, NULL, NULL);
-	fpath = path_buffer;
-	fpath += "*.tif";
-	CString sFileList = "";
-	GetFileList(fpath, &sFileList);
-	CDlgMessage dlg;
-	CString str = sFileList;
-	int iPos = 0;
-	do {
-		CString fn = str.Tokenize(_T("\r\n"), iPos);
-		if (fn.IsEmpty()) break; else dlg.m_Msg += fn + "\r\n";
-	} while (true);
-	dlg.DoModal();*/
-
+	
 #ifndef _DEBUG
 	return;
 #endif
 
 	OutputCorrelationPlotData();
-}
+}*/
 
 TErr CGazoDoc::SetFilter(RECONST_QUEUE* rq, int ndim) {
 	if (maxFilter < ndim) {
@@ -4595,6 +4697,7 @@ void CGazoDoc::OnTomoHistg()
 													&(dlgHist.m_TrmAngle), &bFlg);
 				if (bFlg) dlgHist.m_EnableTrm = TRUE; else dlgHist.m_EnableTrm = FALSE;
 				if (pv->bPolygonEnabled) dlgHist.m_bEnablePolygon = TRUE; else dlgHist.m_bEnablePolygon = FALSE;
+				if (pv->bCircleLassoEnabled) dlgHist.m_bEnableCircleLasso = TRUE; else dlgHist.m_bEnableCircleLasso = FALSE;//251205
 			}
 		}
 		TCHAR path_buffer[_MAX_PATH];
@@ -4774,13 +4877,19 @@ TErr CGazoDoc::ProceedImage(int nproc) {
 		this->SetTitle(path_buffer);
 		if (pv) {
 			CString sFrm = sfnext.SpanExcluding(".").MakeReverse().SpanIncluding("0123456789").MakeReverse();
-			int ipgx[CGAZOVIEW_NPOLYGON], ipgy[CGAZOVIEW_NPOLYGON];
+			int ipgx[CGAZOVIEW_NPOLYGON > CGAZOVIEW_NPARAMCIRCLELASSO ? CGAZOVIEW_NPOLYGON : CGAZOVIEW_NPARAMCIRCLELASSO], ipgy[CGAZOVIEW_NPOLYGON];
 			if (!GetPolygon(sFrm, pv->dlgPolygon.sPolygonList, ipgx, ipgy)) {
 				for (int i=0; i<CGAZOVIEW_NPOLYGON; i++) {
 					pv->iPolygonX[i] = ipgx[i]; pv->iPolygonY[i] = ipgy[i];
 				}
 			}
 			pv->dlgPolygon.UpdateCurrentPolygon();
+			if (!GetCircleLasso(sFrm, pv->dlgCircleLasso.sCircleList, ipgx)) {
+				for (int i = 0; i < CGAZOVIEW_NPARAMCIRCLELASSO; i++) {
+					pv->iCircleLasso[i] = ipgx[i];
+				}
+			}
+			pv->dlgCircleLasso.UpdateCurrentCircle();
 		}
 		UpdateView();
 /*	} else if ((strncmp(ext, ".tif", 4) == 0)||(strncmp(ext, ".TIF", 4) == 0)) {//111109
@@ -4840,6 +4949,7 @@ TErr CGazoDoc::ProceedImage(int nproc) {
 		this->SetTitle(title);
 		file.Close();
 		if (pv) pv->dlgPolygon.UpdateCurrentPolygon();
+		if (pv) pv->dlgCircleLasso.UpdateCurrentCircle();//251205
 	} else if (sExt == ".H5") {
 		CString docTitle = this->GetTitle();
 		int iframe = 0;//ientry = hdf5.m_iChildEntry;
@@ -4896,6 +5006,7 @@ TErr CGazoDoc::ProceedImage(int nproc) {
 		this->SetTitle(title);
 		file.Close();
 		if (pv) pv->dlgPolygon.UpdateCurrentPolygon();
+		if (pv) pv->dlgCircleLasso.UpdateCurrentCircle();//251205
 	} else {
 		return 28001;
 	}
@@ -4923,19 +5034,25 @@ void CGazoDoc::OnTomoStat()
 	POSITION pos = GetFirstViewPosition();
 	CGazoView* pv = (CGazoView*) GetNextView( pos );
 	if (!pv) return;
+	CString smode = "Stats for the entire image\r\n";
 	int ibcx, ibcy, ibsx, ibsy, iba = 0;
 	int ibx0 = 0, iby0 = 0, ibx1 = ixdim-1, iby1 = iydim-1; 
 	bool bBoxFlg = false;
 	pv->GetBoxParams(&ibcx, &ibcy, &ibsx, &ibsy, &iba, &bBoxFlg);
 	if (pv->bPolygonEnabled) {
-		ibx0 = pv->iPolygonX[0]; iby0 = pv->iPolygonY[0]; 
-		ibx1 = pv->iPolygonX[0]; iby1 = pv->iPolygonY[0]; 
-		for (int i=1; i<CGAZOVIEW_NPOLYGON; i++) {
+		ibx0 = pv->iPolygonX[0]; iby0 = pv->iPolygonY[0];
+		ibx1 = pv->iPolygonX[0]; iby1 = pv->iPolygonY[0];
+		for (int i = 1; i < CGAZOVIEW_NPOLYGON; i++) {
 			ibx0 = (pv->iPolygonX[i] < ibx0) ? pv->iPolygonX[i] : ibx0;
 			iby0 = (pv->iPolygonY[i] < iby0) ? pv->iPolygonY[i] : iby0;
 			ibx1 = (pv->iPolygonX[i] > ibx1) ? pv->iPolygonX[i] : ibx1;
 			iby1 = (pv->iPolygonY[i] > iby1) ? pv->iPolygonY[i] : iby1;
 		}
+		smode = "Stats fot the polygon area\r\n";
+	} else if (pv->bCircleLassoEnabled) {
+		//TODO: generate circle limit x/y
+		ibcx = ixdim / 2; ibcy = iydim / 2; ibsx = ixdim; ibsy = iydim;
+		smode = "Stats fot the circle area\r\n";
 	} else if (bBoxFlg) {
 		ibx0 = ibcx - ibsx / 2;
 		if (ibx0 < 0) ibx0 = 0; else if (ibx0 >= ixdim) ibx0 = ixdim - 1;
@@ -4946,6 +5063,7 @@ void CGazoDoc::OnTomoStat()
 		iby1 = iby0 + ibsy - 1;
 		if (iby1 < 0) iby1 = 0; else if (iby1 >= iydim) iby1 = iydim - 1;
 		if (iba != 0) {AfxMessageBox("Reset box angle."); return;}
+		smode = "Stats fot the box area\r\n";
 	} else {
 		ibcx = ixdim/2; ibcy = iydim/2; ibsx = ixdim; ibsy = iydim;
 	}
@@ -4963,6 +5081,9 @@ void CGazoDoc::OnTomoStat()
 			if (pv->bPolygonEnabled) {
 				CPoint pnt(i, j);
 				if (!pv->PointInPolygon(pnt)) continue;
+			} else if (pv->bCircleLassoEnabled) {
+				CPoint pnt(i, j);
+				if (!pv->PointInCircleLasso(pnt)) continue;
 			}
 			int ip = pPixel[i + j * ixdim];
 			if (bColor) {ip = ((ip & 0xff) + ((ip >> 8) & 0xff) + ((ip >> 16) & 0xff)) / 3;}
@@ -4981,7 +5102,7 @@ void CGazoDoc::OnTomoStat()
 	sum2 /= nsum;
 	double sigma = sqrt(sum2 - sum * sum);
 	CString line, scr;
-	line = this->GetPathName() + "\r\n";
+	line = this->GetPathName() + "\r\n" + smode;
 	scr.Format("Pixel intensity\r\n Npixel\tE(x)\tE(x2)\tStdDev\tMax\tMin\r\n %d\t%.1f\t%.1f\t%.1f\t%d\t%d\r\n", 
 				nsum, sum, sum2, sigma, ipmax, ipmin); 
 	line += scr;
@@ -4999,6 +5120,9 @@ void CGazoDoc::OnTomoStat()
 			if (pv->bPolygonEnabled) {
 				CPoint pnt(i, j);
 				if (!pv->PointInPolygon(pnt)) continue;
+			} else if (pv->bCircleLassoEnabled) {
+				CPoint pnt(i, j);
+				if (!pv->PointInCircleLasso(pnt)) continue;
 			}
 			int ip = (int)(pPixel[i + j * ixdim] / dscale);
 			ip = (ip > 0) ? ip : 0;
@@ -5022,6 +5146,15 @@ void CGazoDoc::OnTomoStat()
 			scr.Format(" %d\t%d\r\n", pv->iPolygonX[i], pv->iPolygonY[i]);
 			line += scr;
 		}
+	} else if (pv->bCircleLassoEnabled) {
+		line += "Circle params\r\n";
+		scr.Format(" Center(%d %d) Rad:%d", pv->iCircleLasso[0], pv->iCircleLasso[1], pv->iCircleLasso[2]);
+		line += scr;
+		for (int j = 3; j < CGAZOVIEW_NPARAMCIRCLELASSO; j += 3) {
+			scr.Format("Hump%d:%d Angle:%d Kurt:%d", j/3, pv->iCircleLasso[j], pv->iCircleLasso[j + 1], pv->iCircleLasso[j + 2]);
+			line += scr;
+		}
+		line += "\r\n";
 	} else if (bBoxFlg) {
 		line += "Box diagonal (x y)\r\n";
 		scr.Format(" %d\t%d\r\n", ibx0, iby0);
@@ -5041,6 +5174,14 @@ void CGazoDoc::OnTomoStat()
 			if (pv->bPolygonEnabled) {
 				CPoint pnt(i, j);
 				if (!pv->PointInPolygon(pnt)) {
+					if (bColor) scr = "x x x"; else scr = "x";
+					if (j != ibx1) scr += "\t";
+					line += scr;
+					continue;
+				}
+			} else if (pv->bCircleLassoEnabled) {
+				CPoint pnt(i, j);
+				if (!pv->PointInCircleLasso(pnt)) {
 					if (bColor) scr = "x x x"; else scr = "x";
 					if (j != ibx1) scr += "\t";
 					line += scr;
@@ -5073,6 +5214,14 @@ void CGazoDoc::OnTomoStat()
 						line += scr;
 						continue;
 					}
+				} else if (pv->bCircleLassoEnabled) {
+					CPoint pnt(i, j);
+					if (!pv->PointInCircleLasso(pnt)) {
+						scr = "x";
+						if (j != ibx1) scr += "\t";
+						line += scr;
+						continue;
+					}
 				}
 				scr.Format("%.3f", (float)(pPixel[j + i * ixdim] / pixDiv + pixBase));
 				if (j != ibx1) scr += "\t";
@@ -5097,7 +5246,7 @@ void CGazoDoc::OnUpdateTomoStat(CCmdUI* pCmdUI)
 	}
 	if (bFlg && (iba == 0)) pCmdUI->Enable(true);
 	else if (pv) {
-		if (pv->bPolygonEnabled) pCmdUI->Enable(true);
+		if (pv->bPolygonEnabled || pv->bCircleLassoEnabled) pCmdUI->Enable(true);//251205
 	}
 	else pCmdUI->Enable(false);
 }
@@ -5238,8 +5387,9 @@ void CGazoDoc::OnTomoRefrac()
 
 void CGazoDoc::OnUpdateTomoRefrac(CCmdUI *pCmdUI)
 {
-	if (bDebug) pCmdUI->Enable(true);
-	else pCmdUI->Enable(false);
+	//if (bDebug) pCmdUI->Enable(true);
+	//else pCmdUI->Enable(false);
+	pCmdUI->Enable(false);
 }
 
 void CGazoDoc::ShowRefracCorr(REFRAC_QUEUE* refq) {

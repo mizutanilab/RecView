@@ -31,3 +31,4 @@
 #define CGAZODOC_BINC_SKIP 4
 
 #endif // !defined(AFX_STDAFX_H__98E8803D_E345_468C_A7DF_4E12C27EAC11__INCLUDED_)
+#include <afxcontrolbars.h>

@@ -62,8 +62,15 @@ BEGIN_MESSAGE_MAP(CGazoApp, CWinApp)
 //	ON_COMMAND(ID_FILE_DIALBOX, &CGazoApp::OnFileDialbox)
 //	ON_MESSAGE(WM_DIALBOX, OnDialbox)//161210
 
+//251205
+ON_COMMAND(IDM_HLP_DEBUG, OnHlpDebug)
+ON_UPDATE_COMMAND_UI(IDM_HLP_DEBUG, OnUpdateHlpDebug)
+
 ON_COMMAND(IDM_VIEW_WHEELTOGO, &CGazoApp::OnViewWheeltogo)
 ON_UPDATE_COMMAND_UI(IDM_VIEW_WHEELTOGO, &CGazoApp::OnUpdateViewWheeltogo)
+ON_COMMAND(IDM_VIEW_LASSORBTN, &CGazoApp::OnViewLassoRbtn)
+ON_UPDATE_COMMAND_UI(IDM_VIEW_LASSORBTN, &CGazoApp::OnUpdateViewLassoRbtn)
+
 ON_COMMAND(ID_TOOLBAR_QUEUE, &CGazoApp::OnTomoQueue)
 END_MESSAGE_MAP()
 
@@ -294,6 +301,7 @@ CGazoApp::CGazoApp()
 	bShowBoxAxis = true;
 	bDragScroll = false;
 	bWheelToGo = false;
+	bLassoRbtn = false;
 }
 
 CGazoApp::~CGazoApp() {
@@ -458,6 +466,7 @@ CView* CGazoApp::RequestNew() {
 }
 
 void CGazoApp::OnFileOpen() {
+	CString msg = "251205-001";//251205
 	CString fn = "";
 	static char BASED_CODE defaultExt[] = ".img";
 	static char BASED_CODE szFilter[] = 
@@ -466,8 +475,11 @@ void CGazoApp::OnFileOpen() {
 	//190121 CFileDialog dlg(TRUE, defaultExt, fn, OFN_FILEMUSTEXIST | OFN_HIDEREADONLY, szFilter);
 	CFileDialog dlg(TRUE, defaultExt, NULL, OFN_FILEMUSTEXIST | OFN_HIDEREADONLY, szFilter);
 	if (dlg.DoModal() != IDOK) return;
+	if (bDebug) { msg.Format("251205-001\r\n%s\r\n%s", defaultExt, szFilter); AfxMessageBox(msg); }//251205
 	fn = dlg.GetPathName();
+	if (bDebug) { msg.Format("251205-002\r\n%s", fn); AfxMessageBox(msg); }//251205
 	CWinApp::OpenDocumentFile(fn);
+	if (bDebug) { msg.Format("251205-003"); AfxMessageBox(msg); }//251205
 }
 
 void CGazoApp::SetBusy() {
@@ -2103,3 +2115,33 @@ void CGazoApp::OnUpdateViewWheeltogo(CCmdUI *pCmdUI)
 	// TODO: ここにコマンド更新 UI ハンドラ コードを追加します。
 	pCmdUI->SetCheck(bWheelToGo);
 }
+
+//260110
+void CGazoApp::OnViewLassoRbtn() {
+	// TODO: ここにコマンド ハンドラ コードを追加します。
+	if (bLassoRbtn) bLassoRbtn = false; else bLassoRbtn = true;
+}
+
+void CGazoApp::OnUpdateViewLassoRbtn(CCmdUI *pCmdUI) {
+	// TODO: ここにコマンド更新 UI ハンドラ コードを追加します。
+	pCmdUI->SetCheck(bLassoRbtn);
+}
+
+//251205
+void CGazoApp::OnHlpDebug()
+{
+	//TErr err = 0;
+	//CString line = "";
+	//CGazoApp* pApp = (CGazoApp*)AfxGetApp();
+	//POSITION pos = GetFirstViewPosition();
+	//if (!pos) return;
+	//CGazoView* pv = (CGazoView*)GetNextView(pos);
+	//CMainFrame* pf = (CMainFrame*)AfxGetMainWnd();
+	if (bDebug) bDebug = false; else bDebug = true; return;
+}
+
+void CGazoApp::OnUpdateHlpDebug(CCmdUI* pCmdUI)
+{
+	pCmdUI->SetCheck(bDebug);
+}
+

@@ -46,6 +46,8 @@ BEGIN_MESSAGE_MAP(CGazoView, CView)
 	//ON_UPDATE_COMMAND_UI(IDM_VIEW_BOXAXISLABEL, &CGazoView::OnUpdateViewBoxaxislabel)
 	ON_COMMAND(ID_ANALYSIS_POLYGONLASSO, &CGazoView::OnAnalysisPolygonlasso)
 	ON_UPDATE_COMMAND_UI(ID_ANALYSIS_POLYGONLASSO, &CGazoView::OnUpdateAnalysisPolygonlasso)
+	ON_COMMAND(ID_ANALYSIS_CIRCLELASSO, &CGazoView::OnAnalysisCirclelasso)
+	ON_UPDATE_COMMAND_UI(ID_ANALYSIS_CIRCLELASSO, &CGazoView::OnUpdateAnalysisCirclelasso)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -85,6 +87,10 @@ CGazoView::CGazoView()
 	iPickedPolygonPnt = -1;
 	InitPolygon(200, 200, 100, 100);
 	dlgPolygon.SetView(this);
+	bCircleLassoEnabled = false;//251205
+	bCircleLassoMove = false;//251205
+	InitCircleLasso(200, 200, 100, 100);//251205
+	dlgCircleLasso.SetView(this);//251205
 	pntMouse.SetPoint(0, 0);
 }
 
@@ -97,6 +103,7 @@ CGazoView::~CGazoView()
 	//190122 if (hBitmap) DeleteObject(hBitmap);
 	if (dlgPolygon.m_hWnd) dlgPolygon.DestroyWindow();
 	//lpBmPixel is automatically deleted by DeleteObject
+	if (dlgCircleLasso.m_hWnd) dlgCircleLasso.DestroyWindow();
 }
 
 BOOL CGazoView::PreCreateWindow(CREATESTRUCT& cs)
@@ -447,6 +454,61 @@ void CGazoView::OnDraw(CDC* pDC)
 		pDC->Polyline(pntPolygon, CGAZOVIEW_NPOLYGON+1);
 		pDC->SelectObject(pOldPen);
 	}
+	if (bCircleLassoEnabled) {//251205
+		//CPen mPen1(PS_SOLID, 1, RGB(255, 255, 0));
+		//CPen mPen2(PS_SOLID, 1, RGB(255, 0, 255));
+		//CPen mPen3(PS_SOLID, 1, RGB(0, 255, 255));
+		//CBrush brush1(RGB(255, 255, 0));
+		//CBrush brush2(RGB(255, 0, 255));
+		//CBrush brush3(RGB(0, 255, 255));
+		COLORREF lassoColor[5] = { RGB(255, 255, 0), RGB(255, 0, 255), RGB(0, 255, 255), RGB(0, 255, 0), RGB(0, 0, 255) };
+		CPen penLasso[5]; 
+		CBrush brushLasso[5]; 
+		for (int i = 0; i < 5; i++) {
+			penLasso[i].CreatePen(PS_SOLID, 1, lassoColor[i]);
+			brushLasso[i].CreateSolidBrush(lassoColor[i]);
+		}
+		//CPen penLasso[] = { CPen(PS_SOLID, 1, RGB(255, 255, 0)), CPen(PS_SOLID, 1, RGB(255, 0, 255)), CPen(PS_SOLID, 1, RGB(0, 255, 255)), 
+		//					CPen(PS_SOLID, 1, RGB(0, 255, 0)), CPen(PS_SOLID, 1, RGB(0, 0, 255)) };
+		//CBrush brushLasso[] = { CBrush(RGB(255, 255, 0)), CBrush(RGB(255, 0, 255)), CBrush(RGB(0, 255, 255)), 
+		//						CBrush(RGB(0, 255, 0)), CBrush(RGB(0, 0, 255)) };
+		CPen* pOldPen = pDC->SelectObject(&(penLasso[0]));
+		CBrush* pOldBrush = pDC->SelectObject(&(brushLasso[0]));
+		double cx = (iCircleLasso[0] * rMagnify + ix0img);
+		double cy = (iCircleLasso[1] * rMagnify + iy0img);
+		double rx = (iCircleLasso[2] * rMagnify);
+		//251213 double ry = (iCircleLasso[3] * rMagnify);
+		for (int i = 0; i <= 360; i++) {
+			double expfac = 0.0;
+			int jdot = 0;
+			for (int j = 3; j < CGAZOVIEW_NPARAMCIRCLELASSO; j += 3) {
+				double fa = iCircleLasso[j] * CGAZOVIEW_NPARAMCIRCLELASSO3_CONST;
+				double deg = iCircleLasso[j + 1];
+				double fb = iCircleLasso[j + 2] * CGAZOVIEW_NPARAMCIRCLELASSO5_CONST;
+				const double th = i - deg < -180 ? i - deg + 360 : i - deg > 180 ? i - deg - 360 : i - deg;
+				expfac += fa * exp(-fb * (th*th));
+				if ((th == 0) && (abs(iCircleLasso[j]) > 0)) jdot = j;
+			}
+			double rth = rx * (1.0 + expfac);//rx *( 1.0 + fa * exp(-fb * (th*th)) );
+			int ix = (int)(cx + rth * cos(i / 180.0 * __PI));
+			int iy = (int)(cy + rth * sin(i / 180.0 * __PI));
+			if (i) pDC->LineTo(ix, iy); else pDC->MoveTo(ix, iy);
+			if (jdot) {
+				pDC->SelectObject(&(penLasso[jdot/3-1])); 
+				pDC->SelectObject(&(brushLasso[jdot/3-1]));
+				//if (jdot == 6) {pDC->SelectObject(&mPen2); pDC->SelectObject(&brush2);}
+				//else if (jdot == 9) { pDC->SelectObject(&mPen3); pDC->SelectObject(&brush3);}
+				pDC->Ellipse(ix - 5, iy - 5, ix + 5, iy + 5);
+				pDC->MoveTo(ix, iy);
+				pDC->SelectObject(&(penLasso[0]));
+				pDC->SelectObject(&(brushLasso[0]));
+			}
+		}
+		//pDC->MoveTo(ix + ir, iy);
+		//pDC->AngleArc(ix, iy, ir, 0, 360);
+		pDC->SelectObject(pOldPen);
+		pDC->SelectObject(pOldBrush);
+	}
 	if (bRedLine) {
 		CPen mPen1( PS_SOLID, 1, RGB(255,0,0) );
 		CPen* pOldPen = pDC->SelectObject(&mPen1);
@@ -601,36 +663,117 @@ void CGazoView::OnMouseMove(UINT nFlags, CPoint point)
 			//else ::SetCursor(hCursor);
 		}
 	}
-	if (bPolygonEnabled) {
-		TReal rMagnify = iMagnify;
-		if (rMagnify < 1) rMagnify = 1.0 / (2 - rMagnify);
-		CRect rect;
-		GetClientRect(&rect);
-		CPoint pCenter = rect.CenterPoint();
-		int ixpos = GetScrollPos(SB_HORZ);
-		int iypos = GetScrollPos(SB_VERT);
-		int ixWidthImg = (int)(ixdim * rMagnify);
-		int iyWidthImg = (int)(iydim * rMagnify);
-		int ix0img = pCenter.x - (int)(ixWidthImg * ixpos / CGV_HSCROLL_RANGE);
-		int iy0img = pCenter.y - (int)(iyWidthImg * iypos / CGV_VSCROLL_RANGE);
-		if (bPolygonMove) {
-			int ipx0 = (int)( (pntLButton.x + point.x - ix0img) / rMagnify) - iPolygonX[0];
-			int ipy0 = (int)( (pntLButton.y + point.y - iy0img) / rMagnify) - iPolygonY[0];
-			for (int i=0; i<CGAZOVIEW_NPOLYGON; i++) {
-				iPolygonX[i] += ipx0;
-				iPolygonY[i] += ipy0;
+	bool bInvalidate = false;
+	if (iPickedBoxPnt < 0) {
+		if (bPolygonEnabled) {
+			TReal rMagnify = iMagnify;
+			if (rMagnify < 1) rMagnify = 1.0 / (2 - rMagnify);
+			CRect rect;
+			GetClientRect(&rect);
+			CPoint pCenter = rect.CenterPoint();
+			int ixpos = GetScrollPos(SB_HORZ);
+			int iypos = GetScrollPos(SB_VERT);
+			int ixWidthImg = (int)(ixdim * rMagnify);
+			int iyWidthImg = (int)(iydim * rMagnify);
+			int ix0img = pCenter.x - (int)(ixWidthImg * ixpos / CGV_HSCROLL_RANGE);
+			int iy0img = pCenter.y - (int)(iyWidthImg * iypos / CGV_VSCROLL_RANGE);
+			if (bPolygonMove) {
+				int ipx0 = (int)((pntLButtonPolygon.x + point.x - ix0img) / rMagnify) - iPolygonX[0];
+				int ipy0 = (int)((pntLButtonPolygon.y + point.y - iy0img) / rMagnify) - iPolygonY[0];
+				for (int i = 0; i < CGAZOVIEW_NPOLYGON; i++) {
+					iPolygonX[i] += ipx0;
+					iPolygonY[i] += ipy0;
+				}
+				dlgPolygon.UpdateCurrentPolygon();
+				//InvalidateRect(NULL, FALSE);
+				bInvalidate = true;
 			}
-			dlgPolygon.UpdateCurrentPolygon();
-			InvalidateRect(NULL, FALSE);
-		} else if (bLButtonDown) {
-			if (iPickedPolygonPnt >= 0) {
-				iPolygonX[iPickedPolygonPnt] = (int)((point.x - ix0img) / rMagnify);
-				iPolygonY[iPickedPolygonPnt] = (int)((point.y - iy0img) / rMagnify);
+			else if (bLButtonDown) {
+				if (iPickedPolygonPnt >= 0) {
+					iPolygonX[iPickedPolygonPnt] = (int)((point.x - ix0img) / rMagnify);
+					iPolygonY[iPickedPolygonPnt] = (int)((point.y - iy0img) / rMagnify);
+				}
+				dlgPolygon.UpdateCurrentPolygon();
+				//InvalidateRect(NULL, FALSE);
+				bInvalidate = true;
 			}
-			dlgPolygon.UpdateCurrentPolygon();
-			InvalidateRect(NULL, FALSE);
 		}
-	} else if (bBoxEnabled) {
+		if (bCircleLassoEnabled && (iPickedPolygonPnt < 0)) {
+			TReal rMagnify = iMagnify;
+			if (rMagnify < 1) rMagnify = 1.0 / (2 - rMagnify);
+			CRect rect;
+			GetClientRect(&rect);
+			CPoint pCenter = rect.CenterPoint();
+			int ixpos = GetScrollPos(SB_HORZ);
+			int iypos = GetScrollPos(SB_VERT);
+			int ixWidthImg = (int)(ixdim * rMagnify);
+			int iyWidthImg = (int)(iydim * rMagnify);
+			int ix0img = pCenter.x - (int)(ixWidthImg * ixpos / CGV_HSCROLL_RANGE);
+			int iy0img = pCenter.y - (int)(iyWidthImg * iypos / CGV_VSCROLL_RANGE);
+			if (bCircleLassoEdit) {
+				int ix = (int)((point.x - ix0img) / rMagnify) - iCircleLasso[0];
+				int iy = (int)((point.y - iy0img) / rMagnify) - iCircleLasso[1];
+				const double dth = atan2(iy, ix) / __PI * 180.;
+				//iCircleLasso[4] = (int) deg;
+				const double rth = sqrt(ix * ix + iy * iy);
+				const double rx = iCircleLasso[2] > 0 ? iCircleLasso[2] : 1;
+				const double expfac = rth / rx - 1.0;
+				//present expfac
+				double expfac0 = 0;
+				for (int j = 3; j < CGAZOVIEW_NPARAMCIRCLELASSO; j += 3) {
+					double fa = iCircleLasso[j] * CGAZOVIEW_NPARAMCIRCLELASSO3_CONST;
+					double deg = iCircleLasso[j + 1];
+					double fb = iCircleLasso[j + 2] * CGAZOVIEW_NPARAMCIRCLELASSO5_CONST;
+					const double th = dth - deg < -180 ? dth - deg + 360 : dth - deg > 180 ? dth - deg - 360 : dth - deg;
+					expfac0 += fa * exp(-fb * (th*th));
+				}
+				//reform exp
+				for (int j = 3; j < CGAZOVIEW_NPARAMCIRCLELASSO; j += 3) {
+					//const double fb = iCircleLasso[j + 2] * CGAZOVIEW_NPARAMCIRCLELASSO5_CONST;
+					double ddeg = dth - iCircleLasso[j + 1];
+					ddeg = ddeg < -180 ? ddeg + 360 : ddeg > 180 ? ddeg - 360 : ddeg;
+					if (abs(iCircleLasso[j]) > 0) {//lasso is not exact circle
+						if (abs(ddeg) < 5) {//hump clicked
+							iCircleLasso[j] += (int)((expfac - expfac0) / CGAZOVIEW_NPARAMCIRCLELASSO3_CONST);
+							iCircleLasso[j] = iCircleLasso[j] < -500 ? -500 : iCircleLasso[j] > 500 ? 500 : iCircleLasso[j];
+							iCircleLasso[j + 1] = (int)dth;
+							bInvalidate = true;
+							break;
+						}
+					}
+				}
+				//add a new exp
+				bool bAdd = true;
+				for (int j = 3; j < CGAZOVIEW_NPARAMCIRCLELASSO; j += 3) {
+					if (abs(iCircleLasso[j]) > 0) {
+						double ddeg = dth - iCircleLasso[j + 1];
+						ddeg = ddeg < -180 ? ddeg + 360 : ddeg > 180 ? ddeg - 360 : ddeg;
+						if (abs(ddeg) < 10) { bAdd = false; break; }//skip addtion itself if a near point already exists.
+					}
+				}
+				if (bAdd) {
+					for (int j = 3; j < CGAZOVIEW_NPARAMCIRCLELASSO; j += 3) {
+						if (abs(iCircleLasso[j]) > 0) continue;//skip existing entry
+						iCircleLasso[j] = (int)((expfac - expfac0) / CGAZOVIEW_NPARAMCIRCLELASSO3_CONST);
+						iCircleLasso[j + 1] = (int)dth;
+						bInvalidate = true;
+						break;
+					}
+				}
+				if (bInvalidate) dlgCircleLasso.UpdateCurrentCircle();
+				//InvalidateRect(NULL, FALSE);
+			} else if (bCircleLassoMove) {
+				int ipx0 = (int)((pntLButtonCircle.x + point.x - ix0img) / rMagnify) - iCircleLasso[0];
+				int ipy0 = (int)((pntLButtonCircle.y + point.y - iy0img) / rMagnify) - iCircleLasso[1];
+				iCircleLasso[0] += ipx0;
+				iCircleLasso[1] += ipy0;
+				dlgCircleLasso.UpdateCurrentCircle();
+				//InvalidateRect(NULL, FALSE);
+				bInvalidate = true;
+			}
+		}
+	}
+	if (bBoxEnabled && pf->bEnableEditTrimbox) {
 		TReal rMagnify = iMagnify;
 		if (rMagnify < 1) rMagnify = 1.0 / (2 - rMagnify);
 		CRect rect;
@@ -642,24 +785,26 @@ void CGazoView::OnMouseMove(UINT nFlags, CPoint point)
 		int iyWidthImg = (int)(iydim * rMagnify);
 		int ix0img = pCenter.x - (int)(ixWidthImg * ixpos / CGV_HSCROLL_RANGE);
 		int iy0img = pCenter.y - (int)(iyWidthImg * iypos / CGV_VSCROLL_RANGE);
-		if (bBoxMove && (iBoxSizeX >= 0) &&(iBoxSizeY >= 0)) {
-			iBoxCentX = (int)( (pntLButton.x + point.x - ix0img) / rMagnify);
-			iBoxCentY = (int)( (pntLButton.y + point.y - iy0img) / rMagnify);
+		if (bBoxMove && (iBoxSizeX >= 0) && (iBoxSizeY >= 0) && !bPolygonMove && !bCircleLassoMove && (iPickedPolygonPnt < 0)) {
+			iBoxCentX = (int)((pntLButton.x + point.x - ix0img) / rMagnify);
+			iBoxCentY = (int)((pntLButton.y + point.y - iy0img) / rMagnify);
 			text.Format("Center (%d %d) Size (%d %d) Tilt %d", iBoxCentX, iBoxCentY, iBoxSizeX, iBoxSizeY, iBoxAngle);
-			pf->m_wndStatusBar.SetPaneText(2,text);
+			pf->m_wndStatusBar.SetPaneText(2, text);
 			pd->dlgHist.UpdateParam();
-			InvalidateRect(NULL, FALSE);
-		} else if (bLButtonDown) {
+			//InvalidateRect(NULL, FALSE);
+			bInvalidate = true;
+		}
+		if (bLButtonDown && (iPickedBoxPnt >= 0)) {
 			int iBoxDirX = 1; int iBoxDirY = 1;
 			switch (iPickedBoxPnt) {
-				case 0: {iBoxDirX = -1; iBoxDirY = -1; break;}
-				case 1: {iBoxDirY = -1; break;}
-				case 2: {break;}
-				case 3: {iBoxDirX = -1; break;}
-				default: {break;}
+			case 0: {iBoxDirX = -1; iBoxDirY = -1; break; }
+			case 1: {iBoxDirY = -1; break; }
+			case 2: {break; }
+			case 3: {iBoxDirX = -1; break; }
+			default: {break; }
 			}
-			iBoxCentX = (int)( ((pntLButton.x + point.x) * 0.5 - ix0img) / rMagnify );
-			iBoxCentY = (int)( ((pntLButton.y + point.y) * 0.5 - iy0img) / rMagnify );
+			iBoxCentX = (int)(((pntLButton.x + point.x) * 0.5 - ix0img) / rMagnify);
+			iBoxCentY = (int)(((pntLButton.y + point.y) * 0.5 - iy0img) / rMagnify);
 			//CString msg; msg.Format("%d %d", point.x - pntLButton.x, point.y - pntLButton.y);
 			//pf->m_wndStatusBar.SetPaneText(1, msg);
 			const CPoint pntDif = point - pntLButton;
@@ -668,16 +813,18 @@ void CGazoView::OnMouseMove(UINT nFlags, CPoint point)
 				double alpha = 0;
 				if (pntDif.y >= 0) alpha = acos(pntDif.x / boxDiag) - iBoxAngle * DEG_TO_RAD;
 				else alpha = acos(pntDif.x / boxDiag) + iBoxAngle * DEG_TO_RAD;
-				iBoxSizeX = abs( (int)(boxDiag * cos(alpha) / rMagnify) );
-				iBoxSizeY = abs( (int)(boxDiag * sin(alpha) / rMagnify) );
+				iBoxSizeX = abs((int)(boxDiag * cos(alpha) / rMagnify));
+				iBoxSizeY = abs((int)(boxDiag * sin(alpha) / rMagnify));
 			}
-			text.Format("Center (%d %d) Size (%d %d) Tilt %d", 
+			text.Format("Center (%d %d) Size (%d %d) Tilt %d",
 				iBoxCentX, iBoxCentY, iBoxSizeX, iBoxSizeY, iBoxAngle);
-			pf->m_wndStatusBar.SetPaneText(2,text);
+			pf->m_wndStatusBar.SetPaneText(2, text);
 			pd->dlgHist.UpdateParam();
-			InvalidateRect(NULL, FALSE);
+			//InvalidateRect(NULL, FALSE);
+			bInvalidate = true;
 		}
-	} else if (bDragScrollEnabled && bLButtonDown) {//150102
+	}
+	if (bDragScrollEnabled && bLButtonDown) {//150102
 		TReal rMagnify = iMagnify;
 		if (rMagnify < 1) rMagnify = 1.0 / (2 - rMagnify);
 		const int iprevx = GetScrollPos(SB_HORZ);
@@ -687,7 +834,8 @@ void CGazoView::OnMouseMove(UINT nFlags, CPoint point)
 		if ((iprevx != ixpos)||(iprevy != iypos)) {
 			SetScrollPos(SB_HORZ, ixpos);
 			SetScrollPos(SB_VERT, iypos);
-			InvalidateRect(NULL, FALSE);
+			//InvalidateRect(NULL, FALSE);
+			bInvalidate = true;
 		}
 	}
 	
@@ -734,8 +882,10 @@ void CGazoView::OnMouseMove(UINT nFlags, CPoint point)
 		int iy0img = pCenter.y - (int)(iyWidthImg * iypos / CGV_VSCROLL_RANGE);
 		pntRedTo.x = (int)((point.x - ix0img) / rMagnify);
 		pntRedTo.y = (int)((point.y - iy0img) / rMagnify);
-		InvalidateRect(NULL, FALSE);
+		//InvalidateRect(NULL, FALSE);
+		bInvalidate = true;
 	}
+	if (bInvalidate) InvalidateRect(NULL, FALSE);
 	CView::OnMouseMove(nFlags, point);
 }
 
@@ -783,20 +933,25 @@ void CGazoView::OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
 	CView::OnHScroll(nSBCode, nPos, pScrollBar);
 }
 
-void CGazoView::OnLButtonDown(UINT nFlags, CPoint point) 
+void CGazoView::OnLButtonDown(UINT nFlags, CPoint point)
 {
-	CMainFrame* pf = (CMainFrame*) AfxGetMainWnd();
+	CMainFrame* pf = (CMainFrame*)AfxGetMainWnd();
 	CString text;
 	bLButtonDown = true;
 	//CString msg; msg.Format("%d %d", this->GetFocus(), pf->GetFocus()); AfxMessageBox(msg);
 	//if (this->GetActiveWindow()) AfxMessageBox("is selected");
 	//CPoint prevPnt = pntLButton;
+	bool bAppLassoRbtn = false;
+	CGazoApp* pApp = (CGazoApp*)AfxGetApp();
+	if (pApp) bAppLassoRbtn = pApp->bLassoRbtn;
+	if (bAppLassoRbtn == false) ButtonDownToLassoEdit(point);
+	/*
 	if (bPolygonEnabled) {
 		iPickedPolygonPnt = -1;
-		for (int i=0; i<CGAZOVIEW_NPOLYGON; i++) {
+		for (int i = 0; i < CGAZOVIEW_NPOLYGON; i++) {
 			int ix = point.x - pntPolygon[i].x;
 			int iy = point.y - pntPolygon[i].y;
-			if (ix * ix + iy * iy < 25) {
+			if (ix * ix + iy * iy <= iPickArea) {
 				iPickedPolygonPnt = i; break;
 			}
 		}
@@ -818,101 +973,212 @@ void CGazoView::OnLButtonDown(UINT nFlags, CPoint point)
 			pnt.y = (int)((point.y - iy0img) / rMagnify);
 			if (PointInPolygon(pnt)) {
 				bPolygonMove = true;
-				pntLButton = CPoint((int)(iPolygonX[0] * rMagnify + ix0img), 
-									(int)(iPolygonY[0] * rMagnify + iy0img)) - point;
+				pntLButtonPolygon = CPoint((int)(iPolygonX[0] * rMagnify + ix0img),
+					(int)(iPolygonY[0] * rMagnify + iy0img)) - point;
 				::SetCursor(AfxGetApp()->LoadStandardCursor(IDC_SIZEALL));
 			}
 		}
 		SetCapture();
-	} else if (bBoxEnabled) {
-		//compare pntBox
-		iPickedBoxPnt = -1;
-		for (int i=0; i<4; i++) {
-			int ix = point.x - pntBox[i].x;
-			int iy = point.y - pntBox[i].y;
-			if (ix * ix + iy * iy < 25) {
-				iPickedBoxPnt = i; break;
-			}
+	}
+	if (bCircleLassoEnabled) {
+		bCircleLassoMove = false;
+		bCircleLassoEdit = false;
+		TReal rMagnify = iMagnify;
+		if (rMagnify < 1) rMagnify = 1.0 / (2 - rMagnify);
+		CRect rect;
+		GetClientRect(&rect);
+		CPoint pCenter = rect.CenterPoint();
+		int ixpos = GetScrollPos(SB_HORZ);
+		int iypos = GetScrollPos(SB_VERT);
+		int ixWidthImg = (int)(ixdim * rMagnify);
+		int iyWidthImg = (int)(iydim * rMagnify);
+		int ix0img = pCenter.x - (int)(ixWidthImg * ixpos / CGV_HSCROLL_RANGE);
+		int iy0img = pCenter.y - (int)(iyWidthImg * iypos / CGV_VSCROLL_RANGE);
+		CPoint pnt;
+		pnt.x = (int)((point.x - ix0img) / rMagnify);
+		pnt.y = (int)((point.y - iy0img) / rMagnify);
+		if (PointOnCircleLassoLine(pnt)) {
+			bCircleLassoEdit = true;
+			bPolygonMove = false;
+		} else if (PointInCircleLasso(pnt)) {
+			bCircleLassoMove = true;
+			pntLButtonCircle = CPoint((int)(iCircleLasso[0] * rMagnify + ix0img),
+				(int)(iCircleLasso[1] * rMagnify + iy0img)) - point;
+			::SetCursor(AfxGetApp()->LoadStandardCursor(IDC_SIZEALL));
 		}
-		bBoxMove = false;
-		if (iPickedBoxPnt < 0) {
-			if (PointInBox(point)) {
-				TReal rMagnify = iMagnify;
-				if (rMagnify < 1) rMagnify = 1.0 / (2 - rMagnify);
+		SetCapture();
+	}*/
+	const int iPickArea = CGAZOVIEW_LASSOPICK * CGAZOVIEW_LASSOPICK;// 400;//20 x 20//201126
+	bBoxMove = false;
+	//if (!bPolygonMove && !bCircleLassoMove && (iPickedPolygonPnt < 0)) {
+	if ((iPickedPolygonPnt < 0) && (!bCircleLassoEdit)) {
+		if (bBoxEnabled && pf->bEnableEditTrimbox) {
+			//compare pntBox
+			iPickedBoxPnt = -1;
+			for (int i = 0; i < 4; i++) {
+				int ix = point.x - pntBox[i].x;
+				int iy = point.y - pntBox[i].y;
+				if (ix * ix + iy * iy <= iPickArea) {
+					iPickedBoxPnt = i; break;
+				}
+			}
+			bBoxMove = false;
+			if (iPickedBoxPnt < 0) {
+				if (!bPolygonMove && !bCircleLassoMove) {
+					if (PointInBox(point)) {
+						TReal rMagnify = iMagnify;
+						if (rMagnify < 1) rMagnify = 1.0 / (2 - rMagnify);
+						CRect rect;
+						GetClientRect(&rect);
+						CPoint pCenter = rect.CenterPoint();
+						int ixpos = GetScrollPos(SB_HORZ);
+						int iypos = GetScrollPos(SB_VERT);
+						int ixWidthImg = (int)(ixdim * rMagnify);
+						int iyWidthImg = (int)(iydim * rMagnify);
+						int ix0img = pCenter.x - (int)(ixWidthImg * ixpos / CGV_HSCROLL_RANGE);
+						int iy0img = pCenter.y - (int)(iyWidthImg * iypos / CGV_VSCROLL_RANGE);
+						bBoxMove = true;
+						pntLButton = CPoint((int)(iBoxCentX * rMagnify + ix0img),
+							(int)(iBoxCentY * rMagnify + iy0img)) - point;
+						::SetCursor(AfxGetApp()->LoadStandardCursor(IDC_SIZEALL));
+						//hCursor = ::SetCursor(AfxGetApp()->LoadStandardCursor(IDC_SIZEALL));
+					} else {
+						//bBoxMove = false;
+						bBoxEnabled = false;
+						pf->m_wndStatusBar.SetPaneText(2, "");
+					}
+				}
+			} else {
+				switch (iPickedBoxPnt) {
+				case 0: {pntLButton = pntBox[2]; break; }
+				case 1: {pntLButton = pntBox[3]; break; }
+				case 2: {pntLButton = pntBox[0]; break; }
+				case 3: {pntLButton = pntBox[1]; break; }
+				}
+				text.Format("Center (%d %d) Size (%d %d) Tilt %d",
+					iBoxCentX, iBoxCentY, iBoxSizeX, iBoxSizeY, iBoxAngle);
+				pf->m_wndStatusBar.SetPaneText(2, text);
+			}
+			SetCapture();
+		} else if (!bPolygonMove && !bCircleLassoMove) {
+			pntLButton = point;
+			if (((CGazoApp*)AfxGetApp())->bDragScroll) {
+				bDragScrollEnabled = true;
+				iScrollH = GetScrollPos(SB_HORZ);
+				iScrollV = GetScrollPos(SB_VERT);
+			} else if (pf->bEnableEditTrimbox) {
+				bBoxEnabled = true;
 				CRect rect;
 				GetClientRect(&rect);
 				CPoint pCenter = rect.CenterPoint();
+				TReal rMagnify = iMagnify;
+				if (rMagnify < 1) rMagnify = 1.0 / (2 - rMagnify);
 				int ixpos = GetScrollPos(SB_HORZ);
 				int iypos = GetScrollPos(SB_VERT);
 				int ixWidthImg = (int)(ixdim * rMagnify);
 				int iyWidthImg = (int)(iydim * rMagnify);
 				int ix0img = pCenter.x - (int)(ixWidthImg * ixpos / CGV_HSCROLL_RANGE);
 				int iy0img = pCenter.y - (int)(iyWidthImg * iypos / CGV_VSCROLL_RANGE);
-				bBoxMove = true;
-				pntLButton = CPoint((int)(iBoxCentX * rMagnify + ix0img), 
-									(int)(iBoxCentY * rMagnify + iy0img)) - point;
-				::SetCursor(AfxGetApp()->LoadStandardCursor(IDC_SIZEALL));
-				//hCursor = ::SetCursor(AfxGetApp()->LoadStandardCursor(IDC_SIZEALL));
-			} else {
-				//bBoxMove = false;
-				bBoxEnabled = false;
-				pf->m_wndStatusBar.SetPaneText(2,"");
+				iBoxSizeX = 1;
+				iBoxSizeY = 1;
+				iBoxAngle = 0;
+				iBoxCentX = (int)((point.x - ix0img) / rMagnify);
+				iBoxCentY = (int)((point.y - iy0img) / rMagnify);
+				iPickedBoxPnt = 2;
+				text.Format("Center (%d %d) Size (%d %d) Tilt %d",
+					iBoxCentX, iBoxCentY, iBoxSizeX, iBoxSizeY, iBoxAngle);
+				pf->m_wndStatusBar.SetPaneText(2, text);
 			}
-		} else {
-			switch (iPickedBoxPnt) {
-				case 0: {pntLButton = pntBox[2]; break;}
-				case 1: {pntLButton = pntBox[3]; break;}
-				case 2: {pntLButton = pntBox[0]; break;}
-				case 3: {pntLButton = pntBox[1]; break;}
-			}
-			text.Format("Center (%d %d) Size (%d %d) Tilt %d", 
-				iBoxCentX, iBoxCentY, iBoxSizeX, iBoxSizeY, iBoxAngle);
-			pf->m_wndStatusBar.SetPaneText(2,text);
 		}
-		SetCapture();
-	} else {
-		pntLButton = point;
-		if (((CGazoApp*)AfxGetApp())->bDragScroll) {
-			bDragScrollEnabled = true;
-			iScrollH = GetScrollPos(SB_HORZ);
-			iScrollV = GetScrollPos(SB_VERT);
-		} else {
-			bBoxEnabled = true;
+	}
+	CGazoDoc* pd = GetDocument();
+	if (pd) pd->dlgHist.UpdateParam();
+	InvalidateRect(NULL, FALSE);
+	
+	CView::OnLButtonDown(nFlags, point);
+}
+
+void CGazoView::ButtonDownToLassoEdit(CPoint point) {
+	const int iPickArea = CGAZOVIEW_LASSOPICK * CGAZOVIEW_LASSOPICK;// 400;//20 x 20//201126
+	if (bPolygonEnabled) {
+		iPickedPolygonPnt = -1;
+		for (int i = 0; i < CGAZOVIEW_NPOLYGON; i++) {
+			int ix = point.x - pntPolygon[i].x;
+			int iy = point.y - pntPolygon[i].y;
+			if (ix * ix + iy * iy <= iPickArea) {
+				iPickedPolygonPnt = i; break;
+			}
+		}
+		bPolygonMove = false;
+		if (iPickedPolygonPnt < 0) {
+			TReal rMagnify = iMagnify;
+			if (rMagnify < 1) rMagnify = 1.0 / (2 - rMagnify);
 			CRect rect;
 			GetClientRect(&rect);
 			CPoint pCenter = rect.CenterPoint();
-			TReal rMagnify = iMagnify;
-			if (rMagnify < 1) rMagnify = 1.0 / (2 - rMagnify);
 			int ixpos = GetScrollPos(SB_HORZ);
 			int iypos = GetScrollPos(SB_VERT);
 			int ixWidthImg = (int)(ixdim * rMagnify);
 			int iyWidthImg = (int)(iydim * rMagnify);
 			int ix0img = pCenter.x - (int)(ixWidthImg * ixpos / CGV_HSCROLL_RANGE);
 			int iy0img = pCenter.y - (int)(iyWidthImg * iypos / CGV_VSCROLL_RANGE);
-			iBoxSizeX = 1;
-			iBoxSizeY = 1;
-			iBoxAngle = 0;
-			iBoxCentX = (int)((point.x - ix0img) / rMagnify);
-			iBoxCentY = (int)((point.y - iy0img) / rMagnify);
-			iPickedBoxPnt = 2;
-			text.Format("Center (%d %d) Size (%d %d) Tilt %d", 
-				iBoxCentX, iBoxCentY, iBoxSizeX, iBoxSizeY, iBoxAngle);
-			pf->m_wndStatusBar.SetPaneText(2,text);
+			CPoint pnt;
+			pnt.x = (int)((point.x - ix0img) / rMagnify);
+			pnt.y = (int)((point.y - iy0img) / rMagnify);
+			if (PointInPolygon(pnt)) {
+				bPolygonMove = true;
+				pntLButtonPolygon = CPoint((int)(iPolygonX[0] * rMagnify + ix0img),
+					(int)(iPolygonY[0] * rMagnify + iy0img)) - point;
+				::SetCursor(AfxGetApp()->LoadStandardCursor(IDC_SIZEALL));
+			}
 		}
+		SetCapture();
 	}
-	CGazoDoc* pd = GetDocument();
-	ASSERT_VALID(pd);
-	pd->dlgHist.UpdateParam();
-	InvalidateRect(NULL, FALSE);
-	
-	CView::OnLButtonDown(nFlags, point);
+	if (bCircleLassoEnabled) {
+		bCircleLassoMove = false;
+		bCircleLassoEdit = false;
+		TReal rMagnify = iMagnify;
+		if (rMagnify < 1) rMagnify = 1.0 / (2 - rMagnify);
+		CRect rect;
+		GetClientRect(&rect);
+		CPoint pCenter = rect.CenterPoint();
+		int ixpos = GetScrollPos(SB_HORZ);
+		int iypos = GetScrollPos(SB_VERT);
+		int ixWidthImg = (int)(ixdim * rMagnify);
+		int iyWidthImg = (int)(iydim * rMagnify);
+		int ix0img = pCenter.x - (int)(ixWidthImg * ixpos / CGV_HSCROLL_RANGE);
+		int iy0img = pCenter.y - (int)(iyWidthImg * iypos / CGV_VSCROLL_RANGE);
+		CPoint pnt;
+		pnt.x = (int)((point.x - ix0img) / rMagnify);
+		pnt.y = (int)((point.y - iy0img) / rMagnify);
+		if (PointOnCircleLassoLine(pnt)) {
+			bCircleLassoEdit = true;
+			bPolygonMove = false;
+		}
+		else if (PointInCircleLasso(pnt)) {
+			bCircleLassoMove = true;
+			pntLButtonCircle = CPoint((int)(iCircleLasso[0] * rMagnify + ix0img),
+				(int)(iCircleLasso[1] * rMagnify + iy0img)) - point;
+			::SetCursor(AfxGetApp()->LoadStandardCursor(IDC_SIZEALL));
+		}
+		SetCapture();
+	}
 }
 
 void CGazoView::OnLButtonUp(UINT nFlags, CPoint point) 
 {
 	bLButtonDown = false;
 	bBoxMove = false;
-	bPolygonMove = false;
+	CGazoApp* pApp = (CGazoApp*)AfxGetApp();
+	if (pApp) {
+		if (pApp->bLassoRbtn == false) {
+			bPolygonMove = false;
+			bCircleLassoMove = false;//251205
+			bCircleLassoEdit = false;//251205
+			iPickedBoxPnt = -1;//251205
+			iPickedPolygonPnt = -1;//251205
+		}
+	}
 	bDragScrollEnabled = false;
 	ReleaseCapture();
 	SetCursor(hCursor);
@@ -925,6 +1191,31 @@ BOOL CGazoView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 	//CMainFrame* pf = (CMainFrame*) AfxGetMainWnd();
 	const CGazoApp* pApp = (CGazoApp*) AfxGetApp();
 	CGazoDoc* pd = GetDocument();
+	//consts
+	TReal rMagnify = iMagnify;
+	if (rMagnify < 1) rMagnify = 1.0 / (2 - rMagnify);
+	const int ixpos = GetScrollPos(SB_HORZ);
+	const int iypos = GetScrollPos(SB_VERT);
+	const int ixWidthImg = (int)(ixdim * rMagnify);
+	const int iyWidthImg = (int)(iydim * rMagnify);
+	CRect rect;
+	GetClientRect(&rect);
+	const CPoint pCenter = rect.CenterPoint();
+	const int ix0img = pCenter.x - (int)(ixWidthImg * ixpos / CGV_HSCROLL_RANGE);
+	const int iy0img = pCenter.y - (int)(iyWidthImg * iypos / CGV_VSCROLL_RANGE);
+	CPoint ptcl = pt;
+	ScreenToClient(&ptcl);
+	//distance from circle-lasso center
+	const double cx = (iCircleLasso[0] * rMagnify + ix0img) - ptcl.x;
+	const double cy = (iCircleLasso[1] * rMagnify + iy0img) - ptcl.y;
+	//CString line; line.Format("%d %d\r\n%d %d\r\n%f %f", ptcl.x, ptcl.y, ix0img, iy0img, cx, cy); AfxMessageBox(line);
+	int idelta = (int)(sqrt(cx * cx + cy * cy) * 0.1);
+	idelta = (idelta < 1) ? 1 : idelta;
+	idelta = (idelta > ixWidthImg + iyWidthImg) ? ixWidthImg + iyWidthImg : idelta;
+	//CPoint in image coord
+	CPoint pntimg;
+	pntimg.x = (int)((ptcl.x - ix0img) / rMagnify);
+	pntimg.y = (int)((ptcl.y - iy0img) / rMagnify);
 	if ((pApp->bWheelToGo) || (GetKeyState(VK_SHIFT) < 0) || (GetKeyState(VK_F1) < 0)) {
 		if (pd) {
 			if (pd->parentDoc) {
@@ -941,17 +1232,77 @@ BOOL CGazoView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 					const int ipintp = (int)pow((double)2, iZooming);
 					const int iTargetdim = ixlen * ipintp;
 					if (pd->ixdim == iTargetdim) {
-						const int iTargetSlice = (pd->dlgReconst.iContext & CDLGRECONST_CONTEXT_TOMO1)? 1 : ((pd->dlgReconst.iContext & CDLGRECONST_CONTEXT_TOMO2)? 2 : 0);
-						if ((GetKeyState(VK_SHIFT) < 0)|| (pApp->bWheelToGo)) pd->parentDoc->dlgReconst.IncDecCenter(iTargetSlice, zDelta);
+						const int iTargetSlice = (pd->dlgReconst.iContext & CDLGRECONST_CONTEXT_TOMO1) ? 1 : ((pd->dlgReconst.iContext & CDLGRECONST_CONTEXT_TOMO2) ? 2 : 0);
+						if ((GetKeyState(VK_SHIFT) < 0) || (pApp->bWheelToGo)) pd->parentDoc->dlgReconst.IncDecCenter(iTargetSlice, zDelta);
 						else if (GetKeyState(VK_F1) < 0) pd->parentDoc->dlgReconst.IncDecTilt(zDelta > 0 ? 5 : -5);
 						if (pd->parentDoc->dlgReconst.iStatus == CDLGRECONST_IDLE) pd->parentDoc->dlgReconst.CalcTomogram(iTargetSlice, pd);
 						else pd->parentDoc->dlgReconst.iStatus |= CDLGRECONST_WHEEL;
 					}
 				}
-			} else {
+			}
+			else {
 				if (zDelta < 0) pd->ProceedImage(1);
 				else if (zDelta > 0) pd->ProceedImage(-1);
 			}
+		}
+	} else if (GetKeyState(VK_F2) < 0) {//251205
+		if (bCircleLassoEnabled) {
+			if (zDelta < 0) iCircleLasso[5] = (iCircleLasso[5] - idelta) > 10 ? (iCircleLasso[5] - idelta) : 10;
+			else if (zDelta > 0) iCircleLasso[5] = (iCircleLasso[5] + idelta) < 200 ? (iCircleLasso[5] + idelta) : 200;
+			dlgCircleLasso.UpdateCurrentCircle();
+			InvalidateRect(NULL, FALSE);
+		}
+	} else if (GetKeyState(VK_F3) < 0) {//251205
+		if (bCircleLassoEnabled) {
+			if (zDelta < 0) iCircleLasso[8] = (iCircleLasso[8] - idelta) > 10 ? (iCircleLasso[8] - idelta) : 10;
+			else if (zDelta > 0) iCircleLasso[8] = (iCircleLasso[8] + idelta) < 200 ? (iCircleLasso[8] + idelta) : 200;
+			dlgCircleLasso.UpdateCurrentCircle();
+			InvalidateRect(NULL, FALSE);
+		}
+	} else if (GetKeyState(VK_F4) < 0) {//251205
+		if (bCircleLassoEnabled) {
+			if (zDelta < 0) iCircleLasso[11] = (iCircleLasso[11] - idelta) > 10 ? (iCircleLasso[11] - idelta) : 10;
+			else if (zDelta > 0) iCircleLasso[11] = (iCircleLasso[11] + idelta) < 200 ? (iCircleLasso[11] + idelta) : 200;
+			dlgCircleLasso.UpdateCurrentCircle();
+			InvalidateRect(NULL, FALSE);
+		}
+	} else if (GetKeyState(VK_F5) < 0) {//260110
+		if (bCircleLassoEnabled) {
+			if (zDelta < 0) iCircleLasso[14] = (iCircleLasso[14] - idelta) > 10 ? (iCircleLasso[14] - idelta) : 10;
+			else if (zDelta > 0) iCircleLasso[14] = (iCircleLasso[14] + idelta) < 200 ? (iCircleLasso[14] + idelta) : 200;
+			dlgCircleLasso.UpdateCurrentCircle();
+			InvalidateRect(NULL, FALSE);
+		}
+	} else if (GetKeyState(VK_F6) < 0) {//260110
+		if (bCircleLassoEnabled) {
+			if (zDelta < 0) iCircleLasso[17] = (iCircleLasso[17] - idelta) > 10 ? (iCircleLasso[17] - idelta) : 10;
+			else if (zDelta > 0) iCircleLasso[17] = (iCircleLasso[17] + idelta) < 200 ? (iCircleLasso[17] + idelta) : 200;
+			dlgCircleLasso.UpdateCurrentCircle();
+			InvalidateRect(NULL, FALSE);
+		}
+	} else if (GetKeyState(VK_F7) < 0) {//251205
+		if (bCircleLassoEnabled) {
+			if (zDelta < 0) {
+				for (int j = 3; j < CGAZOVIEW_NPARAMCIRCLELASSO; j += 3) {
+					iCircleLasso[j+1] = iCircleLasso[j+1]-idelta < -180 ? iCircleLasso[j+1]-idelta + 360 : iCircleLasso[j+1]-idelta;
+				}
+			} else if (zDelta > 0) {
+				for (int j = 3; j < CGAZOVIEW_NPARAMCIRCLELASSO; j += 3) {
+					iCircleLasso[j+1] = iCircleLasso[j+1]+idelta > 180 ? iCircleLasso[j+1]+idelta - 360 : iCircleLasso[j+1]+idelta;
+				}
+			}
+			dlgCircleLasso.UpdateCurrentCircle();
+			InvalidateRect(NULL, FALSE);
+		}
+	} else if (GetKeyState(VK_CONTROL) < 0) {//251205
+		if (bCircleLassoEnabled) {
+			if (zDelta < 0) {
+				if (iCircleLasso[2] > idelta) iCircleLasso[2] -= idelta;
+			} else if (zDelta > 0) {
+				iCircleLasso[2] += idelta; //iCircleLasso[3] += idelta;
+			}
+			dlgCircleLasso.UpdateCurrentCircle();
+			InvalidateRect(NULL, FALSE);
 		}
 	} else if (!bLButtonDown) {
 		/*150101
@@ -970,17 +1321,17 @@ BOOL CGazoView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 			//CView::OnVScroll(nSBCode, nPos, pScrollBar);
 		}*/
 		//190628==>
-		TReal rMagnify = iMagnify;
-		if (rMagnify < 1) rMagnify = 1.0 / (2 - rMagnify);
-		CRect rect;
-		GetClientRect(&rect);
-		CPoint pCenter = rect.CenterPoint();
-		int ixpos = GetScrollPos(SB_HORZ);
-		int iypos = GetScrollPos(SB_VERT);
-		double dx0img = pCenter.x - ixdim * rMagnify * ixpos / CGV_HSCROLL_RANGE;
-		double dy0img = pCenter.y - iydim * rMagnify * iypos / CGV_VSCROLL_RANGE;
-		const double dConstX = (pntMouse.x - dx0img) / (ixdim * rMagnify);
-		const double dConstY = (pntMouse.y - dy0img) / (iydim * rMagnify);
+		//TReal rMagnify = iMagnify;
+		//if (rMagnify < 1) rMagnify = 1.0 / (2 - rMagnify);
+		//CRect rect;
+		//GetClientRect(&rect);
+		//CPoint pCenter = rect.CenterPoint();
+		//int ixpos = GetScrollPos(SB_HORZ);
+		//int iypos = GetScrollPos(SB_VERT);
+		//double dx0img = pCenter.x - ixdim * rMagnify * ixpos / CGV_HSCROLL_RANGE;
+		//double dy0img = pCenter.y - iydim * rMagnify * iypos / CGV_VSCROLL_RANGE;
+		const double dConstX = (pntMouse.x - ix0img) / (ixdim * rMagnify);
+		const double dConstY = (pntMouse.y - iy0img) / (iydim * rMagnify);
 		int iMagnifyNext = iMagnify;
 		bool bScroll = true;
 		if (zDelta < 0) {
@@ -995,10 +1346,10 @@ BOOL CGazoView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 		if (bScroll) {
 			rMagnify = iMagnifyNext;
 			if (rMagnify < 1) rMagnify = 1.0 / (2 - rMagnify);
-			ixpos = (int)(((double)(pCenter.x - pntMouse.x) / (ixdim * rMagnify) + dConstX) * CGV_HSCROLL_RANGE + 0.5);
-			iypos = (int)(((double)(pCenter.y - pntMouse.y) / (iydim * rMagnify) + dConstY) * CGV_VSCROLL_RANGE + 0.5);
-			SetScrollPos(SB_HORZ, ixpos);
-			SetScrollPos(SB_VERT, iypos);
+			int ixpos1 = (int)(((double)(pCenter.x - pntMouse.x) / (ixdim * rMagnify) + dConstX) * CGV_HSCROLL_RANGE + 0.5);
+			int iypos1 = (int)(((double)(pCenter.y - pntMouse.y) / (iydim * rMagnify) + dConstY) * CGV_VSCROLL_RANGE + 0.5);
+			SetScrollPos(SB_HORZ, ixpos1);
+			SetScrollPos(SB_VERT, iypos1);
 		}
 		//==>190628
 		if (zDelta < 0) OnToolbarMin();
@@ -1009,38 +1360,56 @@ BOOL CGazoView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 
 void CGazoView::OnRButtonDown(UINT nFlags, CPoint point) 
 {
-	if (bRedLine) {
-		bRedLine = false;
-		InvalidateRect(NULL, FALSE);
-		CView::OnRButtonDown(nFlags, point);
-		return;
-	} else {
-		bRedLine = true; bRButtonDown = true;
+	bRButtonDown = true;
+	bool bAppLassoRbtn = false;
+	CGazoApp* pApp = (CGazoApp*)AfxGetApp();
+	if (pApp) bAppLassoRbtn = pApp->bLassoRbtn;
+	if (bAppLassoRbtn) ButtonDownToLassoEdit(point);
+	if (!bPolygonMove && (iPickedBoxPnt < 0) && !bCircleLassoMove && !bCircleLassoEdit) {
+		if (bRedLine) {
+			bRedLine = false;
+		} else {
+			bRedLine = true;
+			CRect rect;
+			GetClientRect(&rect);
+			CPoint pCenter = rect.CenterPoint();
+			TReal rMagnify = iMagnify;
+			if (rMagnify < 1) rMagnify = 1.0 / (2 - rMagnify);
+			int ixpos = GetScrollPos(SB_HORZ);
+			int iypos = GetScrollPos(SB_VERT);
+			int ixWidthImg = (int)(ixdim * rMagnify);
+			int iyWidthImg = (int)(iydim * rMagnify);
+			int ix0img = pCenter.x - (int)(ixWidthImg * ixpos / CGV_HSCROLL_RANGE);
+			int iy0img = pCenter.y - (int)(iyWidthImg * iypos / CGV_VSCROLL_RANGE);
+			pntRedFrom.x = (int)((point.x - ix0img) / rMagnify);
+			pntRedFrom.y = (int)((point.y - iy0img) / rMagnify);
+			pntRedTo = pntRedFrom;
+		}
 	}
-	CRect rect;
-	GetClientRect(&rect);
-	CPoint pCenter = rect.CenterPoint();
-	TReal rMagnify = iMagnify;
-	if (rMagnify < 1) rMagnify = 1.0 / (2 - rMagnify);
-	int ixpos = GetScrollPos(SB_HORZ);
-	int iypos = GetScrollPos(SB_VERT);
-	int ixWidthImg = (int)(ixdim * rMagnify);
-	int iyWidthImg = (int)(iydim * rMagnify);
-	int ix0img = pCenter.x - (int)(ixWidthImg * ixpos / CGV_HSCROLL_RANGE);
-	int iy0img = pCenter.y - (int)(iyWidthImg * iypos / CGV_VSCROLL_RANGE);
-	pntRedFrom.x = (int)((point.x - ix0img) / rMagnify);
-	pntRedFrom.y = (int)((point.y - iy0img) / rMagnify);
-	pntRedTo = pntRedFrom;
+	if (bAppLassoRbtn) {
+		CGazoDoc* pd = GetDocument();
+		if (pd) pd->dlgHist.UpdateParam();
+	}
 	InvalidateRect(NULL, FALSE);
-	
 	CView::OnRButtonDown(nFlags, point);
 }
 
 void CGazoView::OnRButtonUp(UINT nFlags, CPoint point) 
 {
 	bRButtonDown = false;
-	//pntRButtonUp = point;
-	
+	CGazoApp* pApp = (CGazoApp*)AfxGetApp();
+	if (pApp) {
+		if (pApp->bLassoRbtn) {
+			bPolygonMove = false;
+			bCircleLassoMove = false;//251205
+			bCircleLassoEdit = false;//251205
+			iPickedBoxPnt = -1;//251205
+			iPickedPolygonPnt = -1;//251205
+		}
+	}
+	ReleaseCapture();
+	SetCursor(hCursor);
+
 	CView::OnRButtonUp(nFlags, point);
 }
 
@@ -1128,6 +1497,67 @@ bool CGazoView::PointInPolygon(CPoint point) {//image coords
 //	return (icount & 0x01);
 }
 
+void CGazoView::OnAnalysisCirclelasso()//251205
+{
+	if (bCircleLassoEnabled) {
+		if (dlgCircleLasso.IsWindowVisible()) {
+			bCircleLassoEnabled = false;
+			dlgCircleLasso.ShowWindow(SW_HIDE);
+			dlgCircleLasso.MakeCircleList();
+		}
+		else {
+			if (!dlgCircleLasso.m_hWnd) dlgCircleLasso.Create(IDD_CIRCLELASSO);
+			dlgCircleLasso.ShowWindow(SW_SHOW); //AfxMessageBox("ShowWindow");
+			dlgCircleLasso.UpdateCurrentCircle();
+		}
+	}
+	else {
+		bCircleLassoEnabled = true;
+		if (bBoxEnabled) {
+			InitCircleLasso(iBoxCentX, iBoxCentY, iBoxSizeX, iBoxSizeY);
+		}
+		if (!dlgCircleLasso.m_hWnd) dlgCircleLasso.Create(IDD_CIRCLELASSO);
+		if (dlgCircleLasso.IsWindowVisible()) dlgCircleLasso.SetForegroundWindow();
+		else dlgCircleLasso.ShowWindow(SW_SHOW);
+		dlgCircleLasso.UpdateCurrentCircle();
+	}
+	InvalidateRect(NULL, FALSE);
+}
+
+void CGazoView::OnUpdateAnalysisCirclelasso(CCmdUI *pCmdUI)
+{
+	pCmdUI->SetCheck(bCircleLassoEnabled);
+}
+
+void CGazoView::InitCircleLasso(int xcent, int ycent, int xsize, int ysize) {
+	iCircleLasso[0] = xcent;
+	iCircleLasso[1] = ycent;
+	iCircleLasso[2] = (xsize + ysize) / 2;//radius
+	for (int j = 3; j < CGAZOVIEW_NPARAMCIRCLELASSO; j += 3) {
+		iCircleLasso[j] = 0;//hump
+		iCircleLasso[j+1] = 0;//angle
+		iCircleLasso[j+2] = 50;//kurtosis
+	}
+	dlgCircleLasso.UpdateCurrentCircle();
+}
+
+bool CGazoView::PointInCircleLasso(CPoint point) {//image coords
+	if (!bCircleLassoEnabled) return false;
+	CGazoDoc* pd = GetDocument();
+	if (!pd) return false;
+	return pd->PointInCircleLasso(point.x, point.y, iCircleLasso);
+	//int ix = iCircleLasso[0] - point.x;
+	//int iy = iCircleLasso[1] - point.y;
+	//int ir = iCircleLasso[2];
+	//if (ix * ix + iy * iy < ir * ir) return true; else return false;
+}
+
+bool CGazoView::PointOnCircleLassoLine(CPoint point) {//image coords
+	if (!bCircleLassoEnabled) return false;
+	CGazoDoc* pd = GetDocument();
+	if (!pd) return false;
+	return pd->PointOnCircleLassoLine(point.x, point.y, iCircleLasso);
+}
 
 void CGazoView::OnInitialUpdate()
 {//190628

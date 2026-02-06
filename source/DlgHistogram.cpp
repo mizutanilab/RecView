@@ -23,6 +23,7 @@ CDlgHistogram::CDlgHistogram(CWnd* pParent /*=NULL*/)
 	: CDialog(CDlgHistogram::IDD, pParent)
 	//, m_StatMsg(_T("Statistics..."))
 	, m_bEnablePolygon(FALSE)
+	, m_bEnableCircleLasso(FALSE)
 	, m_bHistLog(FALSE)
 	, m_bUpdateHistg(TRUE)
 {
@@ -123,6 +124,7 @@ void CDlgHistogram::ParamCopyFrom(const CDlgHistogram& a) {
 	m_TrmAngle = a.m_TrmAngle;
 	m_EnableTrm = a.m_EnableTrm;
 	m_bEnablePolygon = a.m_bEnablePolygon;
+	m_bEnableCircleLasso = a.m_bEnableCircleLasso;//251205
 	m_bHistLog = a.m_bHistLog;
 
 	m_Prefix = a.m_Prefix;
@@ -279,6 +281,7 @@ void CDlgHistogram::UpdateView() {
 			pv->SetBoxParams(m_TrmCentX, m_TrmCentY, m_TrmSizeX, m_TrmSizeY, m_TrmAngle);
 			if (m_EnableTrm) pv->EnableBox(true); else pv->EnableBox(false); 
 			if (m_bEnablePolygon) pv->bPolygonEnabled = true; else pv->bPolygonEnabled = false;
+			if (m_bEnableCircleLasso) pv->bCircleLassoEnabled = true; else pv->bCircleLassoEnabled = false;//251205
 		}
 	}
 	if (pd->pixDiv > 0) {
@@ -302,6 +305,7 @@ void CDlgHistogram::UpdateParam() {
 			pv->GetBoxParams(&m_TrmCentX, &m_TrmCentY, &m_TrmSizeX, &m_TrmSizeY, &m_TrmAngle, &bFlg);
 			if (bFlg) m_EnableTrm = TRUE; else m_EnableTrm = FALSE;
 			if (pv->bPolygonEnabled) m_bEnablePolygon = TRUE; else m_bEnablePolygon = FALSE;
+			if (pv->bCircleLassoEnabled) m_bEnableCircleLasso = TRUE; else m_bEnableCircleLasso = FALSE;//251205
 			if (this->m_hWnd) EnableCtrl();
 			break;
 		}
@@ -388,6 +392,7 @@ void CDlgHistogram::DoDataExchange(CDataExchange* pDX)
 	DDX_Check(pDX, IDC_HISTG_ENPOLYGON, m_bEnablePolygon);
 	DDX_Check(pDX, IDC_HISTG_OUTLOGHIST, m_bHistLog);
 	DDX_Check(pDX, IDC_HISTG_UPDATEHISTG, m_bUpdateHistg);
+	DDX_Check(pDX, IDC_HISTG_ENCIRCLELASSO, m_bEnableCircleLasso);//251205
 }
 
 
@@ -412,6 +417,7 @@ BEGIN_MESSAGE_MAP(CDlgHistogram, CDialog)
 	ON_BN_CLICKED(IDC_HISTG_OPT, &CDlgHistogram::OnBnClickedHistgOpt)
 	ON_BN_CLICKED(IDC_HISTG_ENPOLYGON, &CDlgHistogram::OnBnClickedHistgEnpolygon)
 	ON_BN_CLICKED(IDC_HISTG_UPDATEHISTG, &CDlgHistogram::OnBnClickedHistgUpdatehistg)
+	ON_BN_CLICKED(IDC_HISTG_ENCIRCLELASSO, &CDlgHistogram::OnBnClickedHistgEncirclelasso)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -670,6 +676,14 @@ void CDlgHistogram::OnOK()
 				if (pv) fq.sPolygonList = pv->dlgPolygon.sPolygonList;
 			}
 		}
+		fq.sCircleLassoList.Empty();//251205
+		if (m_bEnableCircleLasso) {
+			POSITION pos = pd->GetFirstViewPosition();
+			while (pos != NULL) {
+				CGazoView* pv = (CGazoView*)pd->GetNextView(pos);
+				if (pv) fq.sCircleLassoList = pv->dlgCircleLasso.sCircleList;
+			}
+		}
 		TErr err = pd->OutputImageInBox(&fq, &m_Progress);
 		EndWaitCursor();
 		if (err) {CString line; line.Format("Error %d", err); AfxMessageBox(line);}
@@ -801,6 +815,14 @@ void CDlgHistogram::OnHistgQueue()
 			if (pv) fq.sPolygonList = pv->dlgPolygon.sPolygonList;
 		}
 	}
+	fq.sCircleLassoList.Empty();//251205
+	if (m_bEnableCircleLasso) {
+		POSITION pos = pd->GetFirstViewPosition();
+		while (pos != NULL) {
+			CGazoView* pv = (CGazoView*)pd->GetNextView(pos);
+			if (pv) fq.sCircleLassoList = pv->dlgCircleLasso.sCircleList;
+		}
+	}
 
 	//pd params
 	//rq.filePath = pd->GetPathName();
@@ -870,6 +892,22 @@ void CDlgHistogram::OnBnClickedHistgEnpolygon()
 	UpdateView();
 }
 
+void CDlgHistogram::OnBnClickedHistgEncirclelasso() {//251205
+	UpdateData();
+	EnableCtrl();
+	if (m_bEnableCircleLasso) {
+		POSITION pos = pd->GetFirstViewPosition();
+		while (pos != NULL) {
+			CGazoView* pv = (CGazoView*)pd->GetNextView(pos);
+			if (pv) {
+				if (!(pv->dlgCircleLasso.m_hWnd)) pv->dlgCircleLasso.Create(IDD_CIRCLELASSO);
+				pv->dlgCircleLasso.ShowWindow(SW_SHOW);
+				pv->dlgCircleLasso.UpdateCurrentCircle();
+			}
+		}
+	}
+	UpdateView();
+}
 
 void CDlgHistogram::OnBnClickedHistgUpdatehistg()
 {

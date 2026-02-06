@@ -38,7 +38,7 @@
     <ProjectGuid>{69E97353-E324-499E-9DDC-AB252A7BB6A5}</ProjectGuid>
     <RootNamespace>gazo</RootNamespace>
     <Keyword>MFCProj</Keyword>
-    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.19041.0</WindowsTargetPlatformVersion>
     <CudaToolkitCustomDir>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0</CudaToolkitCustomDir>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -539,6 +539,7 @@
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MaxSpeed</Optimization>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MaxSpeed</Optimization>
     </ClCompile>
+    <ClCompile Include="DlgCircleLasso.cpp" />
     <ClCompile Include="cerror.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='CUDA_Release|x64'">MaxSpeed</Optimization>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='CUDAFFT_Release|x64'">MaxSpeed</Optimization>
@@ -776,6 +777,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ccmplx.h" />
+    <ClInclude Include="DlgCircleLasso.h" />
     <ClInclude Include="cerror.h" />
     <ClInclude Include="cfft.h" />
     <ClInclude Include="chdf5.h" />

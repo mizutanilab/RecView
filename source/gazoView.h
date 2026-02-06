@@ -11,8 +11,13 @@
 
 //#include "StdAfx.h"
 #include "DlgPolygon.h"
+#include "DlgCircleLasso.h"
 
 #define CGAZOVIEW_NPOLYGON 12
+#define CGAZOVIEW_NPARAMCIRCLELASSO 18
+#define CGAZOVIEW_NPARAMCIRCLELASSO3_CONST 0.001
+#define CGAZOVIEW_NPARAMCIRCLELASSO5_CONST 0.00001
+#define CGAZOVIEW_LASSOPICK 20
 #define CGV_HSCROLL_RANGE 4096
 #define CGV_VSCROLL_RANGE 4096
 
@@ -59,6 +64,12 @@ public:
 	int iPolygonX[CGAZOVIEW_NPOLYGON];
 	int iPolygonY[CGAZOVIEW_NPOLYGON];
 	CDlgPolygon dlgPolygon;
+	void InitCircleLasso(int xcent, int ycent, int xsize, int ysize);//251205
+	bool PointInCircleLasso(CPoint point);//251205
+	bool PointOnCircleLassoLine(CPoint point);//251205
+	bool bCircleLassoEnabled;//251205
+	int iCircleLasso[CGAZOVIEW_NPARAMCIRCLELASSO];//251205
+	CDlgCircleLasso dlgCircleLasso;//251205
 
 #ifdef _DEBUG
 	virtual void AssertValid() const;
@@ -69,6 +80,7 @@ protected:
 	void GetCoord(CPoint* pPnt);
 	bool PointInBox(CPoint point);
 	void UpdateBitmap(int ixdarg, int iBrightness, int iContrast);
+	void ButtonDownToLassoEdit(CPoint point);
 	HBITMAP hBitmap;
 	LPDWORD lpBmPixel;
 	int iMagnify;
@@ -89,6 +101,10 @@ protected:
 	bool bPolygonMove;
 	CPoint pntPolygon[CGAZOVIEW_NPOLYGON+1];
 	int iPickedPolygonPnt;
+	CPoint pntLButtonPolygon;//251205
+	bool bCircleLassoMove;//251205
+	bool bCircleLassoEdit;//251205
+	CPoint pntLButtonCircle;//251205
 	CPoint pntMouse;//190628
 private:
 	int ixdim, iydim;
@@ -116,6 +132,8 @@ public:
 	//afx_msg void OnUpdateViewBoxaxislabel(CCmdUI *pCmdUI);
 	afx_msg void OnAnalysisPolygonlasso();
 	afx_msg void OnUpdateAnalysisPolygonlasso(CCmdUI *pCmdUI);
+	afx_msg void OnAnalysisCirclelasso();//251205
+	afx_msg void OnUpdateAnalysisCirclelasso(CCmdUI *pCmdUI);//251205
 	virtual void OnInitialUpdate();
 };
 

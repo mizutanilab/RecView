@@ -91,6 +91,7 @@ struct FORMAT_QUEUE {
 	double dOspThreshold;
 	int iOspDepth;
 	CString sPolygonList;
+	CString sCircleLassoList;//251205
 };
 
 struct REFRAC_QUEUE {

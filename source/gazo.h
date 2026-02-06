@@ -54,7 +54,7 @@ public:
 	int iAvailableCPU;
 	//150101 HCURSOR hCursorRot;
 	CString sProgVersion;
-	bool bShowBoxAxis, bDragScroll, bWheelToGo;
+	bool bShowBoxAxis, bDragScroll, bWheelToGo, bLassoRbtn;
 
 	CDlgQueue dlgQueue;
 	CDlgProperty dlgProperty;
@@ -66,6 +66,7 @@ public:
 
 	int m_iDPI;//230613
 //	CDlgDialbox dlgDialbox;
+	bool bDebug;//251205
 
 private:
 	TErr CalcAvgImage(CString path, CString* files, int nfiles);
@@ -113,6 +114,12 @@ public:
 	//afx_msg LRESULT OnDialbox(WPARAM wParam, LPARAM lParam);//161210
 	afx_msg void OnViewWheeltogo();
 	afx_msg void OnUpdateViewWheeltogo(CCmdUI *pCmdUI);
+	//251205
+	afx_msg void OnHlpDebug();
+	afx_msg void OnUpdateHlpDebug(CCmdUI* pCmdUI);
+	//260110
+	afx_msg void OnViewLassoRbtn();
+	afx_msg void OnUpdateViewLassoRbtn(CCmdUI *pCmdUI);
 };
 
 unsigned __stdcall GetImageDiffThread(void* pArg);

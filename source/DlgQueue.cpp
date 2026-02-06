@@ -952,6 +952,13 @@ TErr CDlgQueue::SaveQueue(CStdioFile* fp) {
 					line.Format("sPolygonList %s\r\n", sEntry); fp->WriteString(line);
 				}
 			}
+			if (!fq->sCircleLassoList.IsEmpty()) {//251205
+				for (;;) {
+					const CString sEntry = fq->sCircleLassoList.Tokenize(_T("\r\n"), ipos);
+					if (sEntry.IsEmpty()) break;
+					line.Format("sCircleLassoList %s\r\n", sEntry); fp->WriteString(line);
+				}
+			}
 		} else if (mode == "Lsqfit") {
 			LSQFIT_QUEUE* lq = &(lsqfitQueue[idx]);
 			//lq->bActive; this must be set TRUE when loading
@@ -971,7 +978,7 @@ TErr CDlgQueue::SaveQueue(CStdioFile* fp) {
 		} else if (mode == "Stop") {//201126
 			//
 		} else if (mode == "Sleep") {//201126
-			const int idur = m_QueueList.GetItemData(i);
+			const int idur = (int) m_QueueList.GetItemData(i);
 			line.Format("Duration %d\r\n", idur); fp->WriteString(line);
 		}
 		fp->WriteString("End\r\n");
@@ -1045,6 +1052,7 @@ TErr CDlgQueue::LoadQueue(CStdioFile* fp) {
 			//180622 _tcscpy_s(fq.lpFileList, MAX_FILE_DIALOG_LIST, "");
 			memset(fq.lpFileList, 0, MAX_FILE_DIALOG_LIST);
 			fq.sPolygonList.Empty();
+			fq.sCircleLassoList.Empty();//251205
 			while (fp->ReadString(line)) {
 				CString cmd = line.SpanExcluding(" \t\r\n");
 				CString param = line.Mid(cmd.GetLength());
@@ -1071,6 +1079,7 @@ TErr CDlgQueue::LoadQueue(CStdioFile* fp) {
 				} else if (cmd == "iYdim") {if (sscanf_s(param, "%d", &(fq.iYdim)) < 1) msg += line;
 				} else if (cmd == "outFilePrefix") {fq.outFilePrefix = param;
 				} else if (cmd == "sPolygonList") {fq.sPolygonList += param + "\r\n";
+				} else if (cmd == "sCircleLassoList") {fq.sCircleLassoList += param + "\r\n";//251205
 				} else if (cmd == "lpFileList") {
 					//180622
 					CString fname;

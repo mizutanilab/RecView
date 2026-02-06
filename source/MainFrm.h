@@ -24,6 +24,7 @@ public:
 	CStatusBar  m_wndStatusBar;
 	CToolBar    m_wndToolBar;
 	CDlgDialbox dlgDialbox;
+	bool bEnableEditTrimbox;
 
 private:
 	HACCEL mfrAccel;//161225
@@ -76,6 +77,8 @@ public:
 	virtual BOOL PreTranslateMessage(MSG* pMsg);
 	afx_msg void OnAcckeyT();
 	afx_msg void OnAcckeyG();
+	afx_msg void OnToolbarTrimbox();
+	afx_msg void OnUpdateToolbarTrimbox(CCmdUI* pCmdUI);
 };
 
 /////////////////////////////////////////////////////////////////////////////

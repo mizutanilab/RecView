@@ -32,6 +32,7 @@
 #define IDD_FRAMELIST                   147
 #define IDD_DIALBOX                     148
 #define IDD_POLYGON                     149
+#define IDD_CIRCLELASSO                 150
 #define IDC_RECONST_SLICE1              1000
 #define IDC_RECONST_CENT1               1001
 #define IDC_RECONST_SLICE2              1002
@@ -92,6 +93,7 @@
 #define IDC_HISTG_16BIT                 1038
 #define IDC_HISTG_ENPOLYGON             1038
 #define IDC_QUEUE_FINAL                 1039
+#define IDC_HISTG_ENCIRCLELASSO         1039
 #define IDC_MSG_TEXT                    1040
 #define IDC_QUEUE_PAUSE                 1040
 #define IDC_HISTG_ENPOLYGON2            1041
@@ -141,20 +143,25 @@
 #define IDC_LSQFIT_REFSET               1052
 #define IDC_RESOLNPLOT_UPDATE           1052
 #define IDC_POLYGON_ADD                 1052
+#define IDC_CIRCLE_RESET1               1052
 #define IDC_REFR_ATOMZ                  1053
 #define IDC_PROP_CUDANBLOCK2            1053
 #define IDC_PROP_ATINWORK               1053
 #define IDC_PROP_ATISTREAMNWORK         1053
 #define IDC_LSQFIT_QRYSET               1053
 #define IDC_RECONST_SETDRIFTLIST        1053
+#define IDC_CIRCLE_RESET2               1053
 #define IDC_REFR_ATOMA                  1054
 #define IDC_PROP_ENFASTSEEK             1054
+#define IDC_CIRCLE_RESET3               1054
 #define IDC_REFR_DENSITY                1055
 #define IDC_PROP_SIMD3                  1055
 #define IDC_PROP_AVX2                   1055
+#define IDC_CIRCLE_RESET4               1055
 #define IDC_REFR_LAC                    1056
 #define IDC_PROP_CUDAFFT2               1056
 #define IDC_PROP_CUDASTREAM             1056
+#define IDC_CIRCLE_RESET5               1056
 #define IDC_REFR_XENERGY                1057
 #define IDC_REFR_S2DDIST                1058
 #define IDC_PROP_AVX3                   1058
@@ -267,6 +274,10 @@
 #define IDC_POLYGON_CURRENT             1126
 #define IDC_POLYGON_DELETE              1127
 #define IDC_LSQFIT_FLIP                 1128
+#define IDC_CIRCLE_DELETE               1129
+#define IDC_CIRCLE_ADD                  1130
+#define IDC_CIRCLE_CURRENT              1131
+#define IDC_CIRCLELIST                  1132
 #define IDC_DIALBOX_COMPORT             1414
 #define IDC_DIALBOX_CONNECT             1415
 #define IDC_DIALBOX_DISCONNECT          1416
@@ -374,6 +385,13 @@
 #define ID_POPUPQUEUE_APPENDSTOP        32848
 #define ID_POPUPQUEUE_APPENDPAUSE       32849
 #define ID_POPUPQUEUE_APPENDSLEEP       32850
+#define ID_TOMOGRAPHY_DATASETPARAMS     32851
+#define ID_ANALYSIS_CIRCLELASSO         32852
+#define ID_VIEW_LASSO                   32853
+#define ID_VIEW_LASSORBTN               32854
+#define IDM_VIEW_LASSORBTN              32855
+#define ID_BUTTON32856                  32856
+#define ID_TOOLBAR_TRIMBOX              32856
 #define ID_POPUPQUEUE_DEL               32860
 
 // Next default values for new objects
@@ -382,8 +400,8 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_3D_CONTROLS                     1
 #define _APS_NEXT_RESOURCE_VALUE        154
-#define _APS_NEXT_COMMAND_VALUE         32851
-#define _APS_NEXT_CONTROL_VALUE         1129
+#define _APS_NEXT_COMMAND_VALUE         32857
+#define _APS_NEXT_CONTROL_VALUE         1134
 #define _APS_NEXT_SYMED_VALUE           102
 #endif
 #endif

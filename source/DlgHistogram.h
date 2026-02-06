@@ -135,6 +135,8 @@ public:
 	//CString m_StatMsg;
 	BOOL m_bEnablePolygon;
 	afx_msg void OnBnClickedHistgEnpolygon();
+	BOOL m_bEnableCircleLasso;//251205
+	afx_msg void OnBnClickedHistgEncirclelasso();
 	BOOL m_bHistLog;
 	BOOL m_bUpdateHistg;
 	afx_msg void OnBnClickedHistgUpdatehistg();

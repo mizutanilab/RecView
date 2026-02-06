@@ -122,6 +122,7 @@ BEGIN
     BUTTON      ID_TOOLBAR_FNFWD
     BUTTON      ID_TOOLBAR_FNFF
     BUTTON      ID_TOOLBAR_FNJUMPF
+    BUTTON      ID_TOOLBAR_TRIMBOX
 END
 
 
@@ -161,6 +162,7 @@ BEGIN
         MENUITEM "Drag scroll",                 IDM_VIEW_DRAGSCROLL
         MENUITEM "Box axis label",              IDM_VIEW_BOXAXISLABEL
         MENUITEM "Wheel to go",                 IDM_VIEW_WHEELTOGO
+        MENUITEM "Lasso=Rbtn",                  IDM_VIEW_LASSORBTN
     END
     POPUP "&Help"
     BEGIN
@@ -215,7 +217,8 @@ BEGIN
         MENUITEM "Overlay...",                  32821
         MENUITEM "Enlarge/reduce..",            ID_ANALYSIS_ENLARGE
         MENUITEM "Radial profile...",           ID_ANALYSIS_RADIALPROFILE
-        MENUITEM "Polygon lasso",               ID_ANALYSIS_POLYGONLASSO
+        MENUITEM "Polygon lasso...",            ID_ANALYSIS_POLYGONLASSO
+        MENUITEM "Circle lasso...",             ID_ANALYSIS_CIRCLELASSO
     END
     POPUP "&View"
     BEGIN
@@ -225,6 +228,7 @@ BEGIN
         MENUITEM "Drag scroll",                 IDM_VIEW_DRAGSCROLL
         MENUITEM "Box axis label",              IDM_VIEW_BOXAXISLABEL
         MENUITEM "Wheel to go",                 IDM_VIEW_WHEELTOGO
+        MENUITEM "Lasso=Rbtn",                  IDM_VIEW_LASSORBTN
     END
     POPUP "&Window"
     BEGIN
@@ -316,7 +320,7 @@ BEGIN
     ICON            IDR_MAINFRAME,IDC_STATIC,11,17,20,20
     DEFPUSHBUTTON   "OK",IDOK,164,7,36,14,WS_GROUP
     LTEXT           "CGazoApp::CGazoApp() sProgVersion",IDC_ABOUT_VER,42,11,115,16,SS_NOPREFIX | WS_TABSTOP
-    LTEXT           "Copyright (C) 2008-2025 Ryuta Mizutani.\r\nAll rights reserved.",IDC_STATIC,46,31,154,17
+    LTEXT           "Copyright (C) 2008-2026 Ryuta Mizutani.\r\nAll rights reserved.",IDC_STATIC,46,31,154,17
     LTEXT           "https://mizutanilab.github.io/",IDC_STATIC,54,49,139,15
     LTEXT           "File->Open one of *.his, *.img, or *.h5 files.\r\nGo 'Tomography->Reconstruction' menu.\r\n  Click 'Show image' to calcurate tomograms.\r\n  Examine tomograms at top and bottom of the sample.\r\n  Refine parameters as you like.\r\n  Then issue or queue execution.",IDC_STATIC,17,67,179,60
     LTEXT           "Again File->Open one of rec*.tif files.\r\nGo 'Tomography->Histogram/conversion' menu.\r\n  Click 'Select Image'\r\n    to select files to convert.\r\n  Move green and red lines in the histogram\r\n    to define output LAC levels.\r\n  Issue or queue execution.",IDC_STATIC,17,119,183,61
@@ -363,13 +367,13 @@ BEGIN
     LTEXT           "Shift",IDC_STATIC,107,84,17,8,SS_CENTERIMAGE | WS_BORDER
 END
 
-IDD_HISTOGRAM DIALOGEX 0, 0, 242, 227
+IDD_HISTOGRAM DIALOGEX 0, 0, 242, 236
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION
 CAPTION "Histogram"
 FONT 9, "MS Sans Serif", 0, 0, 0x0
 BEGIN
-    DEFPUSHBUTTON   "Batch",IDOK,113,206,28,14
-    PUSHBUTTON      "Close",IDCANCEL,207,206,28,14
+    DEFPUSHBUTTON   "Batch",IDOK,113,215,28,14
+    PUSHBUTTON      "Close",IDCANCEL,207,215,28,14
     CONTROL         "",IDC_HISTG_BITMAP,"Static",SS_BITMAP | SS_REALSIZEIMAGE | SS_SUNKEN,30,10,14,15
     LTEXT           "Max",IDC_HISTG_HSTMAX,7,7,22,8
     LTEXT           "Low",IDC_HISTG_HSTLOW,25,110,29,8
@@ -378,7 +382,7 @@ BEGIN
     LTEXT           "(Intensity)",IDC_HISTG_HSTUNIT,156,111,31,8
     EDITTEXT        IDC_HISTG_CURSLOW,73,109,38,12,ES_AUTOHSCROLL
     EDITTEXT        IDC_HISTG_CURSHIGH,114,109,38,12,ES_AUTOHSCROLL
-    PUSHBUTTON      "Queue",IDC_HISTG_QUEUE,144,206,28,14
+    PUSHBUTTON      "Queue",IDC_HISTG_QUEUE,144,215,28,14
     CONTROL         "Preview",IDC_HISTG_PREVIEW,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,144,132,43,10
     GROUPBOX        "Trimming box",IDC_STATIC,7,128,127,59
     EDITTEXT        IDC_HISTG_TRMCENTX,35,146,27,12,ES_AUTOHSCROLL
@@ -392,15 +396,16 @@ BEGIN
     EDITTEXT        IDC_HISTG_TRMANGLE,96,160,27,12,ES_AUTOHSCROLL
     LTEXT           "Tilt",IDC_STATIC,98,150,11,8
     LTEXT           "o",IDC_STATIC,124,160,8,8
-    LTEXT           "Tomograms",IDC_HISTG_FILEMSG,84,193,151,8
-    PUSHBUTTON      "Select image",IDC_HISTG_GETPATH,7,190,48,14
-    CONTROL         "Progress1",IDC_HISTG_PROGRESS,"msctls_progress32",WS_BORDER,7,207,102,11
+    LTEXT           "Tomograms",IDC_HISTG_FILEMSG,9,205,226,8
+    PUSHBUTTON      "Select image",IDC_HISTG_GETPATH,7,189,48,14
+    CONTROL         "Progress1",IDC_HISTG_PROGRESS,"msctls_progress32",WS_BORDER,7,217,102,11
     CONTROL         "Enable trimming",IDC_HISTG_ENTRIM,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,144,144,61,10
     LTEXT           "Box (0,0)-(100,100)",IDC_HISTG_BOXMSG,12,175,117,8
     PUSHBUTTON      "Options...",IDC_HISTG_OPT,201,130,34,14
     CONTROL         "Enable polygon lasso",IDC_HISTG_ENPOLYGON,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,144,156,82,10
-    CONTROL         "Output histogram log",IDC_HISTG_OUTLOGHIST,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,144,168,82,10
-    CONTROL         "Update histogram",IDC_HISTG_UPDATEHISTG,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,144,180,82,10
+    CONTROL         "Output histogram log",IDC_HISTG_OUTLOGHIST,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,144,180,82,10
+    CONTROL         "Update histogram",IDC_HISTG_UPDATEHISTG,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,144,192,82,10
+    CONTROL         "Enable circle lasso",IDC_HISTG_ENCIRCLELASSO,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,144,168,75,10
 END
 
 IDD_QUEUE DIALOGEX 0, 0, 299, 141
@@ -796,6 +801,26 @@ BEGIN
     PUSHBUTTON      "Delete",IDC_POLYGON_DELETE,7,25,37,14
 END
 
+IDD_CIRCLELASSO DIALOGEX 0, 0, 295, 215
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Circle lasso"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "Disable/close",IDOK,7,194,50,14
+    PUSHBUTTON      "Close",IDCANCEL,249,194,39,14
+    LISTBOX         IDC_CIRCLELIST,7,44,281,112,LBS_SORT | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_HSCROLL | WS_TABSTOP
+    EDITTEXT        IDC_CIRCLE_CURRENT,7,7,281,14,ES_AUTOHSCROLL
+    PUSHBUTTON      "Add/replace",IDC_CIRCLE_ADD,239,25,49,14
+    PUSHBUTTON      "Delete",IDC_CIRCLE_DELETE,7,25,37,14
+    LTEXT           "Ctrl:rad F2:kurt-yellow F3:pink F4:cyan F5:green F6:blue F7:rotate",IDC_STATIC,7,178,221,8
+    PUSHBUTTON      "Yellow",IDC_CIRCLE_RESET1,29,161,29,14
+    LTEXT           "Reset:",IDC_STATIC,7,163,22,8
+    PUSHBUTTON      "Pink",IDC_CIRCLE_RESET2,64,161,29,14
+    PUSHBUTTON      "Cyan",IDC_CIRCLE_RESET3,99,161,29,14
+    PUSHBUTTON      "Green",IDC_CIRCLE_RESET4,134,161,29,14
+    PUSHBUTTON      "Blue",IDC_CIRCLE_RESET5,169,161,29,14
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -864,7 +889,7 @@ BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 235
         TOPMARGIN, 7
-        BOTTOMMARGIN, 220
+        BOTTOMMARGIN, 229
     END
 
     IDD_QUEUE, DIALOG
@@ -985,6 +1010,14 @@ BEGIN
         TOPMARGIN, 7
         BOTTOMMARGIN, 177
     END
+
+    IDD_CIRCLELASSO, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 288
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 208
+    END
 END
 #endif    // APSTUDIO_INVOKED
 
@@ -1076,6 +1109,11 @@ BEGIN
 END
 
 IDD_HISTOGRAM AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_CIRCLELASSO AFX_DIALOG_LAYOUT
 BEGIN
     0
 END

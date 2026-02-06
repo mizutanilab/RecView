@@ -39,6 +39,8 @@ BEGIN_MESSAGE_MAP(CMainFrame, CMDIFrameWnd)
 	ON_COMMAND(ID_ACCKEY_V, &CMainFrame::OnAcckeyV)
 	ON_COMMAND(ID_ACCKEY_T, &CMainFrame::OnAcckeyT)
 	ON_COMMAND(ID_ACCKEY_G, &CMainFrame::OnAcckeyG)
+	ON_COMMAND(ID_TOOLBAR_TRIMBOX, &CMainFrame::OnToolbarTrimbox)
+	ON_UPDATE_COMMAND_UI(ID_TOOLBAR_TRIMBOX, &CMainFrame::OnUpdateToolbarTrimbox)
 END_MESSAGE_MAP()
 
 static UINT indicators[] =
@@ -60,6 +62,7 @@ CMainFrame::CMainFrame()
 	dlgDialbox.pv = (CView*)this;	
 	//161225 Accelerator
 	mfrAccel = LoadAccelerators(NULL, MAKEINTRESOURCE(IDR_MAINFRAME));
+	bEnableEditTrimbox = true;
 }
 
 CMainFrame::~CMainFrame()
@@ -241,4 +244,12 @@ BOOL CMainFrame::PreTranslateMessage(MSG* pMsg)
 {
 	if (TranslateAccelerator(this->GetSafeHwnd(), mfrAccel, pMsg)) return TRUE;
 	return CMDIFrameWnd::PreTranslateMessage(pMsg);
+}
+
+void CMainFrame::OnToolbarTrimbox() {
+	if (bEnableEditTrimbox) bEnableEditTrimbox = false; else bEnableEditTrimbox = true;
+}
+void CMainFrame::OnUpdateToolbarTrimbox(CCmdUI* pCmdUI) {
+	if (bEnableEditTrimbox) pCmdUI->SetCheck(1); else pCmdUI->SetCheck(0);
+	pCmdUI->Enable(true);
 }
