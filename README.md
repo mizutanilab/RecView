@@ -43,6 +43,7 @@ The present version can also be compiled with Visual Studio 2008 and CUDA Toolki
 A test dataset in TIFF format is also included in the Release. 
 
 <UL>
+  <LI>Build-260113. Circle lasso function added.</LI>
   <LI>Build-250805. A minor debug in the TIFF reading routine.</LI>
   <LI>Build-240605. Minor debugs in determining the number of frames per dataset of data obtained with the syncreadout mode of Hamamatsu detectors. </LI>
   <LI>Build-230615. Updated the histogram and resolution plot dialogs to make the display compatible with the Screen DPI awareness. Added a function to automatically preprocess raw data when reading individual a*.img files. Added an ability to maintain contrast on the LAC scale when moving back and forth between image frames. Other misc updates.</LI> 
