@@ -1,5 +1,5 @@
 ## RecView <A href="https://scicrunch.org/scicrunch/Resources/record/nlx_144509-1/SCR_016531/resolver">RRID:SCR_016531</A>
-RecView is a program for tomographic reconstruction and image processing. It consists of over 25,000 lines of custom source codes in C++, CUDA C, OpenCL, and x86/x86_64 (x64) assembly languages including SIMD instructions up to AVX-512. RecView is designed for processing data obtained at the BL20B2, BL20XU, BL37XU, and BL47XU beamlines of the SPring-8 synchrotron radiation facility and also those taken at the 32-ID beamline of Advanced Photon Source (APS) of Argonne National Laboratory.<BR> 
+RecView is a program for tomographic reconstruction and image processing. It consists of over 25,000 lines of custom source codes in C++, CUDA C, OpenCL, and x86/x86_64 (x64) assembly languages including SIMD instructions up to AVX-512. RecView is designed for processing data obtained at the BL20B2, BL20XU, BL37XU, and BL47XU beamlines of SPring-8, the BL10U beamline of NanoTerasu, and also those taken at the 32-ID beamline of Advanced Photon Source (APS) of Argonne National Laboratory.<BR> 
 Executables and manuals are available from the Releases pane of the <b><a href="https://github.com/mizutanilab/RecView">repository homepage</a></b>. The manuals are separately provided also in the docs folder. 
 
 <IMG width=100 height=140 alt=testPattern src="testPattern.png" align=left>
@@ -43,6 +43,7 @@ The former version can be compiled with Visual Studio 2008 and CUDA Toolkit 5.5 
 A test dataset in TIFF format is also included in the Release. 
 
 <UL>
+  <LI>Build-260508. Data taken at BL10U of NanoTerasu supported.</LI>
   <LI>Build-260113. Circle lasso function added.</LI>
   <LI>Build-250805. A minor debug in the TIFF reading routine.</LI>
   <LI>Build-240605. Minor debugs in determining the number of frames per dataset of data obtained with the syncreadout mode of Hamamatsu detectors. </LI>
