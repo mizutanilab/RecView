@@ -2366,6 +2366,7 @@ TErr CGazoDoc::LoadLogFile(BOOL bOffsetCT) {
 		fclose(flog);
 		if (err) return err;//211204
 		logPath = fn;
+		if (fdeg[0] < -0.1) fdeg[0] = (float)-0.1;//260508 NanoTerasu
 		//141204==>
 		//degree column seems to be given in #pulse in some beamtimes.
 //161103		int ideg = (int)(fdeg[ipos-1]);
@@ -2594,7 +2595,7 @@ TErr CGazoDoc::SetConvList(CString sDataPath, CString sFilePrefix, CString sFile
 		line = line.Mid(cmd.GetLength());
 		line.TrimLeft();
 		int icmd = CGAZOAPP_CMD_NONE;
-		if (cmd == "ren") icmd = CGAZOAPP_CMD_REN;
+		if ((cmd == "ren")|| (cmd == "rename")) icmd = CGAZOAPP_CMD_REN;//260508 NanoTerasu
 		else if (cmd == "copy") icmd = CGAZOAPP_CMD_COPY;
 		else if (cmd == "img_ave") icmd = CGAZOAPP_CMD_AVG;
 		else continue;
