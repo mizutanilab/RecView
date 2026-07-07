@@ -13,27 +13,27 @@ RecView is provided under the BSD 2-Clause License.
 <ul>
 <li>Software itself<BR>
  R. Mizutani et al. (2010). Microtomographic analysis of neuronal circuits of human brain. <i>Cerebral Cortex</i> <b>20(7)</b>, 1739-1748. 
- <a href="http://dx.doi.org/10.1093/cercor/bhp237">DOI</a> 
- <a href="http://www.ncbi.nlm.nih.gov/pubmed/19915092">PubMed</a> 
+ <a href="https://dx.doi.org/10.1093/cercor/bhp237">DOI</a> 
+ <a href="https://www.ncbi.nlm.nih.gov/pubmed/19915092">PubMed</a> 
 <li>Resolution estimation from real images<BR>
 R. Mizutani et al. (2016). A method for estimating spatial resolution of real image in the Fourier domain. <i>J. Microscopy</i> <b>261(1)</b>, 57-66.
-<a href="http://dx.doi.org/10.1111/jmi.12315">DOI</a> 
-<a href="http://www.ncbi.nlm.nih.gov/pubmed/26444300">PubMed</a> 
+<a href="https://dx.doi.org/10.1111/jmi.12315">DOI</a> 
+<a href="https://www.ncbi.nlm.nih.gov/pubmed/26444300">PubMed</a> 
 <a href="https://arxiv.org/abs/1609.02268">arXiv</a> 
 </li>
 <li>Test patterns<BR>
 R. Mizutani et al. (2008). Evaluation of the improved three-dimensional resolution of a synchrotron radiation computed tomograph using a micro-fabricated test pattern. <i>J. Synchrotron Radiat.</i> <b>15(6)</b>, 648-654. 
-<a href="http://dx.doi.org/10.1107/S0909049508025685">DOI</a> 
-<a href="http://www.ncbi.nlm.nih.gov/pubmed/18955773">PubMed</a> 
+<a href="https://dx.doi.org/10.1107/S0909049508025685">DOI</a> 
+<a href="https://www.ncbi.nlm.nih.gov/pubmed/18955773">PubMed</a> 
 </li>
 <li>Modulation transfer function<BR>
 R. Mizutani et al. (2010). Estimation of presampling modulation transfer function in synchrotron radiation microtomography. <i>Nuclear Instrum. Meth. A</i> <b>621(1-3)</b>, 615-619.
-<a href="http://dx.doi.org/10.1016/j.nima.2010.03.111">DOI</a> 
+<a href="https://dx.doi.org/10.1016/j.nima.2010.03.111">DOI</a> 
 <a href="https://arxiv.org/abs/1609.02269">arXiv</a><BR> 
 R. Saiga et al. (2018). Method for estimating modulation transfer function from sample images. <I>Micron</I> <B>105</B>, 64-69.
  <A href="https://doi.org/10.1016/j.micron.2017.11.009">DOI</A>
  <a href="https://www.ncbi.nlm.nih.gov/pubmed/29179010">PubMed</a> 
-<A href="http://arxiv.org/abs/1711.09776">arXiv</A></li>
+<A href="https://arxiv.org/abs/1711.09776">arXiv</A></li>
 </ul>
 
 ## Release notes
